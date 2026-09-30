@@ -132,18 +132,37 @@ async function main() {
     cek(r2.html.includes('⚠'), 'ikon peringatan tampil');
   }
 
-  // ===== 4. periode bulan ini tanpa peringatan =====
-  console.log('\n--- 4. periode bulan ini tanpa peringatan ---');
-  const r4 = await get(`/penilaian?periode=${periodeIni.id}`, token);
-  cek(
-    !r4.html.includes('bukan periode bulan berjalan'),
-    'periode bulan ini TIDAK memunculkan peringatan salah bulan'
-  );
+  // ===== 4. periode berjalan tidak memunculkan peringatan =====
+  console.log('\n--- 4. periode berjalan tanpa peringatan ---');
+  // ambil periode yang benar-benar memuat HARI INI, bukan sekadar periode
+  // pertama bulan ini — supaya tes tidak bergantung waktu server
+  const hariIni = new Date();
+  const periodeBerjalan = await prisma.periode.findFirst({
+    where: {
+      tanggalMulai: { lte: hariIni },
+      tanggalSelesai: { gte: hariIni },
+    },
+  });
+  if (periodeBerjalan) {
+    console.log(`   periode berjalan: ${periodeBerjalan.nama}`);
+    const rb = await get(`/penilaian?periode=${periodeBerjalan.id}`, token);
+    cek(
+      !rb.html.includes('bukan periode bulan berjalan') &&
+        !rb.html.includes('sudah lewat') &&
+        !rb.html.includes('belum dimulai'),
+      'periode berjalan TIDAK memunculkan peringatan apa pun'
+    );
+  } else {
+    console.log('   (tidak ada periode yang memuat hari ini — dilewati)');
+  }
 
   // ===== 5. belum dinilai =====
   console.log('\n--- 5. status awal: belum dinilai ---');
-  cek(r4.html.includes('Belum dinilai'), 'status "Belum dinilai" tampil');
-  cek(adaTombolNilai(r4.html), 'tautan tombol Nilai/Ubah tampil');
+  // pakai periodeIni (periode pertama bulan ini) sebagai acuan tampilan daftar
+  const r5 = await get(`/penilaian?periode=${periodeIni.id}`, token);
+  cek(r5.status === 200, 'daftar penilaian terbuka');
+  cek(r5.html.includes('Belum dinilai'), 'status "Belum dinilai" tampil');
+  cek(adaTombolNilai(r5.html), 'tautan tombol Nilai/Ubah tampil');
 
   // ===== 6. isi penilaian pertama =====
   console.log('\n--- 6. mengisi penilaian pertama ---');
