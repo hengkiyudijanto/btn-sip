@@ -8,7 +8,10 @@ import { angkaID } from '@/lib/sip/laporan';
  */
 export function LembarLaporan({ data }: { data: DataLaporan }) {
   return (
-    <div className="sip-laporan bg-white mx-auto" style={{ maxWidth: '210mm' }}>
+    <div
+      className={`sip-laporan bg-white mx-auto${data.versi === 'lite' ? ' sip-padat' : ''}`}
+      style={{ maxWidth: '210mm' }}
+    >
       {/* ============ KOP ============ */}
       <div className="sip-kop">
         <div>
@@ -105,7 +108,7 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
               <th style={{ width: '28px' }}>No</th>
               <th>Aspek</th>
               <th style={{ width: '42px' }}>Angka</th>
-              <th style={{ width: '46px' }}>Angka Skor 1&ndash;5</th>
+              <th style={{ width: '46px', whiteSpace: 'nowrap' }}>Skor 1&ndash;5</th>
               <th style={{ width: '42px' }}>Bobot</th>
               <th style={{ width: '46px' }}>Nilai</th>
               <th style={{ width: '30%' }}>Catatan</th>

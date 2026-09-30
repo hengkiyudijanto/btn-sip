@@ -53,7 +53,7 @@ async function cdp(wsUrl: string) {
   return { kirim, tutup: () => ws.close() };
 }
 
-async function cetakPdf(url: string, keluar: string, token: string) {
+async function cetakPdf(url: string, keluar: string, token: string, marginMm: number) {
   const port = await cariPortBebas();
   const chrome = spawn('google-chrome', [
     '--headless=new', '--disable-gpu', '--no-sandbox',
@@ -77,15 +77,18 @@ async function cetakPdf(url: string, keluar: string, token: string) {
   await c.kirim('Page.navigate', { url });
   await new Promise((r) => setTimeout(r, 5000));
 
+  // CDP memakai inci
+  const margin = marginMm / 25.4;
   const pdf = await c.kirim('Page.printToPDF', {
     printBackground: true,
     paperWidth: 8.27,   // A4
     paperHeight: 11.69,
-    marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
-    preferCSSPageSize: true,
+    marginTop: margin, marginBottom: margin,
+    marginLeft: margin, marginRight: margin,
+    preferCSSPageSize: false,
   });
   writeFileSync(keluar, Buffer.from(pdf.data, 'base64'));
-  console.log('  →', keluar);
+  console.log(`  → ${keluar} (margin ${marginMm}mm)`);
 
   c.tutup();
   chrome.kill();
@@ -163,11 +166,11 @@ async function main() {
     data: { tokenHash: h(token), pegawaiId: spv.id, expiresAt: new Date(Date.now() + 900000) },
   });
 
-  console.log('Cetak versi LENGKAP:');
-  await cetakPdf(`${BASE}/laporan/${pen.id}`, '/home/ubuntu/projects/btn-sip/laporan-lengkap.pdf', token);
+  console.log('Cetak versi LENGKAP (margin 12mm):');
+  await cetakPdf(`${BASE}/laporan/${pen.id}`, '/home/ubuntu/projects/btn-sip/laporan-lengkap.pdf', token, 12);
 
-  console.log('Cetak versi LITE:');
-  await cetakPdf(`${BASE}/laporan/${pen.id}?versi=lite`, '/home/ubuntu/projects/btn-sip/laporan-lite.pdf', token);
+  console.log('Cetak versi LITE (margin 8mm, target 1 halaman):');
+  await cetakPdf(`${BASE}/laporan/${pen.id}?versi=lite`, '/home/ubuntu/projects/btn-sip/laporan-lite.pdf', token, 8);
 
   await prisma.penilaianDetail.deleteMany({ where: { penilaianId: pen.id } });
   await prisma.penilaian.delete({ where: { id: pen.id } });

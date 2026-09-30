@@ -235,4 +235,226 @@
   .sip-tabel caption {
     page-break-after: avoid;
   }
+
+/* ==========================================================================
+   Versi LITE — dirapatkan supaya cukup 1 halaman A4
+   --------------------------------------------------------------------------
+   Isi TIDAK dikurangi: identitas, seluruh aspek, tabel total, nilai akhir,
+   catatan penilai, lembar komitmen, dan tanda tangan tetap ada. Yang
+   dirapatkan hanya ukuran huruf, jarak, dan tinggi kotak foto supaya
+   semuanya muat dalam satu halaman.
+   ========================================================================== */
+
+.sip-padat .sip-kop {
+  padding-bottom: 6px;
+  margin-bottom: 8px;
 }
+.sip-padat .sip-kop-judul {
+  font-size: 13px;
+  line-height: 1.15;
+}
+.sip-padat .sip-kop-sub {
+  font-size: 8.5px;
+  margin-top: 1px;
+}
+
+/* identitas & kotak foto */
+.sip-padat .sip-identitas {
+  padding: 6px 8px;
+  margin-bottom: 7px;
+}
+.sip-padat .sip-identitas table {
+  font-size: 9px;
+}
+.sip-padat .sip-foto {
+  width: 72px;
+  height: 96px;
+  font-size: 7.5px;
+}
+.sip-padat .sip-foto-keterangan {
+  width: 72px;
+  font-size: 6.5px;
+  margin-top: 2px;
+}
+
+/* tabel A/B/C */
+.sip-padat .sip-tabel {
+  font-size: 8.5px;
+  margin-bottom: 6px;
+}
+.sip-padat .sip-tabel caption {
+  font-size: 9px;
+  padding: 3px 6px;
+}
+.sip-padat .sip-tabel th,
+.sip-padat .sip-tabel td {
+  padding: 2.5px 4px;
+}
+/* kolom Catatan versi lite boleh lebih sempit karena tanpa dasar penilaian */
+.sip-padat .sip-tabel th:last-child,
+.sip-padat .sip-tabel td:last-child {
+  font-size: 8px;
+}
+
+/* tabel total penilaian */
+.sip-padat .sip-total {
+  padding: 6px 8px;
+  margin-bottom: 7px;
+}
+.sip-padat .sip-total-nilai {
+  font-size: 17px;
+}
+
+/* blok nilai akhir & kategori */
+.sip-padat .sip-rating {
+  padding: 8px;
+  margin-bottom: 6px;
+  font-size: 9.5px;
+}
+.sip-padat .sip-catatan {
+  padding: 7px 9px;
+  margin-bottom: 6px;
+  font-size: 8.5px;
+}
+
+/* lembar komitmen & tanda tangan */
+.sip-padat .sip-komitmen {
+  padding: 7px;
+  margin-bottom: 5px;
+}
+.sip-padat .sip-komitmen-judul {
+  font-size: 9.5px;
+  margin-bottom: 4px;
+}
+.sip-padat .sip-ttd-ruang {
+  height: 46px;
+  margin-bottom: 3px;
+}
+.sip-padat .sip-footer {
+  font-size: 7px;
+  margin-top: 5px;
+  padding-top: 4px;
+}
+
+/* Versi lite: izinkan blok mengalir mengisi ruang sisa halaman.
+   Aturan 'break-inside: avoid' pada versi lengkap memaksa tiap tabel
+   dan lembar komitmen utuh, sehingga kalau ruang tidak cukup seluruh
+   blok pindah ke halaman berikutnya dan hasilnya jadi 2 halaman.
+   Untuk versi lite aturan itu dilepas supaya isi mengisi ruang yang ada. */
+.sip-padat .sip-tabel,
+.sip-padat .sip-total,
+.sip-padat .sip-rating,
+.sip-padat .sip-komitmen {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+/* baris tabel tetap dijaga tidak terbelah supaya tetap terbaca */
+.sip-padat .sip-tabel tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+/* judul tabel jangan terpisah dari baris pertamanya */
+.sip-padat .sip-tabel caption {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+.sip-padat .sip-komitmen-judul,
+.sip-padat .sip-ttd-grid {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* --- penghematan ruang lanjutan: jarak antar blok --- */
+/* Jarak antar tabel dan baris identitas menyumbang ~118 pt yang perlu
+   dihemat supaya lembar komitmen ikut di halaman pertama. */
+.sip-padat .sip-identitas {
+  padding: 4px 6px;
+  margin-bottom: 4px;
+}
+.sip-padat .sip-identitas table {
+  font-size: 8px;
+  line-height: 1.2;
+}
+.sip-padat .sip-identitas td,
+.sip-padat .sip-identitas th {
+  padding: 0.5px 0 !important;
+}
+.sip-padat .sip-foto {
+  width: 54px;
+  height: 72px;
+}
+.sip-padat .sip-foto-keterangan {
+  width: 54px;
+  font-size: 5.5px;
+  margin-top: 1px;
+}
+.sip-padat .sip-tabel {
+  font-size: 7.5px;
+  margin-bottom: 3px;
+}
+.sip-padat .sip-tabel caption {
+  font-size: 8px;
+  padding: 2px 4px;
+}
+.sip-padat .sip-tabel th,
+.sip-padat .sip-tabel td {
+  padding: 1.5px 3px;
+  line-height: 1.18;
+}
+.sip-padat .sip-total {
+  padding: 4px 6px;
+  margin-bottom: 3px;
+}
+.sip-padat .sip-total-nilai {
+  font-size: 14px;
+}
+.sip-padat .sip-rating {
+  padding: 4px 6px;
+  margin-bottom: 3px;
+  font-size: 8.5px;
+  line-height: 1.3;
+}
+.sip-padat .sip-catatan {
+  padding: 4px 6px;
+  margin-bottom: 3px;
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+.sip-padat .sip-komitmen {
+  padding: 5px;
+  margin-bottom: 2px;
+}
+.sip-padat .sip-komitmen-judul {
+  font-size: 8.5px;
+  margin-bottom: 2px;
+}
+.sip-padat .sip-komitmen p {
+  font-size: 7.5px !important;
+  line-height: 1.35 !important;
+}
+.sip-padat .sip-ttd-grid {
+  margin-top: 4px;
+  gap: 10px;
+}
+.sip-padat .sip-ttd-ruang {
+  height: 32px;
+  margin-bottom: 2px;
+}
+.sip-padat .sip-ttd-box {
+  font-size: 7.5px;
+}
+.sip-padat .sip-footer {
+  font-size: 6px;
+  margin-top: 3px;
+  padding-top: 2px;
+}
+
+
+/* kolom Skor 1-5 dinaikkan sedikit supaya teksnya tidak terbelah dua baris */
+.sip-padat .sip-tabel th:nth-child(4),
+.sip-padat .sip-tabel td:nth-child(4) {
+  white-space: nowrap;
+}
+
+}
+
