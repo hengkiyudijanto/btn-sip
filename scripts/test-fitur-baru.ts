@@ -96,7 +96,7 @@ async function main() {
   });
   cek(revisi.status === 'DRAFT', 'status kembali DRAFT setelah dikembalikan');
   cek(revisi.dikirimAt === null, 'waktu kirim direset');
-  cek(revisi.catatanUmum?.includes('Dikembalikan'), 'alasan revisi tersimpan di catatan');
+  cek(revisi.catatanUmum?.includes('Dikembalikan') === true, 'alasan revisi tersimpan di catatan');
 
   // =====================================================================
   console.log('\n--- 2. IMPOR PEGAWAI (CSV) ---');
