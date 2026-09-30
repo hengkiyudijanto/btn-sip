@@ -10,6 +10,8 @@ import {
   type HasilCabang,
 } from '@/app/actions/cabang';
 
+export type OpsiInduk = { id: string; kode: string; nama: string; jenis: string };
+
 function Tombol({
   children,
   variasi = 'utama',
@@ -57,10 +59,17 @@ function Pesan({ state }: { state: HasilCabang }) {
 const kelasInput =
   'w-full rounded-lg border border-abu-300 px-3 py-2 text-sm focus:border-btn-biru-500 focus:ring-2 focus:ring-btn-biru-500/20 focus:outline-none';
 
-/** Form tambah cabang. */
-export function FormTambahCabang() {
+/** Form tambah cabang dengan pilihan jenis unit & cabang induk. */
+export function FormTambahCabang({
+  daftarKanwil,
+  daftarKc,
+}: {
+  daftarKanwil: OpsiInduk[];
+  daftarKc: OpsiInduk[];
+}) {
   const [state, aksi] = useActionState(tambahCabang, {});
   const [buka, setBuka] = useState(false);
+  const [jenis, setJenis] = useState<'KANWIL' | 'KC' | 'KCP'>('KC');
 
   if (!buka) {
     return (
@@ -74,35 +83,75 @@ export function FormTambahCabang() {
     );
   }
 
+  const opsiInduk = jenis === 'KC' ? daftarKanwil : jenis === 'KCP' ? daftarKc : [];
+
   return (
     <div className="kartu p-6">
       <h3 className="text-sm font-semibold text-abu-800 mb-4">Tambah cabang baru</h3>
       <form action={aksi} className="grid gap-4 sm:grid-cols-2">
         <div>
+          <label className="block text-xs font-medium text-abu-600 mb-1.5">Jenis unit</label>
+          <select
+            name="jenis"
+            value={jenis}
+            onChange={(e) => setJenis(e.target.value as 'KANWIL' | 'KC' | 'KCP')}
+            className={kelasInput}
+          >
+            <option value="KANWIL">Kanwil — Kantor Wilayah</option>
+            <option value="KC">KC — Kantor Cabang</option>
+            <option value="KCP">KCP — Kantor Cabang Pembantu</option>
+          </select>
+        </div>
+
+        <div>
           <label className="block text-xs font-medium text-abu-600 mb-1.5">
-            Kode cabang
+            Cabang induk
+            {jenis === 'KANWIL' && <span className="text-abu-400"> (tidak perlu)</span>}
           </label>
+          {jenis === 'KANWIL' ? (
+            <input
+              disabled
+              value="— level tertinggi —"
+              className={`${kelasInput} bg-abu-50 text-abu-400`}
+            />
+          ) : (
+            <select name="indukId" required className={kelasInput}>
+              <option value="">{jenis === 'KC' ? '— pilih Kanwil —' : '— pilih KC —'}</option>
+              {opsiInduk.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.kode} — {o.nama}
+                </option>
+              ))}
+            </select>
+          )}
+          {jenis !== 'KANWIL' && opsiInduk.length === 0 && (
+            <p className="mt-1 text-[11px] text-peringatan">
+              Belum ada {jenis === 'KC' ? 'Kanwil' : 'KC'} yang bisa dijadikan induk. Buat level di
+              atasnya terlebih dahulu.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-abu-600 mb-1.5">Kode</label>
           <input
             name="kode"
             required
-            placeholder="mis. 0002"
+            placeholder="mis. 2441"
             className={`${kelasInput} uppercase`}
           />
           <p className="mt-1 text-[11px] text-abu-400">
-            Kode unik, dipakai di laporan. Huruf/angka, mis. 0002 atau JKT-01
+            Kode unik, dipakai di laporan (mis. 2441 atau MAM-01)
           </p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-abu-600 mb-1.5">
-            Nama cabang
-          </label>
-          <input name="nama" required placeholder="mis. KC Jakarta Pusat" className={kelasInput} />
+          <label className="block text-xs font-medium text-abu-600 mb-1.5">Nama</label>
+          <input name="nama" required placeholder="mis. KCP Mamuju Kota" className={kelasInput} />
         </div>
+
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-abu-600 mb-1.5">
-            Alamat (opsional)
-          </label>
-          <input name="alamat" placeholder="Alamat kantor cabang" className={kelasInput} />
+          <label className="block text-xs font-medium text-abu-600 mb-1.5">Alamat (opsional)</label>
+          <input name="alamat" placeholder="Alamat kantor" className={kelasInput} />
         </div>
 
         <div className="sm:col-span-2 flex items-center gap-3">
@@ -124,43 +173,75 @@ export function FormTambahCabang() {
   );
 }
 
-/** Aksi per baris cabang: ubah nama, aktif/nonaktif, hapus. */
+/** Aksi per baris cabang: ubah (termasuk pindah induk), aktif/nonaktif, hapus. */
 export function AksiCabang({
   id,
   kode,
   nama,
+  jenis,
   alamat,
+  indukId,
   aktif,
   jumlahPegawai,
+  jumlahTurunan,
+  daftarKanwil,
+  daftarKc,
 }: {
   id: string;
   kode: string;
   nama: string;
+  jenis: string;
   alamat: string | null;
+  indukId: string | null;
   aktif: boolean;
   jumlahPegawai: number;
+  jumlahTurunan: number;
+  daftarKanwil: OpsiInduk[];
+  daftarKc: OpsiInduk[];
 }) {
   const [mode, setMode] = useState<'diam' | 'ubah' | 'hapus'>('diam');
   const [stateUbah, aksiUbah] = useActionState(ubahCabang, {});
   const [stateHapus, aksiHapus] = useActionState(hapusCabang, {});
   const [stateStatus, aksiStatus] = useActionState(ubahStatusCabang, {});
 
+  const kelasKecil =
+    'w-full rounded-lg border border-abu-300 px-2.5 py-1.5 text-xs focus:border-btn-biru-500 focus:outline-none';
+
   if (mode === 'ubah') {
+    const opsi = jenis === 'KC' ? daftarKanwil : jenis === 'KCP' ? daftarKc : [];
+
     return (
-      <form action={aksiUbah} className="min-w-[280px]">
+      <form action={aksiUbah} className="min-w-[300px]">
         <input type="hidden" name="id" value={id} />
         <div className="space-y-2">
           <input
             name="nama"
             defaultValue={nama}
             required
-            className="w-full rounded-lg border border-abu-300 px-2.5 py-1.5 text-xs focus:border-btn-biru-500 focus:outline-none"
+            className={kelasKecil}
             placeholder="Nama cabang"
           />
+          {jenis !== 'KANWIL' && (
+            <select
+              name="indukId"
+              defaultValue={indukId ?? ''}
+              required
+              className={kelasKecil}
+            >
+              <option value="">— pilih induk —</option>
+              {opsi
+                .filter((o) => o.id !== id)
+                .map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.kode} — {o.nama}
+                  </option>
+                ))}
+            </select>
+          )}
           <input
             name="alamat"
             defaultValue={alamat ?? ''}
-            className="w-full rounded-lg border border-abu-300 px-2.5 py-1.5 text-xs focus:border-btn-biru-500 focus:outline-none"
+            className={kelasKecil}
             placeholder="Alamat (opsional)"
           />
           <div className="flex gap-1.5">
@@ -181,10 +262,15 @@ export function AksiCabang({
 
   if (mode === 'hapus') {
     return (
-      <form action={aksiHapus} className="min-w-[240px]">
+      <form action={aksiHapus} className="min-w-[250px]">
         <input type="hidden" name="id" value={id} />
         <p className="text-[11px] text-abu-600 leading-relaxed">
-          Hapus cabang <strong>{kode}</strong> secara permanen?
+          Hapus <strong>{kode}</strong> secara permanen?
+          {jumlahTurunan > 0 && (
+            <span className="block mt-1 text-peringatan">
+              Masih ada {jumlahTurunan} cabang turunan — hapus akan ditolak.
+            </span>
+          )}
           {jumlahPegawai > 0 && (
             <span className="block mt-1 text-peringatan">
               Masih ada {jumlahPegawai} pegawai terhubung — hapus akan ditolak.

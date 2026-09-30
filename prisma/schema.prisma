@@ -19,19 +19,36 @@ datasource db {
 // MASTER DATA
 // ===========================================================================
 
+/// Jenis unit kerja dalam hierarki BTN.
+enum JenisCabang {
+  KANWIL /// Kantor Wilayah — level tertinggi
+  KC /// Kantor Cabang
+  KCP /// Kantor Cabang Pembantu
+}
+
 /// Cabang / unit kerja. `kode` dipakai sebagai filter penilaian.
+/// Hierarki dibentuk lewat relasi `induk` (self-relation): Kanwil > KC > KCP.
 model Cabang {
-  id        String   @id @default(cuid())
-  kode      String   @unique // mis. "0001"
+  id        String       @id @default(cuid())
+  kode      String       @unique // mis. "0001"
   nama      String
+  jenis     JenisCabang  @default(KC)
   alamat    String?
-  aktif     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  aktif     Boolean      @default(true)
+
+  /// cabang induk dalam hierarki; null = level teratas (Kanwil)
+  indukId   String?
+  induk     Cabang?      @relation("HierarkiCabang", fields: [indukId], references: [id])
+  turunan   Cabang[]     @relation("HierarkiCabang")
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   pegawai   Pegawai[]
 
   @@index([kode])
+  @@index([indukId])
+  @@index([jenis])
 }
 
 /// Jabatan yang dinilai. Bobot penilaian seragam untuk semua jabatan.

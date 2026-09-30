@@ -5,6 +5,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { BadgeRating } from '@/components/badge-rating';
 import { angkaID } from '@/lib/sip/laporan';
+import { kumpulkanTurunan, susunPohon, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
 
 export const metadata = { title: 'Laporan' };
 
@@ -29,28 +30,51 @@ export default async function HalamanLaporan({
     : daftarPeriode.find((p) => p.aktif) ?? daftarPeriode[0];
 
   const bolehLihatSemua = saya.role === 'ADMIN';
-  const daftarCabang = bolehLihatSemua
-    ? await prisma.cabang.findMany({ where: { aktif: true }, orderBy: { kode: 'asc' } })
-    : [];
+  const semuaCabang = await prisma.cabang.findMany({ orderBy: { kode: 'asc' } });
+  const daftarCabang = bolehLihatSemua ? semuaCabang.filter((c) => c.aktif) : [];
 
-  const cabangFilter = bolehLihatSemua ? cabangId : undefined;
+  // ===== Tentukan cakupan cabang =====
+  // Opsi B: pilih satu unit -> otomatis mencakup seluruh cabang turunannya
+  // (KC di bawah Kanwil, KCP di bawah KC). Tanpa pilihan -> seluruh cabang
+  // yang menjadi wewenang pengguna.
+  const ringkasCabang: CabangRingkas[] = semuaCabang.map((c) => ({
+    id: c.id,
+    kode: c.kode,
+    nama: c.nama,
+    jenis: c.jenis,
+    indukId: c.indukId,
+    aktif: c.aktif,
+  }));
+
+  const unitTerpilih = bolehLihatSemua
+    ? cabangId
+      ? semuaCabang.find((c) => c.id === cabangId)
+      : null
+    : semuaCabang.find((c) => c.id === saya.cabang.id) ?? null;
+
+  let idCakupan: string[] | null = null;
+  if (unitTerpilih) {
+    idCakupan = kumpulkanTurunan(unitTerpilih.id, ringkasCabang);
+  } else if (!bolehLihatSemua) {
+    idCakupan = [saya.cabang.id];
+  }
+
+  const daftarTurunan = unitTerpilih
+    ? ringkasCabang.filter((c) => idCakupan!.includes(c.id) && c.id !== unitTerpilih.id)
+    : [];
 
   const penilaian = periodeTerpilih
     ? await prisma.penilaian.findMany({
         where: {
           periodeId: periodeTerpilih.id,
-          ...(bolehLihatSemua
-            ? cabangFilter
-              ? { pegawai: { cabangId: cabangFilter } }
-              : {}
-            : { pegawai: { cabangId: saya.cabang.id } }),
+          ...(idCakupan ? { pegawai: { cabangId: { in: idCakupan } } } : {}),
         },
         include: {
           pegawai: {
             select: {
               nama: true,
               nip: true,
-              cabang: { select: { kode: true, nama: true } },
+              cabang: { select: { id: true, kode: true, nama: true } },
               jabatan: { select: { nama: true } },
             },
           },
@@ -82,6 +106,33 @@ export default async function HalamanLaporan({
           </p>
         </div>
 
+        {/* ===== Info cakupan ===== */}
+        <div className="mt-5 rounded-lg border border-btn-biru-200 bg-btn-biru-50 px-4 py-3">
+          {unitTerpilih ? (
+            <p className="text-xs leading-relaxed text-btn-biru-700">
+              <strong>Cakupan laporan:</strong> {LABEL_JENIS[unitTerpilih.jenis]}{' '}
+              <strong>
+                {unitTerpilih.kode} — {unitTerpilih.nama}
+              </strong>
+              {daftarTurunan.length > 0 ? (
+                <>
+                  {' '}
+                  beserta <strong>{daftarTurunan.length} unit turunan</strong> di bawahnya (
+                  {daftarTurunan.map((c) => c.kode).join(', ')}).
+                </>
+              ) : (
+                <> (tanpa unit turunan).</>
+              )}
+            </p>
+          ) : (
+            <p className="text-xs leading-relaxed text-btn-biru-700">
+              <strong>Cakupan laporan:</strong> {bolehLihatSemua ? 'seluruh unit kerja' : `unit ${saya.cabang.nama}`}.
+              Pilih unit tertentu pada filter di bawah untuk melihat cakupan yang lebih sempit
+              (unit turunannya tetap ikut terhitung).
+            </p>
+          )}
+        </div>
+
         {/* ===== Filter ===== */}
         <form className="mt-6 kartu p-5" method="get">
           <div className="flex flex-wrap items-end gap-4">
@@ -107,18 +158,28 @@ export default async function HalamanLaporan({
             {bolehLihatSemua && daftarCabang.length > 0 && (
               <div>
                 <label htmlFor="cabang" className="block text-xs font-medium text-abu-600 mb-1.5">
-                  Cabang
+                  Unit kerja
                 </label>
                 <select
                   id="cabang"
                   name="cabang"
-                  defaultValue={cabangFilter ?? ''}
-                  className="rounded-lg border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800 focus:border-btn-biru-500 focus:ring-2 focus:ring-btn-biru-500/20 focus:outline-none min-w-[200px]"
+                  defaultValue={unitTerpilih?.id ?? ''}
+                  className="rounded-lg border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800 focus:border-btn-biru-500 focus:ring-2 focus:ring-btn-biru-500/20 focus:outline-none min-w-[240px]"
                 >
-                  <option value="">Semua cabang</option>
-                  {daftarCabang.map((c) => (
+                  <option value="">Semua unit</option>
+                  {susunPohon(
+                    daftarCabang.map((c) => ({
+                      id: c.id,
+                      kode: c.kode,
+                      nama: c.nama,
+                      jenis: c.jenis,
+                      indukId: c.indukId,
+                      aktif: c.aktif,
+                    }))
+                  ).map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.kode} — {c.nama}
+                      {'\u00A0'.repeat(c.kedalaman * 3)}
+                      {LABEL_JENIS[c.jenis]} {c.kode} — {c.nama}
                     </option>
                   ))}
                 </select>

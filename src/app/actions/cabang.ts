@@ -4,12 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
+import { akanMembuatSiklus } from '@/lib/sip/hierarki';
 
 export type HasilCabang = {
   error?: string;
   sukses?: boolean;
   pesan?: string;
-  peringatan?: string;
 };
 
 async function pastikanAdmin() {
@@ -19,6 +19,8 @@ async function pastikanAdmin() {
   return { saya };
 }
 
+const JENIS = ['KANWIL', 'KC', 'KCP'] as const;
+
 const skema = z.object({
   kode: z
     .string()
@@ -26,10 +28,12 @@ const skema = z.object({
     .max(20, 'Kode maksimal 20 karakter')
     .regex(/^[A-Za-z0-9-]+$/, 'Kode hanya boleh huruf, angka, dan tanda hubung'),
   nama: z.string().min(1, 'Nama cabang wajib diisi').max(120),
+  jenis: z.enum(JENIS),
   alamat: z.string().max(300).optional(),
+  indukId: z.string().optional(),
 });
 
-/** Tambah cabang baru. */
+/** Tambah cabang baru, lengkap dengan jenis & cabang induk. */
 export async function tambahCabang(
   _sebelumnya: HasilCabang,
   formData: FormData
@@ -41,18 +45,41 @@ export async function tambahCabang(
   const parsed = skema.safeParse({
     kode: String(formData.get('kode') ?? '').trim(),
     nama: String(formData.get('nama') ?? '').trim(),
+    jenis: String(formData.get('jenis') ?? 'KC'),
     alamat: String(formData.get('alamat') ?? '').trim() || undefined,
+    indukId: String(formData.get('indukId') ?? '').trim() || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { kode, nama, alamat } = parsed.data;
+  const { kode, nama, jenis, alamat, indukId } = parsed.data;
   const kodeUpper = kode.toUpperCase();
 
   const ada = await prisma.cabang.findUnique({ where: { kode: kodeUpper } });
   if (ada) return { error: `Kode cabang ${kodeUpper} sudah dipakai (${ada.nama}).` };
 
+  // Kanwil adalah level tertinggi — tidak punya induk
+  if (jenis === 'KANWIL' && indukId) {
+    return { error: 'Kanwil adalah level tertinggi dan tidak boleh punya cabang induk.' };
+  }
+
+  // KC & KCP wajib punya induk
+  if (jenis !== 'KANWIL' && !indukId) {
+    return { error: `${jenis} wajib memiliki cabang induk. Pilih induknya terlebih dahulu.` };
+  }
+
+  if (indukId) {
+    const induk = await prisma.cabang.findUnique({ where: { id: indukId } });
+    if (!induk) return { error: 'Cabang induk tidak ditemukan.' };
+    if (jenis === 'KC' && induk.jenis !== 'KANWIL') {
+      return { error: 'Cabang induk dari KC harus berupa Kanwil.' };
+    }
+    if (jenis === 'KCP' && induk.jenis !== 'KC') {
+      return { error: 'Cabang induk dari KCP harus berupa KC.' };
+    }
+  }
+
   const cabang = await prisma.cabang.create({
-    data: { kode: kodeUpper, nama, alamat },
+    data: { kode: kodeUpper, nama, jenis, alamat, indukId: indukId ?? null },
   });
 
   await catatAudit({
@@ -60,15 +87,16 @@ export async function tambahCabang(
     aksi: 'TAMBAH_CABANG',
     entitas: 'Cabang',
     entitasId: cabang.id,
-    dataBaru: { kode: kodeUpper, nama },
+    dataBaru: { kode: kodeUpper, nama, jenis, indukId },
   });
 
   revalidatePath('/cabang');
   revalidatePath('/pegawai');
-  return { sukses: true, pesan: `Cabang ${kodeUpper} — ${nama} berhasil ditambahkan.` };
+  revalidatePath('/laporan');
+  return { sukses: true, pesan: `${jenis} ${kodeUpper} — ${nama} berhasil ditambahkan.` };
 }
 
-/** Ubah nama/alamat cabang. Kode tidak diubah agar tidak memutus data pegawai. */
+/** Ubah data cabang, termasuk memindahkan cabang induk. */
 export async function ubahCabang(
   _sebelumnya: HasilCabang,
   formData: FormData
@@ -80,6 +108,7 @@ export async function ubahCabang(
   const id = String(formData.get('id') ?? '');
   const nama = String(formData.get('nama') ?? '').trim();
   const alamat = String(formData.get('alamat') ?? '').trim();
+  const indukId = String(formData.get('indukId') ?? '').trim() || null;
 
   if (!id) return { error: 'Cabang tidak ditemukan.' };
   if (!nama) return { error: 'Nama cabang wajib diisi.' };
@@ -87,25 +116,61 @@ export async function ubahCabang(
   const lama = await prisma.cabang.findUnique({ where: { id } });
   if (!lama) return { error: 'Cabang tidak ditemukan.' };
 
-  await prisma.cabang.update({ where: { id }, data: { nama, alamat: alamat || null } });
+  if (lama.jenis === 'KANWIL' && indukId) {
+    return { error: 'Kanwil tidak boleh punya cabang induk.' };
+  }
+
+  if (lama.jenis !== 'KANWIL' && !indukId) {
+    return { error: `${lama.jenis} wajib memiliki cabang induk.` };
+  }
+
+  if (indukId) {
+    if (indukId === id) {
+      return { error: 'Cabang tidak boleh menjadi induk bagi dirinya sendiri.' };
+    }
+
+    // Cegah siklus: induk tidak boleh berasal dari turunan sendiri
+    const semua = await prisma.cabang.findMany({ select: { id: true, indukId: true } });
+    if (akanMembuatSiklus(id, indukId, semua)) {
+      return {
+        error:
+          'Cabang tersebut tidak dapat dijadikan induk karena akan membentuk lingkaran hierarki.',
+      };
+    }
+
+    const induk = await prisma.cabang.findUnique({ where: { id: indukId } });
+    if (!induk) return { error: 'Cabang induk tidak ditemukan.' };
+    if (lama.jenis === 'KC' && induk.jenis !== 'KANWIL') {
+      return { error: 'Cabang induk dari KC harus berupa Kanwil.' };
+    }
+    if (lama.jenis === 'KCP' && induk.jenis !== 'KC') {
+      return { error: 'Cabang induk dari KCP harus berupa KC.' };
+    }
+  }
+
+  await prisma.cabang.update({
+    where: { id },
+    data: { nama, alamat: alamat || null, indukId },
+  });
 
   await catatAudit({
     pegawaiId: saya.id,
     aksi: 'UBAH_CABANG',
     entitas: 'Cabang',
     entitasId: id,
-    dataLama: { nama: lama.nama, alamat: lama.alamat },
-    dataBaru: { nama, alamat },
+    dataLama: { nama: lama.nama, alamat: lama.alamat, indukId: lama.indukId },
+    dataBaru: { nama, alamat, indukId },
   });
 
   revalidatePath('/cabang');
   revalidatePath('/pegawai');
+  revalidatePath('/laporan');
   return { sukses: true, pesan: `Cabang ${lama.kode} diperbarui.` };
 }
 
 /**
- * Hapus cabang. Ditolak kalau masih ada pegawai atau penilaian yang
- * terhubung — supaya data historis tidak ikut hilang.
+ * Hapus cabang. Ditolak bila masih ada pegawai atau cabang turunan,
+ * supaya tidak ada data menggantung.
  */
 export async function hapusCabang(
   _sebelumnya: HasilCabang,
@@ -118,9 +183,17 @@ export async function hapusCabang(
   const id = String(formData.get('id') ?? '');
   const cabang = await prisma.cabang.findUnique({
     where: { id },
-    include: { _count: { select: { pegawai: true } } },
+    include: { _count: { select: { pegawai: true, turunan: true } } },
   });
   if (!cabang) return { error: 'Cabang tidak ditemukan.' };
+
+  if (cabang._count.turunan > 0) {
+    return {
+      error:
+        `Cabang ${cabang.kode} masih memiliki ${cabang._count.turunan} cabang turunan. ` +
+        'Pindahkan atau hapus turunannya terlebih dahulu.',
+    };
+  }
 
   if (cabang._count.pegawai > 0) {
     return {
@@ -137,11 +210,12 @@ export async function hapusCabang(
     aksi: 'HAPUS_CABANG',
     entitas: 'Cabang',
     entitasId: id,
-    dataLama: { kode: cabang.kode, nama: cabang.nama },
+    dataLama: { kode: cabang.kode, nama: cabang.nama, jenis: cabang.jenis },
   });
 
   revalidatePath('/cabang');
   revalidatePath('/pegawai');
+  revalidatePath('/laporan');
   return { sukses: true, pesan: `Cabang ${cabang.kode} dihapus.` };
 }
 
