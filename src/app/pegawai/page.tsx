@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
@@ -87,10 +88,20 @@ export default async function HalamanPegawai() {
                   <tr key={p.id}>
                     <td className="tabular-nums text-xs text-abu-600">{p.nip}</td>
                     <td className="font-medium text-abu-900">
-                      {p.nama}
+                      <Link
+                        href={`/pegawai/${p.id}`}
+                        className="hover:text-btn-biru-600 transition-colors"
+                      >
+                        {p.nama}
+                      </Link>
                       {p.harusGantiPassword && (
                         <span className="ml-2 rounded bg-peringatan-bg px-1.5 py-0.5 text-[10px] text-peringatan whitespace-nowrap">
                           belum ganti password
+                        </span>
+                      )}
+                      {p.fotoData && (
+                        <span className="ml-2 text-[10px] text-abu-400" title="Punya foto">
+                          📷
                         </span>
                       )}
                     </td>

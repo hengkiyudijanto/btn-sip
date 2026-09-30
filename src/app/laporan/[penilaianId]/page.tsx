@@ -66,7 +66,7 @@ export default async function HalamanCetakLaporan({
     cabang: p.pegawai.cabang.nama,
     kodeCabang: p.pegawai.cabang.kode,
     periode: `${p.periode.nama} (${rentangPeriode(p.periode.tanggalMulai, p.periode.tanggalSelesai)})`,
-    fotoUrl: p.pegawai.fotoUrl,
+    fotoUrl: p.pegawai.fotoData ?? p.pegawai.fotoUrl,
 
     blok,
     nilaiPenampilan: p.nilaiPenampilan ?? 0,

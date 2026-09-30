@@ -78,7 +78,15 @@ model Pegawai {
   nip           String   @unique
   nama          String
   email         String?  @unique
+  /// URL foto eksternal (kalau ada). Untuk unggahan, pakai kolom fotoData.
   fotoUrl       String?
+  /// Foto 3x4 tersimpan sebagai data URL (base64) — Vercel tidak punya
+  /// filesystem persisten, jadi gambar kecil disimpan di database.
+  fotoData      String?
+  /// Metadata foto untuk ditampilkan tanpa memuat gambarnya.
+  fotoMime      String?
+  fotoUkuran    Int?
+  fotoDiperbarui DateTime?
   passwordHash  String
   role          Role     @default(PEGAWAI)
   aktif         Boolean  @default(true)
