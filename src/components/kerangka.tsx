@@ -23,6 +23,7 @@ const MENU_DASAR: ItemMenu[] = [
   { href: '/persetujuan', label: 'Persetujuan', role: ['MANAGER', 'ADMIN'] },
   { href: '/laporan', label: 'Laporan' },
   { href: '/pegawai', label: 'Pegawai', role: ['ADMIN', 'MANAGER'] },
+  { href: '/cabang', label: 'Cabang', role: ['ADMIN'] },
   { href: '/periode', label: 'Periode', role: ['ADMIN'] },
 ];
 
