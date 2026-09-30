@@ -253,3 +253,24 @@ model Sesi {
   @@index([pegawaiId])
   @@index([expiresAt])
 }
+
+// ===========================================================================
+// PENGATURAN APLIKASI
+// ===========================================================================
+
+/**
+ * Pengaturan global aplikasi (satu baris saja).
+ * Dipakai untuk menyimpan hari penilaian periode, karena hari itu bisa
+ * berubah di masa depan dan mempengaruhi perhitungan periode.
+ */
+model Pengaturan {
+  id            String   @id @default("utama")
+  /// 0=Minggu, 1=Senin, ... 6=Sabtu. Default 3 = Rabu.
+  hariPenilaian Int      @default(3)
+  /// tahun periode yang sudah dibuat otomatis
+  periodeTerbuatSampaiTahun Int?
+  diperbaruiOleh String?
+  updatedAt     DateTime @updatedAt
+
+  @@map("pengaturan")
+}

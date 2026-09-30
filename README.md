@@ -31,8 +31,41 @@ Banking Customer Service.
 - Wajib ganti password pada login pertama
 - Tambah pegawai manual & impor massal dari CSV
 - Reset password, aktif/nonaktifkan akun
-- Kelola periode mingguan (buat tunggal atau massal, kunci, aktif/nonaktif)
+- Unggah foto pegawai (3×4) dengan kompresi otomatis di peramban
+- Periode mingguan dibuat otomatis dari aturan resmi (bisa dikunci, aktif/nonaktif)
 - Audit log untuk setiap aksi penting
+
+## Aturan Periode
+
+Periode penilaian **dihitung otomatis**, tidak dibuat manual. Aturannya:
+
+1. Penilaian dilakukan setiap minggu pada **hari penilaian** yang bisa diubah
+   (default: Rabu). Hari ini hanya jadwal pengisian — **bukan** penentu batas
+   periode.
+2. Penamaan: `Minggu ke-N <Bulan> <Tahun>` dengan N = nomor urut dalam bulan
+   itu, bukan nomor minggu ISO.
+3. Periode selalu **mulai tanggal 1** setiap bulan dan **berakhir hari Minggu**.
+   Tidak menyeberang bulan.
+4. Panjang periode pertama bergantung posisi tanggal 1 terhadap hari penilaian:
+   - tanggal 1 **sebelum/tepat** hari penilaian → berakhir Minggu di minggu itu
+   - tanggal 1 **setelah** hari penilaian → berakhir Minggu minggu depan
+     (contoh: 1 Oktober 2026 hari Kamis, hari penilaian Rabu →
+     Minggu ke-1 Oktober 2026 = **1–11 Okt**, 11 hari)
+5. Periode yang kurang dari **5 hari** digabung: yang di awal bulan ke periode
+   berikutnya, yang di akhir bulan ke periode sebelumnya. Contoh: 1 Nov 2026
+   jatuh Minggu → digabung jadi 1–8 Nov; 30 Nov 2026 jatuh Senin → digabung
+   jadi 23–30 Nov.
+
+Hari penilaian dapat diubah admin di menu **Periode**. Mengubahnya hanya
+mempengaruhi perhitungan periode berikutnya — periode yang sudah dibuat tidak
+diubah, supaya penilaian dan laporan yang sudah jadi tidak rusak.
+
+Logika ada di `src/lib/sip/periode.ts` dengan 89 unit test
+(`src/lib/sip/periode.test.ts`). Untuk melihat simulasi setahun penuh:
+
+```bash
+pnpm exec tsx scripts/simulasi-periode.ts 2026 3   # tahun 2026, hari penilaian Rabu (3)
+```
 
 ## Tumpukan Teknologi
 
