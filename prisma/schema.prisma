@@ -49,6 +49,7 @@ model Cabang {
   @@index([kode])
   @@index([indukId])
   @@index([jenis])
+  pengajuan     PengajuanPegawai[]
 }
 
 /// Jabatan yang dinilai. Bobot penilaian seragam untuk semua jabatan.
@@ -63,6 +64,7 @@ model Jabatan {
   pegawai   Pegawai[]
 
   @@index([kode])
+  pengajuan     PengajuanPegawai[]
 }
 
 enum Role {
@@ -110,6 +112,15 @@ model Pegawai {
   penilaiankuSebagaiMengetahui Penilaian[] @relation("Pengetahui")
   auditLog      AuditLog[]
   sesi          Sesi[]
+
+  /// pengajuan pegawai yang dibuat supervisor ini
+  pengajuanDiajukan       PengajuanPegawai[] @relation("PengajuanOleh")
+  /// pengajuan yang diputuskan admin ini
+  pengajuanDiputus        PengajuanPegawai[] @relation("PengajuanDiputuskan")
+  /// pengajuan yang menunjuk pegawai ini sebagai atasan
+  pengajuanSebagaiAtasan  PengajuanPegawai[] @relation("PengajuanAtasan")
+  /// pengajuan yang menghasilkan pegawai ini
+  pengajuanHasil          PengajuanPegawai?  @relation("PengajuanHasil")
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -273,4 +284,65 @@ model Pengaturan {
   updatedAt     DateTime @updatedAt
 
   @@map("pengaturan")
+}
+
+// ===========================================================================
+// PENGAJUAN PEGAWAI
+// ===========================================================================
+
+enum StatusPengajuan {
+  MENUNGGU // diajukan supervisor, menunggu admin
+  DISETUJUI // admin menyetujui, pegawai sudah dibuat
+  DITOLAK // admin menolak
+}
+
+/**
+ * Pengajuan penambahan pegawai oleh supervisor.
+ *
+ * Supervisor sering menemukan petugas yang belum terdaftar saat hendak
+ * menilai. Daripada memberi kewenangan penuh menambah pegawai (risiko NIP
+ * ganda, salah cabang, pegawai fiktif), supervisor mengajukan dan admin
+ * menyetujui.
+ *
+ * Password disimpan TER-HASH sejak pengajuan supaya admin tidak perlu
+ * mengetik ulang, dan password asli tidak pernah terlihat siapa pun.
+ */
+model PengajuanPegawai {
+  id     String          @id @default(cuid())
+  status StatusPengajuan @default(MENUNGGU)
+
+  /// data calon pegawai
+  nip          String
+  nama         String
+  email        String?
+  passwordHash String
+
+  cabangId  String
+  cabang    Cabang   @relation(fields: [cabangId], references: [id])
+  jabatanId String?
+  jabatan   Jabatan? @relation(fields: [jabatanId], references: [id])
+  atasanId  String?
+  atasan    Pegawai? @relation("PengajuanAtasan", fields: [atasanId], references: [id])
+
+  /// yang mengajukan (supervisor)
+  pengajuId      String
+  pengaju        Pegawai @relation("PengajuanOleh", fields: [pengajuId], references: [id])
+  catatanPengaju String?
+
+  /// hasil keputusan admin
+  diputuskanOlehId String?
+  diputuskanOleh   Pegawai?  @relation("PengajuanDiputuskan", fields: [diputuskanOlehId], references: [id])
+  catatanAdmin     String?
+  diputuskanAt     DateTime?
+
+  /// pegawai yang dihasilkan setelah disetujui
+  pegawaiId String?  @unique
+  pegawai   Pegawai? @relation("PengajuanHasil", fields: [pegawaiId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([cabangId])
+  @@index([pengajuId])
 }

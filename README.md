@@ -32,6 +32,7 @@ Banking Customer Service.
 - Tambah pegawai manual & impor massal dari CSV
 - Reset password, aktif/nonaktifkan akun
 - Unggah foto pegawai (3×4) dengan kompresi otomatis di peramban
+- Pengajuan pegawai baru oleh supervisor, disetujui admin
 - Periode mingguan dibuat otomatis dari aturan resmi (bisa dikunci, aktif/nonaktif)
 - Audit log untuk setiap aksi penting
 
@@ -66,6 +67,38 @@ Logika ada di `src/lib/sip/periode.ts` dengan 89 unit test
 ```bash
 pnpm exec tsx scripts/simulasi-periode.ts 2026 3   # tahun 2026, hari penilaian Rabu (3)
 ```
+
+## Pengajuan Pegawai
+
+Supervisor sering menemukan petugas yang belum terdaftar saat hendak menilai.
+Menambah pegawai langsung bukan wewenangnya, karena data pegawai mengikat NIP
+resmi — risiko NIP ganda, salah unit, atau pegawai fiktif. Jadi alurnya lewat
+pengajuan:
+
+```
+Supervisor mengajukan  ->  Admin memeriksa  ->  Setujui / Tolak
+                                              |
+                                     disetujui: pegawai langsung aktif
+```
+
+**Aturan yang ditegakkan** (`src/lib/sip/pengajuan.ts`):
+
+- pengaju harus SUPERVISOR, MANAGER, atau ADMIN
+- unit kerja tujuan harus unit pengaju atau turunannya (KC boleh mengajukan
+  untuk KCP di bawahnya; Kanwil untuk semua di bawahnya)
+- NIP belum dipakai pegawai mana pun dan belum diajukan orang lain
+- role hasil **selalu PEGAWAI** — tidak bisa membuat admin/supervisor
+- password di-hash sejak pengajuan, jadi admin tidak perlu mengetik ulang
+  dan password asli tidak pernah terlihat siapa pun
+- pegawai hasil wajib mengganti password saat login pertama
+- saat admin menyetujui, NIP dan email diperiksa ULANG (bisa terpakai
+  sejak pengajuan dibuat)
+- penolakan wajib disertai alasan minimal 5 karakter
+- supervisor boleh membatalkan pengajuannya sendiri selama belum diputuskan
+
+Setiap langkah tercatat di audit log: `AJUKAN_PEGAWAI`,
+`SETUJUI_PENGAJUAN_PEGAWAI`, `TOLAK_PENGAJUAN_PEGAWAI`,
+`BATAL_PENGAJUAN_PEGAWAI`.
 
 ## Tumpukan Teknologi
 
