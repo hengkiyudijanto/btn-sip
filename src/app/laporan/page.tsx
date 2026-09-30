@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { BadgeRating } from '@/components/badge-rating';
 import { angkaID } from '@/lib/sip/laporan';
 import { kumpulkanTurunan, susunPohon, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
+import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 
 export const metadata = { title: 'Laporan' };
 
@@ -20,14 +21,16 @@ export default async function HalamanLaporan({
 
   const { periode: periodeId, cabang: cabangId } = await searchParams;
 
-  const daftarPeriode = await prisma.periode.findMany({
-    orderBy: { tanggalMulai: 'desc' },
-    take: 20,
-  });
+  // Periode di sekitar hari ini (3 bulan ke belakang sampai 6 bulan ke
+  // depan). Sebelumnya memakai orderBy desc + take 20, yang mengambil
+  // 20 periode TERAKHIR di database — sejak periode otomatis dibuat
+  // sampai 2027, itu berarti menampilkan Desember 2027 padahal sekarang
+  // baru 2026.
+  const daftarPeriode = await daftarPeriodeUntukPemilih();
 
   const periodeTerpilih = periodeId
-    ? daftarPeriode.find((p) => p.id === periodeId)
-    : daftarPeriode.find((p) => p.aktif) ?? daftarPeriode[0];
+    ? (daftarPeriode.find((p) => p.id === periodeId) ?? (await pilihPeriodeRelevan()))
+    : await pilihPeriodeRelevan();
 
   const bolehLihatSemua = saya.role === 'ADMIN';
   const semuaCabang = await prisma.cabang.findMany({ orderBy: { kode: 'asc' } });
@@ -133,6 +136,38 @@ export default async function HalamanLaporan({
           )}
         </div>
 
+        {/* ===== peringatan periode tidak sesuai bulan berjalan ===== */}
+        {(() => {
+          if (!periodeTerpilih) return null;
+          const hariIni = new Date();
+          const t = new Date(hariIni.getFullYear(), hariIni.getMonth(), hariIni.getDate());
+          const mulai = new Date(periodeTerpilih.tanggalMulai);
+          const selesai = new Date(periodeTerpilih.tanggalSelesai);
+          const berjalan = t >= mulai && t <= selesai;
+          const lewat = t > selesai;
+          const bulanBerbeda = mulai.getMonth() !== hariIni.getMonth() ||
+            mulai.getFullYear() !== hariIni.getFullYear();
+
+          if (berjalan) return null;
+
+          const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli',
+            'Agustus','September','Oktober','November','Desember'];
+
+          return (
+            <div className="mt-4 rounded-lg border border-peringatan/30 bg-peringatan-bg px-3.5 py-2.5 text-xs leading-relaxed text-peringatan">
+              <strong>⚠ Perhatian.</strong>{' '}
+              {lewat
+                ? 'Periode yang dipilih sudah lewat'
+                : 'Periode yang dipilih belum dimulai'}
+              {bulanBerbeda && (
+                <> — sekarang <strong>{BULAN[hariIni.getMonth()]} {hariIni.getFullYear()}</strong>,
+                sedangkan periode ini <strong>{BULAN[mulai.getMonth()]} {mulai.getFullYear()}</strong></>
+              )}
+              . Pastikan ini periode yang ingin dilihat; kalau tidak, ubah pilihan di atas.
+            </div>
+          );
+        })()}
+
         {/* ===== Filter ===== */}
         <form className="mt-6 kartu p-5" method="get">
           <div className="flex flex-wrap items-end gap-4">
@@ -153,6 +188,17 @@ export default async function HalamanLaporan({
                   </option>
                 ))}
               </select>
+              {periodeTerpilih && (
+                <p className="mt-1.5 text-[11px] text-abu-400 tabular-nums">
+                  {periodeTerpilih.tanggalMulai.toLocaleDateString('id-ID', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })}
+                  {' – '}
+                  {periodeTerpilih.tanggalSelesai.toLocaleDateString('id-ID', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })}
+                </p>
+              )}
             </div>
 
             {bolehLihatSemua && daftarCabang.length > 0 && (
