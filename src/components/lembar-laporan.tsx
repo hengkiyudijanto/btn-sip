@@ -31,6 +31,23 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
         />
       </div>
 
+      {/* penanda versi lite — supaya jelas saat dicetak/diarsipkan */}
+      {data.versi === 'lite' && (
+        <div
+          style={{
+            fontSize: '8.5px',
+            color: '#475569',
+            background: '#f1f5f9',
+            border: '1px solid #cbd5e1',
+            borderTop: 'none',
+            padding: '3px 8px',
+            textAlign: 'right',
+          }}
+        >
+          Versi ringkas &mdash; tanpa dasar penilaian
+        </div>
+      )}
+
       {/* ============ IDENTITAS KARYAWAN ============ */}
       <div
         style={{

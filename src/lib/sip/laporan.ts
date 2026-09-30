@@ -72,6 +72,13 @@ export type DataLaporan = {
   /** keterangan foto penilaian, mis. "seragam lengkap dengan name tag" */
   fotoCatatan?: string | null;
 
+  /**
+   * Versi laporan:
+   * - 'lengkap': menyertakan dasar penilaian (kriteria rubrik) di kolom Catatan
+   * - 'lite'   : dasar penilaian dibuang, hanya catatan yang ditulis atasan
+   */
+  versi?: 'lengkap' | 'lite';
+
   // penilaian
   blok: BlokKategori[];
   nilaiPenampilan: number;
@@ -92,9 +99,16 @@ export type DataLaporan = {
   status: string;
 };
 
-/** Susun baris detail per kategori dari data penilaian yang tersimpan. */
+/**
+ * Susun baris detail per kategori dari data penilaian yang tersimpan.
+ *
+ * @param detail  baris detail penilaian
+ * @param versi   'lengkap' menyertakan dasar penilaian (kriteria rubrik),
+ *                'lite' membuangnya dan hanya menyisakan catatan atasan
+ */
 export function susunBlok(
-  detail: { kodeAspek: string; nilaiMentah: number; skor: number; catatan: string | null }[]
+  detail: { kodeAspek: string; nilaiMentah: number; skor: number; catatan: string | null }[],
+  versi: 'lengkap' | 'lite' = 'lengkap'
 ): BlokKategori[] {
   const peta = new Map(detail.map((d) => [d.kodeAspek, d]));
 
@@ -120,8 +134,13 @@ export function susunBlok(
         skor,
         bobot: `${Math.round(asp.bobot * 100)}%`,
         nilai: Math.round(nilai * 100) / 100,
+        // catatan atasan SELALU ditampilkan, di kedua versi
         catatan: d?.catatan ?? '',
-        kriteria: rubrikAspek(asp.kode).find((l) => l.skor === skor)?.kriteria,
+        // dasar penilaian (kriteria rubrik) hanya di versi lengkap
+        kriteria:
+          versi === 'lite'
+            ? undefined
+            : rubrikAspek(asp.kode).find((l) => l.skor === skor)?.kriteria,
       };
     });
 

@@ -66,7 +66,8 @@ async function main() {
   for (const t of tombol) {
     const bersih = t.replace(/\s+/g, ' ');
     const teks = bersih.replace(/<[^>]*>/g, '').trim().slice(0, 40);
-    const disabled = /disabled/.test(bersih);
+    // hanya atribut disabled, bukan class Tailwind 'disabled:opacity-60'
+    const disabled = /\sdisabled(?:=""|(?=[\s>]))/.test(bersih);
     console.log(`  disabled=${String(disabled).padEnd(5)} teks="${teks}"`);
   }
 

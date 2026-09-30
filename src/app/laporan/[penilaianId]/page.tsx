@@ -19,14 +19,18 @@ export const metadata = { title: 'Laporan SIP' };
 
 export default async function HalamanCetakLaporan({
   params,
+  searchParams,
 }: {
   params: Promise<{ penilaianId: string }>;
+  searchParams: Promise<{ versi?: string }>;
 }) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
 
   const { penilaianId } = await params;
+  const { versi: versiParam } = await searchParams;
+  const versi: 'lengkap' | 'lite' = versiParam === 'lite' ? 'lite' : 'lengkap';
 
   const p = await prisma.penilaian.findUnique({
     where: { id: penilaianId },
@@ -55,7 +59,8 @@ export default async function HalamanCetakLaporan({
       nilaiMentah: d.nilaiMentah,
       skor: d.skor,
       catatan: d.catatan,
-    }))
+    })),
+    versi
   );
 
   const data: DataLaporan = {
@@ -71,6 +76,7 @@ export default async function HalamanCetakLaporan({
     // supaya laporan lama yang dibuat sebelum aturan foto tetap tercetak.
     fotoUrl: p.fotoData ?? p.pegawai.fotoData ?? p.pegawai.fotoUrl,
     fotoCatatan: p.fotoCatatan,
+    versi,
 
     blok,
     nilaiPenampilan: p.nilaiPenampilan ?? 0,
@@ -127,8 +133,42 @@ export default async function HalamanCetakLaporan({
         </div>
       </div>
 
-      {/* ===== Petunjuk cetak (tidak tercetak) ===== */}
-      <div className="tanpa-cetak mx-auto max-w-5xl px-4 sm:px-6 pt-5">
+      {/* ===== Petunjuk cetak + pilih versi (tidak tercetak) ===== */}
+      <div className="tanpa-cetak mx-auto max-w-5xl px-4 sm:px-6 pt-5 space-y-3">
+        {/* pemilih versi laporan */}
+        <div className="rounded-lg border border-abu-200 bg-white px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-semibold text-abu-700">Versi laporan:</span>
+            <div className="flex gap-2">
+              <Link
+                href={`/laporan/${penilaianId}`}
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  versi === 'lengkap'
+                    ? 'bg-btn-biru-600 text-white'
+                    : 'border border-abu-300 bg-white text-abu-700 hover:bg-abu-50'
+                }`}
+              >
+                Lengkap
+              </Link>
+              <Link
+                href={`/laporan/${penilaianId}?versi=lite`}
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  versi === 'lite'
+                    ? 'bg-btn-biru-600 text-white'
+                    : 'border border-abu-300 bg-white text-abu-700 hover:bg-abu-50'
+                }`}
+              >
+                Lite
+              </Link>
+            </div>
+            <span className="text-[11px] text-abu-500 leading-relaxed">
+              {versi === 'lengkap'
+                ? 'Menyertakan dasar penilaian (kriteria rubrik) di kolom Catatan.'
+                : 'Tanpa dasar penilaian — catatan yang ditulis atasan tetap ditampilkan.'}
+            </span>
+          </div>
+        </div>
+
         <div className="rounded-lg border border-btn-biru-200 bg-btn-biru-50 px-4 py-3">
           <p className="text-xs leading-relaxed text-btn-biru-700">
             <strong>Untuk mencetak:</strong> klik &ldquo;Cetak / Simpan PDF&rdquo;, lalu pada
