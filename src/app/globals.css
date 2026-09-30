@@ -1,26 +1,221 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Sistem Desain SIP — Bank BTN
+   Korporat konservatif: biru sebagai warna utama, merah sebagai aksen.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- Warna korporat BTN --- */
+  --btn-biru-900: #001a4d;
+  --btn-biru-800: #00276b;
+  --btn-biru-700: #00337f;
+  --btn-biru-600: #004494;
+  --btn-biru-500: #0056b3;
+  --btn-biru-400: #1a6fcc;
+  --btn-biru-100: #dbeafe;
+  --btn-biru-50: #eff6ff;
+
+  --btn-merah-700: #8f0a1e;
+  --btn-merah-600: #b30d26;
+  --btn-merah-500: #d4112e;
+  --btn-merah-400: #e8384f;
+  --btn-merah-100: #fde2e6;
+
+  /* --- Netral --- */
+  --abu-50: #f8fafc;
+  --abu-100: #f1f5f9;
+  --abu-200: #e2e8f0;
+  --abu-300: #cbd5e1;
+  --abu-400: #94a3b8;
+  --abu-500: #64748b;
+  --abu-600: #475569;
+  --abu-700: #334155;
+  --abu-800: #1e293b;
+  --abu-900: #0f172a;
+
+  /* --- Semantik --- */
+  --sukses: #059669;
+  --sukses-bg: #d1fae5;
+  --peringatan: #d97706;
+  --peringatan-bg: #fef3c7;
+  --bahaya: #dc2626;
+  --bahaya-bg: #fee2e2;
+  --info: var(--btn-biru-500);
+  --info-bg: var(--btn-biru-50);
+
+  /* --- Warna rating performance --- */
+  --rating-istimewa: #047857;
+  --rating-istimewa-bg: #d1fae5;
+  --rating-sangat-baik: #0369a1;
+  --rating-sangat-baik-bg: #e0f2fe;
+  --rating-baik: #4f46e5;
+  --rating-baik-bg: #e0e7ff;
+  --rating-cukup: #b45309;
+  --rating-cukup-bg: #fef3c7;
+  --rating-kurang: #b91c1c;
+  --rating-kurang-bg: #fee2e2;
+
+  /* --- Permukaan --- */
+  --background: var(--abu-50);
+  --foreground: var(--abu-900);
+  --kartu: #ffffff;
+  --garis: var(--abu-200);
+
+  /* --- Bayangan --- */
+  --bayang-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --bayang: 0 1px 3px 0 rgb(15 23 42 / 0.1), 0 1px 2px -1px rgb(15 23 42 / 0.1);
+  --bayang-md: 0 4px 6px -1px rgb(15 23 42 / 0.1), 0 2px 4px -2px rgb(15 23 42 / 0.1);
+  --bayang-lg: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-btn-biru-900: var(--btn-biru-900);
+  --color-btn-biru-800: var(--btn-biru-800);
+  --color-btn-biru-700: var(--btn-biru-700);
+  --color-btn-biru-600: var(--btn-biru-600);
+  --color-btn-biru-500: var(--btn-biru-500);
+  --color-btn-biru-400: var(--btn-biru-400);
+  --color-btn-biru-100: var(--btn-biru-100);
+  --color-btn-biru-50: var(--btn-biru-50);
+
+  --color-btn-merah-700: var(--btn-merah-700);
+  --color-btn-merah-600: var(--btn-merah-600);
+  --color-btn-merah-500: var(--btn-merah-500);
+  --color-btn-merah-400: var(--btn-merah-400);
+  --color-btn-merah-100: var(--btn-merah-100);
+
+  --color-abu-50: var(--abu-50);
+  --color-abu-100: var(--abu-100);
+  --color-abu-200: var(--abu-200);
+  --color-abu-300: var(--abu-300);
+  --color-abu-400: var(--abu-400);
+  --color-abu-500: var(--abu-500);
+  --color-abu-600: var(--abu-600);
+  --color-abu-700: var(--abu-700);
+  --color-abu-800: var(--abu-800);
+  --color-abu-900: var(--abu-900);
+
+  --color-sukses: var(--sukses);
+  --color-sukses-bg: var(--sukses-bg);
+  --color-peringatan: var(--peringatan);
+  --color-peringatan-bg: var(--peringatan-bg);
+  --color-bahaya: var(--bahaya);
+  --color-bahaya-bg: var(--bahaya-bg);
+
+  --color-kartu: var(--kartu);
+  --color-garis: var(--garis);
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ==========================================================================
+   Dasar
+   ========================================================================== */
+
+* {
+  border-color: var(--garis);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:focus-visible {
+  outline: 2px solid var(--btn-biru-500);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Komponen dasar
+   ========================================================================== */
+
+.kartu {
+  background: var(--kartu);
+  border: 1px solid var(--garis);
+  border-radius: 0.75rem;
+  box-shadow: var(--bayang-sm);
+}
+
+.kartu-padat {
+  background: var(--kartu);
+  border: 1px solid var(--garis);
+  border-radius: 0.75rem;
+  box-shadow: var(--bayang-md);
+}
+
+.label-kolom {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--abu-500);
+}
+
+.aksen-btn {
+  position: relative;
+}
+.aksen-btn::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 2.5rem;
+  height: 3px;
+  background: var(--btn-merah-500);
+  border-radius: 2px;
+}
+
+@keyframes naik {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animasi-naik {
+  animation: naik 0.35s ease-out both;
+}
+
+.tabel-sip {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+.tabel-sip thead th {
+  background: var(--abu-50);
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--abu-600);
+  border-bottom: 1px solid var(--garis);
+}
+.tabel-sip tbody td {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--abu-100);
+}
+.tabel-sip tbody tr:hover {
+  background: var(--abu-50);
+}
+.tabel-sip tbody tr:last-child td {
+  border-bottom: none;
 }

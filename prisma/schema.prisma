@@ -1,0 +1,230 @@
+// Skema database SIP — Bank BTN
+// Prisma + PostgreSQL (Neon)
+//
+// Catatan desain:
+// - `nilaiAkhir` & `kontribusi` per kategori DISIMPAN (snapshot) supaya laporan
+//   lama tidak berubah kalau bobot diubah di kemudian hari.
+// - `bobotTersimpan` (JSON) ikut disimpan sebagai jejak audit versi bobot.
+// - Password disimpan sebagai hash, TIDAK pernah plaintext.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===========================================================================
+// MASTER DATA
+// ===========================================================================
+
+/// Cabang / unit kerja. `kode` dipakai sebagai filter penilaian.
+model Cabang {
+  id        String   @id @default(cuid())
+  kode      String   @unique // mis. "0001"
+  nama      String
+  alamat    String?
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pegawai   Pegawai[]
+
+  @@index([kode])
+}
+
+/// Jabatan yang dinilai. Bobot penilaian seragam untuk semua jabatan.
+model Jabatan {
+  id        String   @id @default(cuid())
+  kode      String   @unique // TELLER, CS, SECURITY, PB_TELLER, PB_CS
+  nama      String   // "Teller"
+  namaEn    String?  // "Teller"
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  pegawai   Pegawai[]
+
+  @@index([kode])
+}
+
+enum Role {
+  PEGAWAI    // melihat hasil penilaian sendiri
+  SUPERVISOR // menilai petugas
+  MANAGER    // mengetahui/mengakui penilaian
+  ADMIN      // kelola master data, periode, akun
+}
+
+/// Pegawai sekaligus pengguna aplikasi. Login memakai NIP + password.
+model Pegawai {
+  id            String   @id @default(cuid())
+  nip           String   @unique
+  nama          String
+  email         String?  @unique
+  fotoUrl       String?
+  passwordHash  String
+  role          Role     @default(PEGAWAI)
+  aktif         Boolean  @default(true)
+
+  /// wajib ganti password saat login pertama / setelah reset admin
+  harusGantiPassword Boolean @default(true)
+  lastLoginAt   DateTime?
+
+  cabangId      String
+  cabang        Cabang   @relation(fields: [cabangId], references: [id])
+  jabatanId     String?
+  jabatan       Jabatan? @relation(fields: [jabatanId], references: [id])
+
+  /// atasan langsung (untuk default penilai)
+  atasanId      String?
+  atasan        Pegawai?  @relation("AtasanBawahan", fields: [atasanId], references: [id])
+  bawahan       Pegawai[] @relation("AtasanBawahan")
+
+  penilaianku   Penilaian[] @relation("PegawaiDinilai")
+  penilaiankuSebagaiPenilai Penilaian[] @relation("Penilai")
+  penilaiankuSebagaiMengetahui Penilaian[] @relation("Pengetahui")
+  auditLog      AuditLog[]
+  sesi          Sesi[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([cabangId])
+  @@index([jabatanId])
+  @@index([role])
+}
+
+// ===========================================================================
+// PERIODE
+// ===========================================================================
+
+/// Periode penilaian mingguan. Kombinasi tanggal mulai unik.
+model Periode {
+  id          String   @id @default(cuid())
+  kode        String   @unique // mis. "2026-W40"
+  nama        String   // "Minggu ke-40 (29 Sep - 5 Okt 2026)"
+  tanggalMulai DateTime
+  tanggalSelesai DateTime
+  aktif       Boolean  @default(true)
+  dikunci     Boolean  @default(false) // kalau true, penilaian tidak bisa diubah
+  createdAt   DateTime @default(now())
+
+  penilaian   Penilaian[]
+
+  @@index([tanggalMulai])
+  @@unique([tanggalMulai, tanggalSelesai])
+}
+
+// ===========================================================================
+// PENILAIAN
+// ===========================================================================
+
+enum StatusPenilaian {
+  DRAFT      // penilai masih mengisi
+  DIKIRIM    // sudah submit, menunggu diketahui atasan
+  DIKETAHUI  // atasan penilai sudah acknowledge
+  FINAL      // dikunci, siap cetak
+}
+
+model Penilaian {
+  id          String   @id @default(cuid())
+
+  pegawaiId   String
+  pegawai     Pegawai  @relation("PegawaiDinilai", fields: [pegawaiId], references: [id])
+
+  penilaiId   String
+  penilai     Pegawai  @relation("Penilai", fields: [penilaiId], references: [id])
+
+  /// atasan yang "mengetahui" — bisa sama dengan penilai
+  mengetahuiId String?
+  mengetahui   Pegawai? @relation("Pengetahui", fields: [mengetahuiId], references: [id])
+
+  periodeId   String
+  periode     Periode  @relation(fields: [periodeId], references: [id])
+
+  status      StatusPenilaian @default(DRAFT)
+
+  // --- hasil perhitungan (snapshot) ---
+  nilaiPenampilan Float? // kategori A, skala 1-5
+  nilaiKemampuan  Float? // kategori B
+  nilaiSikap      Float? // kategori C
+  nilaiAkhir      Float? // skala 0-5
+  rating          String? // "Istimewa" | "Sangat Baik" | ...
+
+  /// jejak audit versi bobot yang dipakai saat menghitung
+  bobotTersimpan  Json?
+
+  catatanUmum String?
+
+  detail      PenilaianDetail[]
+
+  dikirimAt   DateTime?
+  diketahuiAt DateTime?
+  finalAt     DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// satu pegawai satu penilaian per periode
+  @@unique([pegawaiId, periodeId])
+  @@index([penilaiId])
+  @@index([periodeId, status])
+  @@index([pegawaiId])
+}
+
+/// Nilai per aspek. `nilaiMentah` menyimpan angka asli yang diinput penilai
+/// (1-5, atau 0-100 untuk quiz) supaya bisa diaudit.
+model PenilaianDetail {
+  id           String   @id @default(cuid())
+  penilaianId  String
+  penilaian    Penilaian @relation(fields: [penilaianId], references: [id], onDelete: Cascade)
+
+  kodeAspek    String   // A1..A4, B1..B5, C1..C4
+  nilaiMentah  Float    // apa yang diinput penilai
+  skor         Int      // hasil konversi ke 1-5
+  bobotAspek   Float    // snapshot bobot
+  catatan      String?
+
+  @@unique([penilaianId, kodeAspek])
+  @@index([penilaianId])
+}
+
+// ===========================================================================
+// AUDIT & SESI
+// ===========================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  pegawaiId  String?
+  pegawai    Pegawai? @relation(fields: [pegawaiId], references: [id])
+
+  aksi       String   // "LOGIN", "UPDATE_PENILAIAN", "KUNCI_PERIODE", ...
+  entitas    String?  // "Penilaian", "Pegawai", ...
+  entitasId  String?
+  dataLama   Json?
+  dataBaru   Json?
+  ip         String?
+  userAgent  String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([pegawaiId, createdAt])
+  @@index([entitas, entitasId])
+}
+
+/// Sesi login (cookie/session token). Token disimpan sebagai hash.
+model Sesi {
+  id          String   @id @default(cuid())
+  tokenHash   String   @unique
+  pegawaiId   String
+  pegawai     Pegawai  @relation(fields: [pegawaiId], references: [id], onDelete: Cascade)
+
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([pegawaiId])
+  @@index([expiresAt])
+}

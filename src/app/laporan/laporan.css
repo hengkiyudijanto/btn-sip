@@ -1,0 +1,228 @@
+/* ==========================================================================
+   Gaya cetak laporan SIP
+   Tujuan: hasil cetak A4 rapi, tanpa elemen antarmuka, tanda tangan punya
+   ruang cukup untuk ditandatangani basah.
+   ========================================================================== */
+
+/* Ukuran & margin halaman saat dicetak */
+@page {
+  size: A4 portrait;
+  margin: 12mm 10mm;
+}
+
+.sip-laporan {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  color: #0f172a;
+}
+
+/* ---- Kop laporan ---- */
+.sip-kop {
+  border-bottom: 3px solid #004494;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sip-kop-judul {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #00276b;
+  line-height: 1.25;
+}
+.sip-kop-sub {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ---- Identitas karyawan ---- */
+/* Label "IDENTITAS KARYAWAN" menempel di atas kotak identitas */
+.sip-identitas {
+  display: grid;
+  grid-template-columns: 1fr 96px;
+  gap: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 0 0 4px 4px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.sip-foto {
+  width: 96px;
+  height: 120px;
+  border: 1px dashed #94a3b8;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 4px;
+  background: #f8fafc;
+}
+
+/* ---- Tabel penilaian ---- */
+.sip-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  margin-bottom: 10px;
+}
+.sip-tabel caption {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00276b;
+  background: #eef4fb;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  padding: 6px 8px;
+}
+.sip-tabel th {
+  background: #004494;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 5px 6px;
+  border: 1px solid #00337f;
+  text-align: center;
+}
+.sip-tabel td {
+  border: 1px solid #cbd5e1;
+  padding: 5px 6px;
+  vertical-align: top;
+}
+.sip-tabel tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+.sip-tabel tfoot td {
+  background: #eef4fb;
+  font-weight: 700;
+  border: 1px solid #cbd5e1;
+}
+.sip-tengah {
+  text-align: center;
+}
+.sip-kanan {
+  text-align: right;
+}
+.sip-nowrap {
+  white-space: nowrap;
+}
+
+/* ---- Blok total & rating ---- */
+.sip-total {
+  border: 2px solid #004494;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.sip-total-nilai {
+  font-size: 22px;
+  font-weight: 700;
+  color: #00276b;
+  line-height: 1;
+}
+.sip-rating {
+  display: inline-block;
+  border: 1px solid #004494;
+  border-radius: 3px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00276b;
+}
+
+/* ---- Lembar komitmen / tanda tangan ---- */
+.sip-komitmen {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.sip-komitmen-judul {
+  font-size: 11px;
+  font-weight: 700;
+  color: #00276b;
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+.sip-ttd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+.sip-ttd-box {
+  text-align: center;
+  font-size: 10px;
+}
+/* Ruang tanda tangan basah — sengaja lega, 70px cukup untuk tanda tangan */
+.sip-ttd-ruang {
+  height: 70px;
+  border-bottom: 1px solid #0f172a;
+  margin-bottom: 4px;
+}
+.sip-catatan {
+  font-size: 9.5px;
+  color: #475569;
+  line-height: 1.5;
+  border-left: 3px solid #d4112e;
+  padding-left: 8px;
+  margin: 10px 0;
+}
+.sip-footer {
+  font-size: 8px;
+  color: #94a3b8;
+  text-align: center;
+  margin-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 6px;
+}
+
+/* ==========================================================================
+   Mode cetak
+   ========================================================================== */
+@media print {
+  /* sembunyikan seluruh antarmuka aplikasi */
+  body * {
+    visibility: hidden;
+  }
+  .sip-laporan,
+  .sip-laporan * {
+    visibility: visible;
+  }
+  .sip-laporan {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 0;
+  }
+  /* elemen yang tidak boleh tercetak */
+  .tanpa-cetak {
+    display: none !important;
+  }
+  /* paksa warna latar tercetak (kop, header tabel) */
+  .sip-tabel th,
+  .sip-tabel caption,
+  .sip-tabel tfoot td,
+  .sip-total,
+  .sip-kop {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* hindari tabel terpotong di tengah baris */
+  .sip-tabel tr,
+  .sip-ttd-grid,
+  .sip-komitmen {
+    page-break-inside: avoid;
+  }
+  .sip-tabel caption {
+    page-break-after: avoid;
+  }
+}

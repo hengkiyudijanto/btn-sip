@@ -1,36 +1,216 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SIP — Sistem Informasi Penilaian Petugas Frontliner
 
-## Getting Started
+Aplikasi web penilaian kinerja mingguan petugas frontliner **Bank BTN** —
+Teller, Customer Service, Security, Priority Banking Teller, dan Priority
+Banking Customer Service.
 
-First, run the development server:
+## Fitur
 
+**Penilaian**
+- 13 aspek dalam 3 kategori: Penampilan (20%), Kemampuan (50%), Sikap (30%)
+- Atasan mengisi **angka 0–100** per aspek; skor 1–5 terisi otomatis dari
+  tabel konversi resmi
+- Nilai akhir skala 0–5 dengan 5 kategori: Istimewa, Sangat Baik, Baik, Cukup,
+  Kurang
+- Panduan kriteria lengkap tiap level skor, bisa dibuka saat menilai
+- Draft dan kirim, dengan catatan per aspek dan catatan umum
+
+**Persetujuan**
+- Alur: DRAFT → DIKIRIM → DIKETAHUI → FINAL
+- Manager menyatakan mengetahui, admin dapat mengunci final
+- Bisa dikembalikan ke penilai untuk revisi beserta alasan
+
+**Laporan**
+- Laporan SIP siap cetak (PDF via cetak browser), dengan kolom tanda tangan
+  pegawai & atasan untuk ditandatangani basah
+- Rekap per periode dan per cabang, peringkat, sebaran kategori
+- Ekspor otomatis lewat fitur cetak browser
+
+**Pengelolaan**
+- Login NIP + password, 4 peran: Pegawai, Supervisor, Manager, Admin
+- Wajib ganti password pada login pertama
+- Tambah pegawai manual & impor massal dari CSV
+- Reset password, aktif/nonaktifkan akun
+- Kelola periode mingguan (buat tunggal atau massal, kunci, aktif/nonaktif)
+- Audit log untuk setiap aksi penting
+
+## Tumpukan Teknologi
+
+| Bagian | Teknologi |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Bahasa | TypeScript |
+| UI | Tailwind CSS 4 |
+| Database | PostgreSQL (Neon) |
+| ORM | Prisma 7 + driver adapter `@prisma/adapter-pg` |
+| Autentikasi | bcrypt + sesi cookie httpOnly (token di-hash) |
+| Validasi | Zod |
+| Pengujian | Vitest |
+| Deploy | Vercel |
+
+## Menjalankan Secara Lokal
+
+### 1. Prasyarat
+- Node.js 22+
+- pnpm 12+
+- Akun Neon (atau PostgreSQL lain)
+
+### 2. Pasang dependensi
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Siapkan environment
+```bash
+cp .env.example .env.local
+# lalu isi DATABASE_URL
+```
+Ambil connection string dengan:
+```bash
+neon connection-string production
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Migrasi database & generate Prisma Client
+```bash
+pnpm exec prisma migrate deploy
+pnpm exec prisma generate
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 5. Buat akun admin pertama
+```bash
+ADMIN_PASSWORD='PasswordAnda123' pnpm exec tsx scripts/seed-admin.ts
+```
+Akun dibuat dengan penanda **wajib ganti password** saat login pertama.
 
-## Learn More
+### 6. Jalankan
+```bash
+pnpm dev          # pengembangan
+pnpm build && pnpm start   # produksi
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Pengujian
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm test                        # unit test (mesin penilaian, rubrik, laporan)
+pnpm exec tsc --noEmit           # pemeriksaan tipe
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Skrip verifikasi lain (butuh `DATABASE_URL` aktif):
 
-## Deploy on Vercel
+```bash
+pnpm exec tsx scripts/test-db.ts                 # koneksi database
+pnpm exec tsx scripts/test-alur-penilaian.ts     # alur penilaian end-to-end
+pnpm exec tsx scripts/test-angka-100.ts          # input angka 0-100
+pnpm exec tsx scripts/test-halaman-laporan.ts    # halaman laporan (HTTP)
+pnpm exec tsx scripts/test-halaman-baru.ts       # halaman persetujuan/pegawai/periode
+pnpm exec tsx scripts/test-fitur-baru.ts         # persetujuan, impor, reset, periode
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Data Contoh
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Untuk mencoba aplikasi dengan data realistis:
+
+```bash
+pnpm exec tsx scripts/seed-demo.ts          # buat data contoh
+pnpm exec tsx scripts/seed-demo.ts --hapus  # bersihkan
+```
+
+Akun contoh yang dibuat:
+
+| Peran | NIP | Password |
+|---|---|---|
+| Supervisor | `90000001` | `DemoSIP2026` |
+| Manager | `90000002` | `DemoSIP2026` |
+| Pegawai | `80000001` | `DemoSIP2026` |
+
+## Aturan Penilaian
+
+**Konversi angka 0–100 ke skor 1–5**
+
+| Skor | Rentang angka | Kategori |
+|---|---|---|
+| 5 | 99–100 | Istimewa |
+| 4 | 92–98 | Sangat Baik |
+| 3 | 81–91 | Baik |
+| 2 | 76–80 | Cukup |
+| 1 | 0–75 | Kurang |
+
+**Nilai akhir (skala 0–5)**
+
+```
+nilai_kategori = Σ (skor_aspek × bobot_aspek)
+nilai_akhir    = Σ (nilai_kategori × bobot_kategori)
+```
+
+**Kategori hasil akhir**
+
+| Rentang | Kategori |
+|---|---|
+| 4,80 – 5,00 | Istimewa |
+| 4,60 – 4,79 | Sangat Baik |
+| 4,00 – 4,59 | Baik |
+| 3,60 – 3,99 | Cukup |
+| 0,00 – 3,59 | Kurang |
+
+> **Catatan penting:** karena konversi berbasis rentang (bukan proporsional),
+> selisih 1 angka di batas rentang mengubah skor satu tingkat penuh. Contoh:
+> angka 91 → skor 3 → nilai akhir 2,80, sedangkan angka 92 → skor 4 →
+> nilai akhir 3,70. Ini konsekuensi dari tabel resmi, bukan kesalahan
+> perhitungan. Nilai akhir maksimum yang dapat dicapai adalah 4,60 kecuali
+> hampir semua aspek mendapat angka 99–100.
+
+## Impor Pegawai dari CSV
+
+Format kolom (baris pertama wajib judul):
+
+```
+NIP,Nama,Cabang,Jabatan,Role
+80000010,Andi Wijaya,0001,TELLER,PEGAWAI
+80000011,Rina Sari,0002|Cabang Bandung,CS,PEGAWAI
+```
+
+- **Cabang** — isi kode yang sudah ada (mis. `0001`), atau `kode|Nama` untuk
+  membuat cabang baru otomatis
+- **Jabatan** — kode: `TELLER`, `CS`, `SECURITY`, `PB_TELLER`, `PB_CS`
+- **Role** — `PEGAWAI`, `SUPERVISOR`, `MANAGER`, `ADMIN`
+- Password awal dibuat acak dan **hanya ditampilkan sekali** setelah impor
+
+## Deploy ke Vercel
+
+1. Push repo ke GitHub
+2. Impor project di Vercel
+3. Tambahkan environment variable `DATABASE_URL` (dari `.env.local`)
+4. Deploy
+
+Jalankan migrasi sekali setelah deploy:
+```bash
+pnpm exec prisma migrate deploy
+```
+
+## Struktur Proyek
+
+```
+src/
+  app/
+    actions/          server action: auth, penilaian, persetujuan, pegawai, periode
+    masuk/            halaman login
+    ubah-password/    ganti password wajib
+    dasbor/           ringkasan & statistik
+    penilaian/        daftar petugas + form penilaian 13 aspek
+    persetujuan/      tinjau & setujui (manager/admin)
+    laporan/          rekap + halaman cetak PDF
+    pegawai/          kelola pegawai, impor CSV
+    periode/          kelola periode mingguan
+  components/         komponen UI
+  lib/
+    sip/              mesin penilaian, rubrik, penyusun laporan
+    auth.ts           hash password, sesi, audit log
+    db.ts             Prisma client singleton
+prisma/
+  schema.prisma       skema database
+scripts/              seed & skrip verifikasi
+```
+
+## Lisensi
+
+Perangkat lunak internal PT Bank Tabungan Negara (Persero) Tbk.
