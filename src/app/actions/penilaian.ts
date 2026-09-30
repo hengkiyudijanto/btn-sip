@@ -25,6 +25,8 @@ export type HasilSimpan = {
   sukses?: boolean;
   nilaiAkhir?: number;
   rating?: string;
+  /** true bila ini mengubah penilaian yang sudah ada (bukan yang baru) */
+  diubah?: boolean;
 };
 
 /** Role yang boleh menilai petugas. */
@@ -113,6 +115,20 @@ export async function simpanPenilaian(
   const status = kirim ? 'DIKIRIM' : 'DRAFT';
 
   try {
+    // ambil nilai lama (kalau ada) untuk dicatat di audit log — penting
+    // ketika atasan mengubah penilaian yang sudah pernah disimpan
+    const sebelumnya = await prisma.penilaian.findUnique({
+      where: { pegawaiId_periodeId: { pegawaiId, periodeId } },
+      select: {
+        status: true,
+        nilaiAkhir: true,
+        rating: true,
+        nilaiPenampilan: true,
+        nilaiKemampuan: true,
+        nilaiSikap: true,
+      },
+    });
+
     const penilaian = await prisma.$transaction(async (tx) => {
       const p = await tx.penilaian.upsert({
         where: { pegawaiId_periodeId: { pegawaiId, periodeId } },
@@ -162,14 +178,34 @@ export async function simpanPenilaian(
 
     await catatAudit({
       pegawaiId: penilai.id,
-      aksi: kirim ? 'KIRIM_PENILAIAN' : 'SIMPAN_DRAFT_PENILAIAN',
+      aksi: kirim
+        ? sebelumnya
+          ? 'UBAH_LALU_KIRIM_PENILAIAN'
+          : 'KIRIM_PENILAIAN'
+        : sebelumnya
+          ? 'UBAH_DRAFT_PENILAIAN'
+          : 'SIMPAN_DRAFT_PENILAIAN',
       entitas: 'Penilaian',
       entitasId: penilaian.id,
+      dataLama: sebelumnya
+        ? {
+            status: sebelumnya.status,
+            nilaiAkhir: sebelumnya.nilaiAkhir,
+            rating: sebelumnya.rating,
+            nilaiPenampilan: sebelumnya.nilaiPenampilan,
+            nilaiKemampuan: sebelumnya.nilaiKemampuan,
+            nilaiSikap: sebelumnya.nilaiSikap,
+          }
+        : undefined,
       dataBaru: {
         pegawaiDinilai: target.nip,
         periode: periode.kode,
+        status,
         nilaiAkhir: hasil.nilaiAkhir,
         rating: hasil.rating.label,
+        nilaiPenampilan: nilaiA,
+        nilaiKemampuan: nilaiB,
+        nilaiSikap: nilaiC,
       },
     });
 
@@ -180,6 +216,8 @@ export async function simpanPenilaian(
       sukses: true,
       nilaiAkhir: hasil.nilaiAkhir,
       rating: hasil.rating.label,
+      // beri tahu pemanggil bahwa ini mengubah penilaian yang sudah ada
+      diubah: Boolean(sebelumnya),
     };
   } catch (e) {
     console.error('[simpanPenilaian]', e);

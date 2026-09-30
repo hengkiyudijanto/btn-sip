@@ -3,7 +3,8 @@ import { pegawaiDariSesi } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { BadgeRating } from '@/components/badge-rating';
 import { Kerangka } from '@/components/kerangka';
-import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
+import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
+import { PemilihPeriode } from '@/components/pemilih-periode';
 import Link from 'next/link';
 
 export const metadata = { title: 'Daftar Penilaian' };
@@ -17,16 +18,26 @@ const LABEL_STATUS: Record<string, { teks: string; kelas: string }> = {
 
 const BOLEH_MENILAI = new Set(['SUPERVISOR', 'MANAGER', 'ADMIN']);
 
-export default async function HalamanPenilaian() {
+export default async function HalamanPenilaian({
+  searchParams,
+}: {
+  searchParams: Promise<{ periode?: string }>;
+}) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
 
   const bolehMenilai = BOLEH_MENILAI.has(saya.role);
 
-  // Periode yang memuat hari ini (bukan lagi periode paling akhir di
-  // database — itu menyebabkan halaman menampilkan Desember 2027).
-  const periode = await pilihPeriodeRelevan();
+  // periode boleh dipilih lewat ?periode=<id>; kalau tidak ada, pakai
+  // periode yang memuat hari ini
+  const { periode: periodeParam } = await searchParams;
+  const periode = periodeParam
+    ? (await prisma.periode.findUnique({ where: { id: periodeParam } })) ??
+      (await pilihPeriodeRelevan())
+    : await pilihPeriodeRelevan();
+
+  const daftarPeriode = bolehMenilai ? await daftarPeriodeUntukPemilih() : [];
 
   // Kalau belum ada periode sama sekali, tampilkan pesan
   if (!periode) {
@@ -86,6 +97,23 @@ export default async function HalamanPenilaian() {
             : `${periode.nama} · Anda dapat melihat hasil penilaian`
         }
       />
+
+      {/* ===== pemilih periode ===== */}
+      {bolehMenilai && daftarPeriode.length > 0 && (
+        <div className="mt-6">
+          <PemilihPeriode
+            daftar={daftarPeriode.map((p) => ({
+              id: p.id,
+              nama: p.nama,
+              aktif: p.aktif,
+              tanggalMulai: p.tanggalMulai,
+              tanggalSelesai: p.tanggalSelesai,
+            }))}
+            terpilihId={periode.id}
+            dikunci={periode.dikunci}
+          />
+        </div>
+      )}
 
       {/* Kartu info periode */}
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -185,10 +213,23 @@ export default async function HalamanPenilaian() {
                       {bolehMenilai && !periode.dikunci ? (
                         <Link
                           href={`/penilaian/${p.id}?periode=${periode.id}`}
-                          className="inline-flex items-center gap-1 rounded-md border border-btn-biru-200 bg-btn-biru-50 px-3 py-1.5 text-xs font-medium text-btn-biru-700 hover:bg-btn-biru-100 transition-colors"
+                          className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                            penilaian
+                              ? 'border-abu-300 bg-white text-abu-700 hover:bg-abu-50'
+                              : 'border-btn-biru-200 bg-btn-biru-50 text-btn-biru-700 hover:bg-btn-biru-100'
+                          }`}
+                          title={
+                            penilaian
+                              ? 'Ubah penilaian yang sudah ada'
+                              : 'Isi penilaian baru'
+                          }
                         >
-                          {penilaian ? 'Lihat / Ubah' : 'Nilai'}
+                          {penilaian ? 'Ubah' : 'Nilai'}
                         </Link>
+                      ) : periode.dikunci ? (
+                        <span className="text-abu-400 text-xs" title="Periode terkunci">
+                          🔒
+                        </span>
                       ) : (
                         <span className="text-abu-300 text-xs">—</span>
                       )}
