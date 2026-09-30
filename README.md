@@ -72,7 +72,7 @@ neon connection-string production
 
 ### 4. Migrasi database & generate Prisma Client
 ```bash
-pnpm exec prisma migrate deploy
+pnpm db:migrasi        # menerapkan migrasi ke DATABASE_URL di .env.local
 pnpm exec prisma generate
 ```
 
@@ -184,8 +184,23 @@ NIP,Nama,Cabang,Jabatan,Role
 
 Jalankan migrasi sekali setelah deploy:
 ```bash
-pnpm exec prisma migrate deploy
+pnpm db:migrasi --url "<DATABASE_URL produksi>"
 ```
+
+> **Mengapa migrasi tidak dijalankan otomatis saat build?**
+> Sebelumnya `prisma migrate deploy` ikut dijalankan di dalam build Vercel.
+> Ternyata itu rapuh: Prisma memakai `pg_advisory_lock` dan Neon memakai
+> connection pooler (pgbouncer), sehingga dua build yang berjalan bersamaan
+> membuat kunci menggantung dan build GAGAL dengan error P1002 — walau
+> kodenya benar. Sekarang build hanya meng-generate Prisma Client (tidak
+> membutuhkan akses database), dan migrasi dijalankan secara sadar.
+>
+> Bila menemui error P1002, jalankan:
+> ```bash
+> pnpm exec tsx scripts/cek-lock.ts        # lihat siapa pemegang kunci
+> pnpm exec tsx scripts/bebaskan-lock.ts   # putuskan koneksi yang menggantung
+> pnpm db:migrasi                          # ulangi migrasi
+> ```
 
 ## Struktur Proyek
 
