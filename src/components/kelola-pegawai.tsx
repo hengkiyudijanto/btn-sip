@@ -7,6 +7,7 @@ import {
   resetPassword,
   ubahStatusAktif,
   tambahPegawai,
+  ubahPegawai,
 } from '@/app/actions/pegawai';
 import type { HasilImpor } from '@/app/actions/pegawai';
 
@@ -252,17 +253,161 @@ export function PanelTambah({
 }
 
 // ===========================================================================
-// Aksi baris: reset password & aktif/nonaktif
+// Aksi baris: ubah data, reset password & aktif/nonaktif
 // ===========================================================================
 
-export function AksiBaris({ pegawaiId, aktif }: { pegawaiId: string; aktif: boolean }) {
+export function AksiBaris({
+  pegawaiId,
+  aktif,
+  data,
+  daftarCabang,
+  daftarJabatan,
+}: {
+  pegawaiId: string;
+  aktif: boolean;
+  data: {
+    nip: string;
+    nama: string;
+    email: string | null;
+    cabangId: string;
+    jabatanId: string | null;
+    role: string;
+  };
+  daftarCabang: { id: string; kode: string; nama: string }[];
+  daftarJabatan: { id: string; kode: string; nama: string }[];
+}) {
   const [stateReset, aksiReset] = useActionState(resetPassword, {});
   const [stateStatus, aksiStatus] = useActionState(ubahStatusAktif, {});
+  const [stateUbah, aksiUbah] = useActionState(ubahPegawai, {});
   const [konfirmasi, setKonfirmasi] = useState(false);
+  const [mode, setMode] = useState<'diam' | 'ubah'>('diam');
+  const [nip, setNip] = useState(data.nip);
 
+  const nipBerubah = nip.trim() !== data.nip;
+  const kelasKecil =
+    'w-full rounded-lg border border-abu-300 px-2.5 py-1.5 text-xs focus:border-btn-biru-500 focus:outline-none';
+
+  // ---------- mode ubah: tampilkan form lengkap ----------
+  if (mode === 'ubah') {
+    return (
+      <div className="min-w-[330px] text-left">
+        <form action={aksiUbah} className="space-y-2">
+          <input type="hidden" name="id" value={pegawaiId} />
+
+          <div>
+            <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Nama</label>
+            <input name="nama" defaultValue={data.nama} required className={kelasKecil} />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-abu-500 mb-0.5">
+              NIP {nipBerubah && <span className="text-peringatan">(diubah)</span>}
+            </label>
+            <input
+              name="nip"
+              value={nip}
+              onChange={(e) => setNip(e.target.value)}
+              required
+              className={`${kelasKecil} ${
+                nipBerubah ? 'border-peringatan bg-peringatan-bg/40' : ''
+              }`}
+            />
+            {nipBerubah && (
+              <p className="mt-1 text-[10px] text-peringatan leading-relaxed">
+                NIP dipakai untuk login. Pegawai harus diberi tahu NIP barunya.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-abu-500 mb-0.5">
+              Email (opsional)
+            </label>
+            <input
+              name="email"
+              type="email"
+              defaultValue={data.email ?? ''}
+              className={kelasKecil}
+              placeholder="nama@btn.co.id"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Cabang</label>
+            <select name="cabangId" defaultValue={data.cabangId} required className={kelasKecil}>
+              {daftarCabang.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.kode} — {c.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Jabatan</label>
+            <select name="jabatanId" defaultValue={data.jabatanId ?? ''} className={kelasKecil}>
+              <option value="">— tidak ada —</option>
+              {daftarJabatan.map((j) => (
+                <option key={j.id} value={j.id}>
+                  {j.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Peran</label>
+            <select name="role" defaultValue={data.role} className={kelasKecil}>
+              <option value="PEGAWAI">Pegawai</option>
+              <option value="SUPERVISOR">Supervisor (penilai)</option>
+              <option value="MANAGER">Manager (mengetahui)</option>
+              <option value="ADMIN">Administrator</option>
+            </select>
+          </div>
+
+          <div className="flex gap-1.5 pt-1">
+            <button
+              type="submit"
+              className="rounded-md bg-btn-biru-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-btn-biru-700 transition-colors"
+            >
+              Simpan
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('diam')}
+              className="rounded-md border border-abu-300 px-3 py-1.5 text-[11px] text-abu-600 hover:bg-abu-50"
+            >
+              Batal
+            </button>
+          </div>
+        </form>
+
+        {stateUbah.error && (
+          <p className="mt-2 text-[11px] text-bahaya bg-bahaya-bg rounded px-2 py-1">
+            {stateUbah.error}
+          </p>
+        )}
+        {stateUbah.sukses && (
+          <p className="mt-2 text-[11px] text-sukses bg-sukses-bg rounded px-2 py-1">
+            {stateUbah.pesan}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // ---------- mode diam: tombol aksi ----------
   return (
     <div className="flex flex-col items-end gap-1.5">
       <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => setMode('ubah')}
+          className="rounded-md border border-btn-biru-200 bg-btn-biru-50 px-2.5 py-1 text-[11px] font-medium text-btn-biru-700 hover:bg-btn-biru-100 transition-colors whitespace-nowrap"
+        >
+          Ubah
+        </button>
+
         {!konfirmasi ? (
           <button
             type="button"
@@ -320,6 +465,11 @@ export function AksiBaris({ pegawaiId, aktif }: { pegawaiId: string; aktif: bool
       {stateStatus.pesan && (
         <p className="text-[11px] text-abu-600 bg-abu-100 rounded px-2 py-1">
           {stateStatus.pesan}
+        </p>
+      )}
+      {stateUbah.sukses && stateUbah.pesan && (
+        <p className="text-[11px] text-sukses bg-sukses-bg rounded px-2 py-1">
+          {stateUbah.pesan}
         </p>
       )}
     </div>

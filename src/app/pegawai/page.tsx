@@ -119,7 +119,20 @@ export default async function HalamanPegawai() {
                     </td>
                     {admin && (
                       <td className="text-right">
-                        <AksiBaris pegawaiId={p.id} aktif={p.aktif} />
+                        <AksiBaris
+                          pegawaiId={p.id}
+                          aktif={p.aktif}
+                          data={{
+                            nip: p.nip,
+                            nama: p.nama,
+                            email: p.email,
+                            cabangId: p.cabangId,
+                            jabatanId: p.jabatanId,
+                            role: p.role,
+                          }}
+                          daftarCabang={daftarCabang}
+                          daftarJabatan={daftarJabatan}
+                        />
                       </td>
                     )}
                   </tr>

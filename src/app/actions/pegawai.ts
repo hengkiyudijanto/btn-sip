@@ -309,3 +309,118 @@ export async function tambahPegawai(
   revalidatePath('/pegawai');
   return { sukses: true, password: pw, pesan: `${nama} berhasil ditambahkan.` };
 }
+
+// ===========================================================================
+// UBAH PEGAWAI
+// ===========================================================================
+
+const ROLE_SAH = ['PEGAWAI', 'SUPERVISOR', 'MANAGER', 'ADMIN'] as const;
+
+/**
+ * Ubah data pegawai (nama, NIP, cabang, jabatan, peran, email).
+ *
+ * Aturan:
+ * - Hanya admin.
+ * - NIP boleh diubah, tapi dicek keunikan & dicatat di audit log.
+ * - Perubahan peran tidak boleh membuat admin terakhir kehilangan hak admin.
+ * - Menonaktifkan lewat perubahan peran tidak diizinkan; pakai tombol status.
+ */
+export async function ubahPegawai(
+  _sebelumnya: { error?: string; sukses?: boolean; pesan?: string; nipBaru?: string },
+  formData: FormData
+): Promise<{ error?: string; sukses?: boolean; pesan?: string; nipBaru?: string }> {
+  const cek = await pastikanAdmin();
+  if ('error' in cek) return { error: cek.error };
+  const saya = cek.saya;
+
+  const id = String(formData.get('id') ?? '');
+  const nama = String(formData.get('nama') ?? '').trim();
+  const nip = String(formData.get('nip') ?? '').trim();
+  const emailRaw = String(formData.get('email') ?? '').trim();
+  const cabangId = String(formData.get('cabangId') ?? '');
+  const jabatanId = String(formData.get('jabatanId') ?? '') || null;
+  const roleRaw = String(formData.get('role') ?? '').toUpperCase();
+
+  if (!id) return { error: 'Pegawai tidak ditemukan.' };
+  if (!nama) return { error: 'Nama wajib diisi.' };
+  if (!nip) return { error: 'NIP wajib diisi.' };
+  if (!cabangId) return { error: 'Cabang wajib dipilih.' };
+  if (!/^[A-Za-z0-9._-]+$/.test(nip)) {
+    return { error: 'NIP hanya boleh huruf, angka, titik, garis bawah, dan tanda hubung.' };
+  }
+  if (nip.length > 30) return { error: 'NIP maksimal 30 karakter.' };
+
+  const role = (ROLE_SAH as readonly string[]).includes(roleRaw)
+    ? (roleRaw as (typeof ROLE_SAH)[number])
+    : null;
+  if (!role) return { error: 'Peran tidak valid.' };
+
+  const lama = await prisma.pegawai.findUnique({ where: { id } });
+  if (!lama) return { error: 'Pegawai tidak ditemukan.' };
+
+  // NIP harus unik
+  if (nip !== lama.nip) {
+    const bentrok = await prisma.pegawai.findUnique({ where: { nip } });
+    if (bentrok) {
+      return { error: `NIP ${nip} sudah dipakai oleh ${bentrok.nama}.` };
+    }
+  }
+
+  // email harus unik juga (kalau diisi)
+  const email = emailRaw || null;
+  if (email) {
+    const bentrokEmail = await prisma.pegawai.findFirst({
+      where: { email, id: { not: id } },
+    });
+    if (bentrokEmail) {
+      return { error: `Email ${email} sudah dipakai oleh ${bentrokEmail.nama}.` };
+    }
+  }
+
+  // Jangan sampai tidak ada admin tersisa
+  if (lama.role === 'ADMIN' && role !== 'ADMIN') {
+    const jumlahAdmin = await prisma.pegawai.count({
+      where: { role: 'ADMIN', aktif: true, id: { not: id } },
+    });
+    if (jumlahAdmin === 0) {
+      return {
+        error:
+          'Ini satu-satunya akun admin yang aktif. Buat akun admin lain dulu sebelum mengubah peran akun ini.',
+      };
+    }
+  }
+
+  const cabang = await prisma.cabang.findUnique({ where: { id: cabangId } });
+  if (!cabang) return { error: 'Cabang tidak ditemukan.' };
+
+  await prisma.pegawai.update({
+    where: { id },
+    data: { nama, nip, email, cabangId, jabatanId, role },
+  });
+
+  await catatAudit({
+    pegawaiId: saya.id,
+    aksi: nip !== lama.nip ? 'UBAH_PEGAWAI_NIP' : 'UBAH_PEGAWAI',
+    entitas: 'Pegawai',
+    entitasId: id,
+    dataLama: {
+      nip: lama.nip,
+      nama: lama.nama,
+      email: lama.email,
+      cabangId: lama.cabangId,
+      jabatanId: lama.jabatanId,
+      role: lama.role,
+    },
+    dataBaru: { nip, nama, email, cabangId, jabatanId, role },
+  });
+
+  revalidatePath('/pegawai');
+  revalidatePath('/dasbor');
+
+  const pesanNip =
+    nip !== lama.nip
+      ? `Data ${nama} diperbarui. NIP diubah dari ${lama.nip} menjadi ${nip} — pastikan pegawai diberi tahu.`
+      : `Data ${nama} diperbarui.`;
+
+  return { sukses: true, pesan: pesanNip, nipBaru: nip };
+}
