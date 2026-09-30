@@ -5,6 +5,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { BadgeRating } from '@/components/badge-rating';
 import { angkaID } from '@/lib/sip/laporan';
+import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import {
   TombolDiketahui,
   TombolKunci,
@@ -21,10 +22,7 @@ export default async function HalamanPersetujuan() {
   if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!BOLEH_MENGETAHUI.has(saya.role)) redirect('/dasbor');
 
-  const periode = await prisma.periode.findFirst({
-    where: { aktif: true },
-    orderBy: { tanggalMulai: 'desc' },
-  });
+  const periode = await pilihPeriodeRelevan();
 
   const menunggu = periode
     ? await prisma.penilaian.findMany({

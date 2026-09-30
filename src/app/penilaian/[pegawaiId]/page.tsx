@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { FormPenilaian, type NilaiAspek } from '@/components/form-penilaian';
 import { simpanPenilaian } from '@/app/actions/penilaian';
 import { Kerangka } from '@/components/kerangka';
+import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 
 export const metadata = { title: 'Isi Penilaian' };
 
@@ -36,10 +37,7 @@ export default async function HalamanIsiPenilaian({
 
   const periode = periodeIdParam
     ? await prisma.periode.findUnique({ where: { id: periodeIdParam } })
-    : await prisma.periode.findFirst({
-        where: { aktif: true },
-        orderBy: { tanggalMulai: 'desc' },
-      });
+    : await pilihPeriodeRelevan();
   if (!periode) redirect('/penilaian');
 
   // Nilai yang sudah ada (kalau pernah disimpan)

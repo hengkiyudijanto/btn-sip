@@ -3,6 +3,7 @@ import { pegawaiDariSesi } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { BadgeRating } from '@/components/badge-rating';
 import { Kerangka } from '@/components/kerangka';
+import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import Link from 'next/link';
 
 export const metadata = { title: 'Daftar Penilaian' };
@@ -23,11 +24,9 @@ export default async function HalamanPenilaian() {
 
   const bolehMenilai = BOLEH_MENILAI.has(saya.role);
 
-  // Periode aktif terbaru
-  const periode = await prisma.periode.findFirst({
-    where: { aktif: true },
-    orderBy: { tanggalMulai: 'desc' },
-  });
+  // Periode yang memuat hari ini (bukan lagi periode paling akhir di
+  // database — itu menyebabkan halaman menampilkan Desember 2027).
+  const periode = await pilihPeriodeRelevan();
 
   // Kalau belum ada periode sama sekali, tampilkan pesan
   if (!periode) {

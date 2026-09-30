@@ -4,6 +4,7 @@ import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { BadgeRating } from '@/components/badge-rating';
+import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 
 const LABEL_ROLE: Record<string, string> = {
   PEGAWAI: 'Pegawai',
@@ -22,10 +23,7 @@ export default async function Dasbor() {
   const BOLEH_MENILAI = ['SUPERVISOR', 'MANAGER', 'ADMIN'].includes(pegawai.role);
 
   // Statistik ringkas
-  const periode = await prisma.periode.findFirst({
-    where: { aktif: true },
-    orderBy: { tanggalMulai: 'desc' },
-  });
+  const periode = await pilihPeriodeRelevan();
 
   const [totalPetugas, penilaianSaya, penilaianPeriodeIni] = await Promise.all([
     prisma.pegawai.count({
