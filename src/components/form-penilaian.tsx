@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useKirimForm } from '@/components/use-kirim-form';
 import { KATEGORI, nilaiKeSkala, ratingDariNilai } from '@/lib/sip/penilaian';
 import { rubrikAspek, RENTANG_SKOR } from '@/lib/sip/rubrik';
 import { BadgeRating } from '@/components/badge-rating';
@@ -198,19 +198,32 @@ function KartuAspek({
 // Tombol submit
 // ===========================================================================
 
-function TombolSimpan({ kirim }: { kirim: boolean }) {
-  const { pending } = useFormStatus();
+/**
+ * Tombol simpan/kirim di dalam form penilaian.
+ *
+ * Catatan penting: useFormStatus() mengembalikan pending=true saat HTML
+ * dirender di server, sehingga semua tombol tampil nonaktif sebelum
+ * halaman hidup di peramban. Karena itu status pending di sini dipantau
+ * lewat penanda yang hanya menyala setelah tombol benar-benar diklik.
+ */
+function TombolSimpan({ kirim, nonaktif }: { kirim: boolean; nonaktif?: boolean }) {
+  const { sibuk: pending, tandaiKirim } = useKirimForm();
+  const [sedangKirim, setSedangKirim] = useState(false);
+  // hanya percayai pending setelah form benar-benar dikirim dari klien
+  const sibuk = sedangKirim && pending;
+
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={sibuk || nonaktif}
+      onClick={() => setSedangKirim(true)}
       className={
         kirim
           ? 'inline-flex items-center gap-2 rounded-lg bg-btn-merah-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-btn-merah-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm'
           : 'inline-flex items-center gap-2 rounded-lg border border-abu-300 bg-white px-5 py-2.5 text-sm font-semibold text-abu-700 hover:bg-abu-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors'
       }
     >
-      {pending && (
+      {sibuk && (
         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -232,6 +245,7 @@ export function FormPenilaian({
   nilaiAwal,
   catatanUmumAwal,
   sudahDikirim,
+  adaFoto,
 }: {
   aksi: (prev: HasilSimpan, fd: FormData) => Promise<HasilSimpan>;
   pegawaiId: string;
@@ -239,6 +253,8 @@ export function FormPenilaian({
   nilaiAwal?: NilaiAspek;
   catatanUmumAwal?: string;
   sudahDikirim?: boolean;
+  /** apakah foto penilaian sudah diunggah — wajib sebelum bisa dikirim */
+  adaFoto?: boolean;
 }) {
   const [state, formAction] = useActionState(aksi, {});
   const [nilai, setNilai] = useState<NilaiAspek>(nilaiAwal ?? {});
@@ -388,17 +404,31 @@ export function FormPenilaian({
             />
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs text-abu-500 leading-relaxed max-w-md">
-                {sudahDikirim
-                  ? 'Penilaian sudah pernah dikirim. Setiap perubahan tercatat di audit log.'
-                  : 'Simpan draft untuk melanjutkan nanti, atau kirim untuk meminta persetujuan atasan.'}
-              </p>
+              <div className="text-xs text-abu-500 leading-relaxed max-w-md space-y-1.5">
+                <p>
+                  {sudahDikirim
+                    ? 'Penilaian sudah pernah dikirim. Setiap perubahan tercatat di audit log.'
+                    : 'Simpan draft untuk melanjutkan nanti, atau kirim untuk meminta persetujuan atasan.'}
+                </p>
+                {!adaFoto && (
+                  <p className="text-peringatan font-medium">
+                    ⚠ Foto penilaian belum ada. Draft boleh disimpan tanpa foto,
+                    tapi penilaian tidak dapat dikirim sebelum foto diunggah.
+                  </p>
+                )}
+              </div>
               <div className="flex gap-2.5">
                 <span onClick={() => setKirim(false)}>
                   <TombolSimpan kirim={false} />
                 </span>
-                <span onClick={() => setKirim(true)}>
-                  <TombolSimpan kirim={true} />
+                <span
+                  onClick={() => {
+                    if (!adaFoto) return;
+                    setKirim(true);
+                  }}
+                  title={adaFoto ? undefined : 'Unggah foto penilaian terlebih dahulu'}
+                >
+                  <TombolSimpan kirim={true} nonaktif={!adaFoto} />
                 </span>
               </div>
             </div>

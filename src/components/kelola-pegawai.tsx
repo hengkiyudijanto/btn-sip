@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useRef, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useKirimForm } from '@/components/use-kirim-form';
 import {
   imporPegawai,
   resetPassword,
@@ -18,11 +18,12 @@ function Tombol({
   children: React.ReactNode;
   variasi?: 'utama' | 'sekunder';
 }) {
-  const { pending } = useFormStatus();
+  const { sibuk: pending, tandaiKirim } = useKirimForm();
   return (
     <button
       type="submit"
       disabled={pending}
+      onClick={tandaiKirim}
       className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors ${
         variasi === 'utama'
           ? 'bg-btn-biru-600 text-white hover:bg-btn-biru-700'

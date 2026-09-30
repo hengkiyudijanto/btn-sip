@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useKirimForm } from '@/components/use-kirim-form';
 import type { HasilLogin } from '@/app/actions/auth';
 
 function Tombol({
@@ -11,11 +11,12 @@ function Tombol({
   children: React.ReactNode;
   nonaktif?: boolean;
 }) {
-  const { pending } = useFormStatus();
+  const { sibuk: pending, tandaiKirim } = useKirimForm();
   return (
     <button
       type="submit"
       disabled={pending || nonaktif}
+      onClick={tandaiKirim}
       className="w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white bg-btn-biru-600 hover:bg-btn-biru-700 active:bg-btn-biru-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm"
     >
       {pending && (

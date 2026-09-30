@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useKirimForm } from '@/components/use-kirim-form';
 import type { HasilAksi } from '@/app/actions/persetujuan';
 import {
   tandaiDiketahui,
@@ -16,7 +16,7 @@ function Tombol({
   children: React.ReactNode;
   variasi?: 'utama' | 'sekunder' | 'bahaya';
 }) {
-  const { pending } = useFormStatus();
+  const { sibuk: pending, tandaiKirim } = useKirimForm();
   const kelas =
     variasi === 'utama'
       ? 'bg-btn-biru-600 text-white hover:bg-btn-biru-700'
@@ -28,6 +28,7 @@ function Tombol({
     <button
       type="submit"
       disabled={pending}
+      onClick={tandaiKirim}
       className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors ${kelas}`}
     >
       {pending && (

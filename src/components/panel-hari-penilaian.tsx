@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useKirimForm } from '@/components/use-kirim-form';
 import { ubahHariPenilaianAksi, type HasilPengaturan } from '@/app/actions/pengaturan';
 
 const HARI = [
@@ -9,11 +9,12 @@ const HARI = [
 ];
 
 function TombolSimpan() {
-  const { pending } = useFormStatus();
+  const { sibuk: pending, tandaiKirim } = useKirimForm();
   return (
     <button
       type="submit"
       disabled={pending}
+      onClick={tandaiKirim}
       className="rounded-lg bg-btn-biru-600 px-4 py-2 text-xs font-semibold text-white hover:bg-btn-biru-700 disabled:opacity-60 transition-colors"
     >
       {pending ? 'Menyimpan...' : 'Simpan'}

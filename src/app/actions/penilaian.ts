@@ -86,6 +86,21 @@ export async function simpanPenilaian(
   if (!periode) return { error: 'Periode tidak ditemukan.' };
   if (periode.dikunci) return { error: 'Periode sudah dikunci, penilaian tidak dapat diubah.' };
 
+  // Foto diwajibkan saat mengirim penilaian. Draft boleh tanpa foto,
+  // supaya atasan bisa mengisi skor dulu dan memotret di lain waktu.
+  if (kirim) {
+    const ada = await prisma.penilaian.findUnique({
+      where: { pegawaiId_periodeId: { pegawaiId, periodeId } },
+      select: { fotoData: true },
+    });
+    if (!ada?.fotoData) {
+      return {
+        error:
+          'Foto penilaian belum ada. Unggah foto terlebih dahulu sebelum mengirim penilaian.',
+      };
+    }
+  }
+
   // Konversi angka 0-100 setiap aspek ke skor 1-5, lalu hitung nilai.
   const denganSkor = aspek.map((a) => {
     const def = KATEGORI.flatMap((k) => k.aspek).find((x) => x.kode === a.kode)!;

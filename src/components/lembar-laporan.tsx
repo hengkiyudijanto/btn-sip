@@ -72,6 +72,9 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
             <span>FOTO 3&times;4</span>
           )}
         </div>
+        {data.fotoCatatan && (
+          <div className="sip-foto-keterangan">{data.fotoCatatan}</div>
+        )}
       </div>
 
       {/* ============ A / B / C ============ */}

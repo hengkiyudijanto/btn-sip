@@ -6,6 +6,7 @@ import { FormPenilaian, type NilaiAspek } from '@/components/form-penilaian';
 import { simpanPenilaian } from '@/app/actions/penilaian';
 import { Kerangka } from '@/components/kerangka';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
+import { FotoPenilaian } from '@/components/foto-penilaian';
 
 export const metadata = { title: 'Isi Penilaian' };
 
@@ -41,10 +42,30 @@ export default async function HalamanIsiPenilaian({
   if (!periode) redirect('/penilaian');
 
   // Nilai yang sudah ada (kalau pernah disimpan)
-  const tersimpan = await prisma.penilaian.findUnique({
+  let tersimpan = await prisma.penilaian.findUnique({
     where: { pegawaiId_periodeId: { pegawaiId, periodeId: periode.id } },
     include: { detail: true },
   });
+
+  const bolehMenilai = ['SUPERVISOR', 'MANAGER', 'ADMIN'].includes(saya.role);
+
+  // Foto melekat pada penilaian, jadi penilaian harus ada lebih dulu.
+  // Saat halaman pertama dibuka, baris draft dibuat otomatis supaya foto
+  // bisa langsung diunggah tanpa harus mengisi skor dulu.
+  if (!tersimpan && bolehMenilai && !periode.dikunci) {
+    await prisma.penilaian.create({
+      data: {
+        pegawaiId,
+        penilaiId: saya.id,
+        periodeId: periode.id,
+        status: 'DRAFT',
+      },
+    });
+    tersimpan = await prisma.penilaian.findUnique({
+      where: { pegawaiId_periodeId: { pegawaiId, periodeId: periode.id } },
+      include: { detail: true },
+    });
+  }
 
   const nilaiAwal: NilaiAspek = {};
   for (const d of tersimpan?.detail ?? []) {
@@ -125,6 +146,19 @@ export default async function HalamanIsiPenilaian({
         </div>
       )}
 
+      {tersimpan && bolehMenilai && (
+        <div className="mb-6">
+          <FotoPenilaian
+            penilaianId={tersimpan.id}
+            fotoUrl={tersimpan.fotoData}
+            ukuranAwal={tersimpan.fotoUkuran}
+            catatanAwal={tersimpan.fotoCatatan}
+            terkunci={terkunci}
+            wajibFoto={true}
+          />
+        </div>
+      )}
+
       <FormPenilaian
         aksi={simpanPenilaian}
         pegawaiId={target.id}
@@ -132,6 +166,7 @@ export default async function HalamanIsiPenilaian({
         nilaiAwal={nilaiAwal}
         catatanUmumAwal={tersimpan?.catatanUmum ?? ''}
         sudahDikirim={Boolean(tersimpan?.dikirimAt)}
+        adaFoto={Boolean(tersimpan?.fotoData)}
       />
 
       {tersimpan && (

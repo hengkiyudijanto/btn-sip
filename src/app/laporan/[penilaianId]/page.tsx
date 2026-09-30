@@ -66,7 +66,11 @@ export default async function HalamanCetakLaporan({
     cabang: p.pegawai.cabang.nama,
     kodeCabang: p.pegawai.cabang.kode,
     periode: `${p.periode.nama} (${rentangPeriode(p.periode.tanggalMulai, p.periode.tanggalSelesai)})`,
-    fotoUrl: p.pegawai.fotoData ?? p.pegawai.fotoUrl,
+    // Foto penilaian dipakai lebih dulu (foto kondisi petugas pada periode
+    // ini). Kalau belum ada, baru jatuh ke foto pegawai sebagai cadangan —
+    // supaya laporan lama yang dibuat sebelum aturan foto tetap tercetak.
+    fotoUrl: p.fotoData ?? p.pegawai.fotoData ?? p.pegawai.fotoUrl,
+    fotoCatatan: p.fotoCatatan,
 
     blok,
     nilaiPenampilan: p.nilaiPenampilan ?? 0,

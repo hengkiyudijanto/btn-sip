@@ -69,6 +69,8 @@ export type DataLaporan = {
   kodeCabang: string;
   periode: string;
   fotoUrl: string | null;
+  /** keterangan foto penilaian, mis. "seragam lengkap dengan name tag" */
+  fotoCatatan?: string | null;
 
   // penilaian
   blok: BlokKategori[];
