@@ -66,6 +66,13 @@ const WARNA_PENDAR_NILAI = '7FA0F3';
 const WARNA_BATAS_NILAI = 'D1D1D1';
 
 /**
+ * Tinggi kotak nilai. Dipakai bersama oleh kotak nilai DAN pil kategori di
+ * sebelah kanannya, supaya keduanya selalu sama tinggi — dulu angkanya
+ * ditulis terpisah (0,40 vs 0,52) dan jadi tidak sama.
+ */
+const KOTAK_NILAI_TINGGI = 0.40;
+
+/**
  * Mencampur dua warna hex. `t` = 0 menghasilkan warna1, `t` = 1 menghasilkan
  * warna2. Dipakai untuk menghitung tangga warna pendar secara rata, supaya
  * tidak ada nilai warna yang dikarang.
@@ -401,8 +408,8 @@ function slideRanking(
     // di tengah. Bagian tengah (biru sekarang) mengambil 50% tinggi kotak,
     // sisanya 50% dibagi rata untuk ke dua sisi (25% atas, 25% bawah).
     // Dibuat bertingkat karena pptxgenjs tidak punya gradasi asli.
-    const kotakAtas = y + hFoto / 2 - 0.20;
-    const kotakTinggi = 0.40;
+    const kotakAtas = y + hFoto / 2 - KOTAK_NILAI_TINGGI / 2;
+    const kotakTinggi = KOTAK_NILAI_TINGGI;
     // Tiap lapis digambar sesuai porsinya. TIDAK ada tambahan tinggi di sini:
     // dulu tiap lapis ditambah 0,01 inci supaya tidak ada celah, tapi sejak
     // jumlah lapisnya jadi 7, tambahan itu menumpuk sehingga total kotaknya
@@ -425,20 +432,22 @@ function slideRanking(
       line: { color: WARNA_BATAS_NILAI, width: 0.5 },
     });
     slide.addText(angkaID(b.nilai), {
-      x: xKotak, y: y + hFoto / 2 - 0.20, w: wKotak - 0.10, h: 0.40,
+      x: xKotak, y: kotakAtas, w: wKotak - 0.10, h: KOTAK_NILAI_TINGGI,
       fontSize: F_NILAI, bold: true, color: PUTIH, align: 'right',
       valign: 'middle', fontFace: FONT,
     });
 
-    // pil kategori
+    // pil kategori — tingginya DISAMAKAN dengan kotak nilai (0,40 inci),
+    // dan titik tengahnya sejajar dengan kotak nilai.
     const kat = b.kategori;
+    const pilAtas = y + hFoto / 2 - KOTAK_NILAI_TINGGI / 2;
     slide.addShape('roundRect', {
-      x: xKategori, y: y + hFoto / 2 - 0.26, w: wKategori, h: 0.52,
+      x: xKategori, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
       fill: { color: WARNA_KATEGORI[kat] ?? WARNA_KATEGORI.Kurang },
-      line: { color: PUTIH, width: 1 }, rectRadius: 0.28,
+      line: { color: PUTIH, width: 1 }, rectRadius: KOTAK_NILAI_TINGGI / 2,
     });
     slide.addText(kat, {
-      x: xKategori, y: y + hFoto / 2 - 0.26, w: wKategori, h: 0.52,
+      x: xKategori, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
       fontSize: F_KATEGORI, bold: true, color: PUTIH, align: 'center',
       valign: 'middle', fontFace: FONT, shrinkText: true,
     });
