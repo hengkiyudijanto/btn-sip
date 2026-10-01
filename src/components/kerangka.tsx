@@ -22,6 +22,7 @@ const MENU_DASAR: ItemMenu[] = [
   { href: '/penilaian', label: 'Penilaian' },
   { href: '/persetujuan', label: 'Persetujuan', role: ['MANAGER', 'ADMIN'] },
   { href: '/laporan', label: 'Laporan' },
+  { href: '/laporan/ranking', label: 'Ranking PPTX' },
   { href: '/pegawai', label: 'Pegawai', role: ['ADMIN', 'MANAGER'] },
   { href: '/pengajuan-pegawai', label: 'Usul Pegawai', role: ['SUPERVISOR', 'MANAGER', 'ADMIN'] },
   { href: '/cabang', label: 'Cabang', role: ['ADMIN'] },
