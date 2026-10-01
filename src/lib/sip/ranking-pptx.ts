@@ -70,8 +70,8 @@ const FONT = 'Aptos';
 // perkiraan. Kalau file aslinya berubah, jalankan ulang
 // scripts/ekstrak-font-pptx.py lalu sesuaikan angka di bawah.
 const F_JUDUL = 44;
-const F_POSISI = 24;
-const F_NAMA = 20;
+const F_POSISI = 18;
+const F_NAMA = 16;
 const F_NILAI = 20;
 const F_KATEGORI = 12;
 const F_LEGENDA_ANGKA = 10;
