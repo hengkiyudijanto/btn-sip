@@ -63,8 +63,14 @@ const WARNA_UJUNG_NILAI = '7FA0F3';    // cadangan kalau mau balik ke bertangga
 /** Garis tepi kotak nilai — nilai persis dari user (#D1D1D1). */
 const WARNA_BATAS_NILAI = 'D1D1D1';
 
-/** Latar kotak label "SKALA PENILAIAN" — biru agak muda (biru Telegram). */
-const WARNA_LABEL_LEGENDA = '2AABEE';
+/**
+ * Latar kotak label "SKALA PENILAIAN".
+ * Disamakan dengan warna garis batas kotak nilai (#D1D1D1) sesuai permintaan
+ * user. Karena latarnya jadi terang, teksnya diganti biru tua supaya tetap
+ * terbaca (putih di atas abu terang tidak terbaca).
+ */
+const WARNA_LABEL_LEGENDA = 'D1D1D1';
+const WARNA_TEKS_LABEL_LEGENDA = '142D64';
 
 const GRADASI_NILAI: Array<{ warna: string; atur: number; tinggi: number }> = [
   // --- 25% atas: satu warna datar #2C4CCC ---
@@ -221,8 +227,8 @@ function legenda(slide: PptxGenJS.Slide) {
   });
   slide.addText('SKALA PENILAIAN', {
     x: LEG_LABEL.x, y: LEG_LABEL.y + 0.03, w: LEG_LABEL.w, h: 0.280,
-    fontSize: 10, bold: true, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: FONT,
+    fontSize: 10, bold: true, color: WARNA_TEKS_LABEL_LEGENDA,
+    align: 'center', valign: 'middle', fontFace: FONT,
   });
 
   const item: Array<[string, string]> = [
