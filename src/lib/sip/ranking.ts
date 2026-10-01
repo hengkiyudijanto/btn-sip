@@ -102,7 +102,8 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
       // laporan mencakup turunan: Kanwil mencakup KC, KC mencakup KCP
       const turunan = kumpulkanTurunan(cabang.id, semua);
       cabangIds = [cabang.id, ...turunan];
-      unitLabel = `${cabang.kode} ${cabang.nama}`;
+      // Nama cabang saja, tanpa kode (permintaan user)
+      unitLabel = cabang.nama;
     }
   } else if (filter.jenis) {
     const daftar = await prisma.cabang.findMany({
@@ -151,7 +152,8 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
     const kunci = `${p.pegawai.cabang.kode}|${posisi}`;
     if (!peta.has(kunci)) {
       peta.set(kunci, {
-        unit: `${p.pegawai.cabang.kode} ${p.pegawai.cabang.nama}`,
+        // Nama cabang saja, tanpa kode (permintaan user)
+        unit: p.pegawai.cabang.nama,
         posisi,
         baris: [],
       });

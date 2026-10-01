@@ -103,6 +103,12 @@ const WARNA_TEKS_LABEL_LEGENDA = 'FFFFFF';
  * sehingga sisi kanan-kirinya terlihat agak kotak, bukan seperti pil.
  */
 const RADIUS_LABEL_LEGENDA = 0.06;
+/**
+ * Radius sudut panel putih legenda, dalam inci. Diambil dari file referensi
+ * (Rounded Rectangle 83): radius relatif 24% dari tinggi panel.
+ * 0,24 x 0,720 = 0,173 inci.
+ */
+const RADIUS_PANEL_LEGENDA = 0.173;
 
 /**
  * Menyusun daftar lapis untuk kotak nilai.
@@ -206,7 +212,7 @@ const F_LABEL_LEGENDA = 10;
 
 /** Nama unit memakai Poppins (berbeda dari isi slide yang memakai Aptos). */
 const FONT_UNIT = 'Poppins';
-const F_UNIT = 20;
+const F_UNIT = 18;   // asli 20 — dikurangi 2 pt atas permintaan user
 
 /** Nilai dengan koma desimal (format Indonesia). */
 function angkaID(n: number): string {
@@ -288,11 +294,12 @@ const LEG_Y_RENTANG = 6.908;        // baris rentang angka
 const LEG_Y_NAMA = 7.110;           // baris nama kategori
 
 function legenda(slide: PptxGenJS.Slide) {
-  // panel putih legenda (tinggi 0,720 inci, sesuai file referensi)
+  // Panel putih legenda. Radius sudutnya diambil dari file referensi
+  // (Rounded Rectangle 83): 24% dari tinggi => 0,24 x 0,720 = 0,173 inci.
   slide.addShape('roundRect', {
     x: LEG_PANEL.x, y: LEG_PANEL.y, w: LEG_PANEL.w, h: LEG_PANEL.h,
     fill: { color: PUTIH }, line: { color: PUTIH, width: 0 },
-    rectRadius: 0.06,
+    rectRadius: RADIUS_PANEL_LEGENDA,
   });
 
   // label "SKALA PENILAIAN" — kotak berlatar biru muda (biru Telegram),
