@@ -56,8 +56,10 @@ export const MENU: ItemMenuPohon[] = [
   {
     label: 'Parameter',
     anak: [
-      { href: '/cabang', label: 'Cabang', role: ['ADMIN'] },
-      { href: '/periode', label: 'Periode', role: ['ADMIN'] },
+      { href: '/parameter/cabang', label: 'Cabang', role: ['ADMIN'] },
+      { href: '/parameter/jabatan', label: 'Jabatan', role: ['ADMIN'] },
+      { href: '/parameter/peran', label: 'Peran', role: ['ADMIN'] },
+      { href: '/parameter/periode', label: 'Periode', role: ['ADMIN'] },
     ],
   },
 ];

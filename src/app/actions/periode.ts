@@ -78,7 +78,7 @@ export async function buatPeriode(
     dataBaru: { kode, nama },
   });
 
-  revalidatePath('/periode');
+  revalidatePath('/parameter/periode');
   revalidatePath('/penilaian');
   revalidatePath('/laporan');
   return { sukses: true, pesan: `Periode ${nama} dibuat.` };
@@ -107,7 +107,7 @@ export async function ubahStatusPeriode(
     entitasId: periodeId,
   });
 
-  revalidatePath('/periode');
+  revalidatePath('/parameter/periode');
   revalidatePath('/penilaian');
   return { sukses: true, pesan: `Periode ${p.nama} kini ${baru ? 'aktif' : 'nonaktif'}.` };
 }
@@ -139,7 +139,7 @@ export async function kunciPeriode(
     dataBaru: { dikunci: baru, jumlahPenilaian: p._count.penilaian },
   });
 
-  revalidatePath('/periode');
+  revalidatePath('/parameter/periode');
   revalidatePath('/penilaian');
   revalidatePath('/laporan');
   return {
@@ -203,7 +203,7 @@ export async function buatBeberapaPeriode(
     dataBaru: { jumlahDiminta: jumlah, dibuat, dilewati },
   });
 
-  revalidatePath('/periode');
+  revalidatePath('/parameter/periode');
   return {
     sukses: true,
     pesan: `${dibuat} periode dibuat${dilewati > 0 ? `, ${dilewati} dilewati karena sudah ada` : ''}.`,

@@ -41,7 +41,7 @@ export async function ubahHariPenilaianAksi(
   // supaya perubahan langsung terasa manfaatnya
   const hasil = await pastikanPeriodeBulan(new Date());
 
-  revalidatePath('/periode');
+  revalidatePath('/parameter/periode');
   revalidatePath('/penilaian');
 
   return {

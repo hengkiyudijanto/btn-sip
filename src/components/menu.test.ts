@@ -39,13 +39,23 @@ describe('struktur menu', () => {
 });
 
 describe('menu Parameter', () => {
-  it('admin melihat Parameter berisi Cabang dan Periode', () => {
+  it('admin melihat Parameter berisi Cabang, Jabatan, Peran, Periode', () => {
     const menu = saringMenu('ADMIN');
     const parameter = menu.find((m) => m.label === 'Parameter');
     expect(parameter).toBeDefined();
     const anak = parameter!.anak!.map((a) => a.label);
     expect(anak).toContain('Cabang');
+    expect(anak).toContain('Jabatan');
+    expect(anak).toContain('Peran');
     expect(anak).toContain('Periode');
+  });
+
+  it('semua submenu Parameter menunjuk ke /parameter/*', () => {
+    const menu = saringMenu('ADMIN');
+    const parameter = menu.find((m) => m.label === 'Parameter')!;
+    for (const a of parameter.anak!) {
+      expect(a.href.startsWith('/parameter/')).toBe(true);
+    }
   });
 
   it('Cabang dan Periode tidak lagi jadi menu terpisah di tingkat atas', () => {

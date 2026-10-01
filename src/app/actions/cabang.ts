@@ -90,7 +90,7 @@ export async function tambahCabang(
     dataBaru: { kode: kodeUpper, nama, jenis, indukId },
   });
 
-  revalidatePath('/cabang');
+  revalidatePath('/parameter/cabang');
   revalidatePath('/pegawai');
   revalidatePath('/laporan');
   return { sukses: true, pesan: `${jenis} ${kodeUpper} — ${nama} berhasil ditambahkan.` };
@@ -162,7 +162,7 @@ export async function ubahCabang(
     dataBaru: { nama, alamat, indukId },
   });
 
-  revalidatePath('/cabang');
+  revalidatePath('/parameter/cabang');
   revalidatePath('/pegawai');
   revalidatePath('/laporan');
   return { sukses: true, pesan: `Cabang ${lama.kode} diperbarui.` };
@@ -213,7 +213,7 @@ export async function hapusCabang(
     dataLama: { kode: cabang.kode, nama: cabang.nama, jenis: cabang.jenis },
   });
 
-  revalidatePath('/cabang');
+  revalidatePath('/parameter/cabang');
   revalidatePath('/pegawai');
   revalidatePath('/laporan');
   return { sukses: true, pesan: `Cabang ${cabang.kode} dihapus.` };
@@ -242,7 +242,7 @@ export async function ubahStatusCabang(
     entitasId: id,
   });
 
-  revalidatePath('/cabang');
+  revalidatePath('/parameter/cabang');
   revalidatePath('/pegawai');
   return {
     sukses: true,
