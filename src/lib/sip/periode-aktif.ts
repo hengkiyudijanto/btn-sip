@@ -51,28 +51,68 @@ export async function pilihPeriodeRelevan(tanggal: Date = new Date()): Promise<P
 
 /**
  * Ambil daftar periode untuk pemilih (dropdown), diurutkan dari yang
- * terbaru sampai terlama, tapi dibatasi di sekitar hari ini supaya
- * tidak menampilkan ratusan periode dari tahun-tahun jauh.
+ * terbaru sampai terlama.
+ *
+ * Hanya **tahun berjalan** yang ditampilkan, sama seperti halaman
+ * `/periode`. Sebelumnya jendela "3 bulan ke belakang s/d 6 bulan ke
+ * depan" dipakai, dan itu membuat dropdown memuat periode tahun depan
+ * (mis. Desember 2027) yang tidak pernah terlihat di `/periode` —
+ * user bisa memilih periode masa depan tanpa sadar. Aturan periode
+ * menentukan periode dibuat otomatis beberapa tahun ke depan, jadi
+ * dropdown TIDAK boleh mengambil semuanya.
+ *
+ * Desember tahun lalu dan Januari tahun depan tetap disertakan supaya
+ * penilaian di batas tahun (periode yang menyeberang tahun) masih bisa
+ * dipilih. Duplikat dibuang oleh `id`.
  */
 export async function daftarPeriodeUntukPemilih(tanggal: Date = new Date()) {
-  const hariIni = new Date(tanggal.getFullYear(), tanggal.getMonth(), tanggal.getDate());
+  const pilih = {
+    id: true, nama: true, aktif: true, tanggalMulai: true, tanggalSelesai: true,
+  } as const;
 
-  const sekitar = await prisma.periode.findMany({
+  const tahun = tanggal.getFullYear();
+
+  const daftar = await prisma.periode.findMany({
     where: {
-      // 3 bulan ke belakang sampai 6 bulan ke depan
-      tanggalSelesai: { gte: new Date(hariIni.getFullYear(), hariIni.getMonth() - 3, 1) },
-      tanggalMulai: { lte: new Date(hariIni.getFullYear(), hariIni.getMonth() + 6, 31) },
+      // tahun berjalan + Desember tahun lalu + Januari tahun depan
+      OR: [
+        { tanggalMulai: { gte: new Date(tahun, 0, 1), lte: new Date(tahun, 11, 31, 23, 59, 59) } },
+        { tanggalSelesai: { gte: new Date(tahun - 1, 11, 1), lte: new Date(tahun - 1, 11, 31, 23, 59, 59) } },
+        { tanggalMulai: { gte: new Date(tahun + 1, 0, 1), lte: new Date(tahun + 1, 0, 31, 23, 59, 59) } },
+      ],
     },
     orderBy: { tanggalMulai: 'desc' },
-    select: { id: true, nama: true, aktif: true, tanggalMulai: true, tanggalSelesai: true },
+    select: pilih,
   });
 
-  // kalau jendela itu kosong (mis. data uji di tahun lain), pakai semua
-  if (sekitar.length > 0) return sekitar;
+  // buang duplikat (periode Des 2025 dan Jan 2026 bisa tertangkap dua syarat)
+  const unik = new Map<string, (typeof daftar)[number]>();
+  for (const p of daftar) unik.set(p.id, p);
+  return [...unik.values()].sort(
+    (a, b) => b.tanggalMulai.getTime() - a.tanggalMulai.getTime()
+  );
+}
 
-  return prisma.periode.findMany({
-    orderBy: { tanggalMulai: 'desc' },
-    take: 30,
-    select: { id: true, nama: true, aktif: true, tanggalMulai: true, tanggalSelesai: true },
+/**
+ * Daftar periode dikelompokkan per tahun, untuk halaman `/periode` supaya
+ * periode tahun lain bisa dilihat tanpa mengubah halaman jadi lintas tahun
+ * dalam satu tabel panjang.
+ */
+export async function daftarPeriodePerTahun() {
+  const semua = await prisma.periode.findMany({
+    orderBy: [{ tanggalMulai: 'desc' }],
+    include: { _count: { select: { penilaian: true } } },
   });
+
+  const perTahun = new Map<number, typeof semua>();
+  for (const p of semua) {
+    const t = p.tanggalMulai.getFullYear();
+    if (!perTahun.has(t)) perTahun.set(t, []);
+    perTahun.get(t)!.push(p);
+  }
+
+  // tahun terbaru lebih dulu
+  return [...perTahun.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([tahun, daftar]) => ({ tahun, daftar }));
 }

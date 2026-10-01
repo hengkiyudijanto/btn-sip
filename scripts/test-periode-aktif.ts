@@ -105,17 +105,60 @@ async function main() {
       continue;
     }
 
+    if (path === '/periode') {
+      // Halaman /periode SENGAJA menampilkan semua tahun (dikelompokkan),
+      // supaya periode yang muncul di dropdown bisa ditelusuri. Yang penting
+      // di sini: semua kelompok tahun benar-benar dirender.
+      const headings = [...html.matchAll(/>(\d{4})</g)].map((m) => m[1]);
+      cek(headings.includes('2025'), '/periode: kelompok tahun 2025 ada');
+      cek(headings.includes('2026'), '/periode: kelompok tahun 2026 ada');
+      cek(headings.includes('2027'), '/periode: kelompok tahun 2027 ada');
+      continue;
+    }
+
     const adaDes2027 = html.includes('Desember 2027');
     cek(!adaDes2027, `${path}: TIDAK menampilkan Desember 2027`);
-
-    if (path !== '/periode') {
-      // halaman Periode memang menampilkan semua bulan, jadi tidak dicek
-      const menampilkanTarget = html.includes(namaTarget);
-      cek(menampilkanTarget, `${path}: menampilkan "${namaTarget}"`);
-    }
+    const menampilkanTarget = html.includes(namaTarget);
+    cek(menampilkanTarget, `${path}: menampilkan "${namaTarget}"`);
   }
 
   await prisma.sesi.deleteMany({ where: { pegawaiId: admin.id } });
+
+  // ===== 4. dropdown hanya tahun berjalan =====
+  console.log('\n--- 4. isi dropdown periode (penilaian & laporan) ---');
+  const { daftarPeriodeUntukPemilih } = await import('../src/lib/sip/periode-aktif');
+  const dropdown = await daftarPeriodeUntukPemilih();
+  const tahunIni = new Date().getFullYear();
+
+  console.log(`   jumlah pilihan: ${dropdown.length}`);
+  console.log(`   paling baru   : ${dropdown[0]?.nama}`);
+  console.log(`   paling lama   : ${dropdown[dropdown.length - 1]?.nama}`);
+
+  const tahunDropdown = [...new Set(dropdown.map((p) => p.tanggalMulai.getFullYear()))].sort();
+  console.log(`   tahun tersedia: ${tahunDropdown.join(', ')}`);
+
+  cek(
+    !tahunDropdown.some((t) => t > tahunIni + 1),
+    `tidak ada periode lebih dari ${tahunIni + 1} di dropdown`
+  );
+  cek(
+    !dropdown.some((p) => p.nama.includes('Desember 2027')) ||
+      tahunIni + 1 >= 2027,
+    'tidak ada masa depan jauh (mis. Desember 2027) di dropdown'
+  );
+  cek(dropdown.length > 0, 'dropdown tidak kosong');
+  cek(
+    tahunDropdown.includes(tahunIni),
+    `tahun berjalan (${tahunIni}) ada di dropdown`
+  );
+
+  // Desember tahun lalu & Januari tahun depan boleh ikut (batas tahun)
+  const naikTurun = dropdown.every(
+    (p, i) => i === 0 || dropdown[i - 1].tanggalMulai >= p.tanggalMulai
+  );
+  cek(naikTurun, 'urut dari terbaru ke terlama');
+  const idUnik = new Set(dropdown.map((p) => p.id)).size === dropdown.length;
+  cek(idUnik, 'tidak ada periode ganda');
 
   console.log(`\n=== HASIL: ${lulus} lulus, ${gagal} gagal ===`);
   if (gagal > 0) process.exit(1);
