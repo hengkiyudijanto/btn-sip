@@ -27,7 +27,7 @@ import PptxGenJS from 'pptxgenjs';
 import type { DataRanking } from './ranking';
 import { BACKGROUND, LOGO_DANANTARA, LOGO_BTN } from './ranking-gambar';
 import { ringkasNama } from './nama-petugas';
-import { potongGambarPerSlide, type Potongan } from './potong-gambar-pptx';
+import { isikanFotoKeBentukPptx, type BentukBerfoto } from './foto-ke-bentuk';
 import { hitungPenempatanFoto, rasioFotoJpeg } from './potong-foto';
 
 // ---- warna ----
@@ -81,6 +81,13 @@ const KOTAK_NILAI_TINGGI = 0.40;
  * bingkai ini supaya tidak menutupi garis putihnya.
  */
 const TEBAL_BINGKAI_FOTO = 0.05;
+
+/**
+ * Radius sudut kotak foto (inci). Karena fotonya diisikan KE DALAM bentuk ini
+ * (bukan ditimpa), sudut foto mengikuti lengkungan ini — jadi tidak ada lagi
+ * sudut bolong.
+ */
+const RADIUS_FOTO = 0.18;
 
 /**
  * Skala penilaian 0..5 yang dipetakan ke panjang kotak nilai.
@@ -433,8 +440,8 @@ function slideRanking(
   prs: PptxGenJS,
   kelompok: DataRanking['kelompok'][number],
   petaFoto: Map<string, string>,
-  /** Diisi fungsi ini: nomor slide -> potongan foto yang dipakai. */
-  potongan: Map<number, Potongan>,
+  /** Diisi fungsi ini: daftar bentuk yang harus diisi foto. */
+  bentukBerfoto: BentukBerfoto[],
   /** Nomor slide ini di dalam berkas PPTX (slide 1 = ringkasan). */
   nomorSlide: number
 ) {
@@ -495,40 +502,44 @@ function slideRanking(
     const y = yAwal + i * jarak;
     kotakIsiFoto.y = y + TEBAL_BINGKAI_FOTO;
 
-    // foto: bingkai + gambar (foto penilaian periode ini)
-    // Bingkai foto: latar transparan (kalau foto belum ada, kotaknya tetap
-    // terlihat dari garis putihnya saja)
+    // Kotak foto dibuat sebagai BENTUK membulat, bukan gambar biasa.
+    //
+    // Bentuknya diberi nama FOTO_n sebagai penanda. Setelah berkas PPTX jadi,
+    // bentuk ini diisi fotonya lewat blipFill (lihat foto-ke-bentuk.ts),
+    // sehingga fotonya MENGIKUTI bentuk membulat kotaknya — tidak ada lagi
+    // sudut bolong seperti waktu fotonya digambar sebagai gambar kotak.
+    //
+    // Kalau petugas belum punya foto, bentuknya tetap terlihat dari garis
+    // putihnya saja (latar transparan).
     slide.addShape('roundRect', {
       x: xFoto, y, w: wFoto, h: hFoto,
-      fill: { type: 'none' } as never, line: { color: PUTIH, width: 1.25 },
-      rectRadius: 0.18,
+      fill: { type: 'none' } as never,
+      line: { color: PUTIH, width: 1.25 },
+      rectRadius: RADIUS_FOTO,
+      objectName: `FOTO_${nomorSlide}_${i}`,
     });
     const foto = petaFoto.get(b.nip);
     if (foto) {
-      // Foto selalu mengisi penuh kotaknya tanpa gepeng.
-      //
-      // Gambar ditaruh MEMENUHI kotak (w,h = kotak), lalu kelebihan sisi
-      // dipotong lewat srcRect yang disisipkan setelah PPTX jadi — lihat
-      // potong-gambar-pptx.ts. pptxgenjs sendiri tidak bisa menulis srcRect;
-      // opsi `sizing: cover` miliknya hanya merentangkan gambar (gepeng).
-      slide.addImage({
-        data: `data:image/jpeg;base64,${foto}`,
-        x: kotakIsiFoto.x, y: kotakIsiFoto.y,
-        w: kotakIsiFoto.w, h: kotakIsiFoto.h,
-      });
+      // Hitung potongannya supaya proporsi foto asli dipertahankan saat
+      // diisikan ke bentuk membulat (sama seperti object-fit: cover).
+      const rasio = rasioFotoJpeg(foto) ?? wFoto / hFoto;
+      const tempat = hitungPenempatanFoto(kotakIsiFoto, rasio);
 
-      // Hitung berapa bagian yang harus dipotong supaya proporsi foto asli
-      // dipertahankan (sama seperti object-fit: cover).
-      const rasio = rasioFotoJpeg(foto);
-      if (rasio) {
-        const tempat = hitungPenempatanFoto(kotakIsiFoto, rasio);
-        potongan.set(nomorSlide, {
+      // Catat bentuk mana yang harus diisi foto ini; pengisiannya dilakukan
+      // setelah berkas PPTX jadi (foto-ke-bentuk.ts), karena pptxgenjs tidak
+      // bisa mengisi BENTUK dengan gambar.
+      bentukBerfoto.push({
+        slide: nomorSlide,
+        nama: `FOTO_${nomorSlide}_${i}`,
+        base64: foto,
+        jenis: 'jpeg',
+        potongan: {
           kiri: tempat.potongKiri,
           kanan: tempat.potongKanan,
           atas: tempat.potongAtas,
           bawah: tempat.potongBawah,
-        });
-      }
+        },
+      });
     }
 
     // Nama petugas — di sebelah kanan foto. Ditulis RINGKAS: kata pertama
@@ -645,20 +656,21 @@ export async function bangunPptxRanking(
   prs.defineLayout({ name: 'LAYAR', width: LEBAR, height: TINGGI });
   prs.layout = 'LAYAR';
 
-  // Nomor slide -> potongan foto. Diisi saat menggambar tiap slide, lalu
-  // diterapkan ke XML setelah berkasnya jadi.
-  const potongan = new Map<number, Potongan>();
+  // Daftar bentuk kotak foto yang harus diisi gambar. Diisi saat menggambar
+  // tiap slide, lalu diterapkan ke XML setelah berkasnya jadi.
+  const bentukBerfoto: BentukBerfoto[] = [];
 
   slideRingkasan(prs, data);
   for (let i = 0; i < data.kelompok.length; i++) {
     // Slide 1 = ringkasan, jadi slide ranking pertama bernomor 2.
-    slideRanking(prs, data.kelompok[i], petaFoto, potongan, i + 2);
+    slideRanking(prs, data.kelompok[i], petaFoto, bentukBerfoto, i + 2);
   }
 
   const keluaran = (await prs.write({ outputType: 'nodebuffer' })) as Buffer;
 
-  // pptxgenjs tidak bisa menulis srcRect (atribut potongan gambar), jadi
-  // disisipkan setelahnya. Tanpa ini foto akan gepeng karena direntangkan.
-  if (potongan.size === 0) return keluaran;
-  return potongGambarPerSlide(keluaran, potongan);
+  // pptxgenjs tidak bisa mengisi BENTUK dengan gambar, jadi foto diisikan
+  // setelah berkasnya jadi. Ini yang membuat foto mengikuti bentuk membulat
+  // kotaknya (tanpa sudut bolong).
+  if (bentukBerfoto.length === 0) return keluaran;
+  return isikanFotoKeBentukPptx(keluaran, bentukBerfoto);
 }

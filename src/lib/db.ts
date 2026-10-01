@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { rapikanHasil } from './rapikan-data';
 
 /**
  * Prisma client singleton.
@@ -9,10 +10,18 @@ import { PrismaPg } from '@prisma/adapter-pg';
  *
  * Di mode development, Next.js hot-reload bisa membuat banyak instance —
  * kita simpan di globalThis supaya tidak membuka koneksi baru tiap reload.
+ *
+ * ATURAN KAPITALISASI (permintaan user) diterapkan di sini lewat `$extends`:
+ * setiap hasil query dari model Pegawai/Cabang/Jabatan dirapikan hurufnya
+ * sebelum sampai ke tampilan. Ditaruh di satu titik ini supaya tidak ada
+ * halaman yang terlewat — lihat src/lib/rapikan-data.ts.
  */
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma: ReturnType<typeof buatClient> | undefined;
 };
+
+/** Model yang hasil namanya perlu dirapikan. */
+const MODEL_PERLU_RAPI = new Set(['Pegawai', 'Cabang', 'Jabatan']);
 
 function buatClient() {
   const connectionString = process.env.DATABASE_URL;
@@ -23,13 +32,25 @@ function buatClient() {
   }
 
   const adapter = new PrismaPg({ connectionString });
-
-  return new PrismaClient({
+  const dasar = new PrismaClient({
     adapter,
     log:
       process.env.NODE_ENV === 'development'
         ? ['query', 'error', 'warn']
         : ['error'],
+  });
+
+  return dasar.$extends({
+    name: 'rapikan-nama',
+    query: {
+      $allModels: {
+        async $allOperations({ model, args, query }) {
+          const hasil = await query(args);
+          if (!model || !MODEL_PERLU_RAPI.has(model)) return hasil;
+          return rapikanHasil(hasil, model);
+        },
+      },
+    },
   });
 }
 
