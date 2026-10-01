@@ -106,13 +106,39 @@ async function main() {
     }
 
     if (path === '/periode') {
-      // Halaman /periode SENGAJA menampilkan semua tahun (dikelompokkan),
-      // supaya periode yang muncul di dropdown bisa ditelusuri. Yang penting
-      // di sini: semua kelompok tahun benar-benar dirender.
-      const headings = [...html.matchAll(/>(\d{4})</g)].map((m) => m[1]);
-      cek(headings.includes('2025'), '/periode: kelompok tahun 2025 ada');
-      cek(headings.includes('2026'), '/periode: kelompok tahun 2026 ada');
-      cek(headings.includes('2027'), '/periode: kelompok tahun 2027 ada');
+      // Halaman /periode menampilkan SEMUA tahun sebagai kelompok, tapi isi
+      // tahun yang tidak sedang berjalan tidak dirender (HTML tetap ringan).
+      // Yang diperiksa: kelompok tahun muncul sebagai tautan pembuka.
+      cek(html.includes('2025'), '/periode: kelompok tahun 2025 ada');
+      cek(html.includes('2026'), '/periode: kelompok tahun 2026 ada');
+      cek(html.includes('2027'), '/periode: kelompok tahun 2027 ada');
+      cek(
+        html.includes('/periode?tahun=2025'),
+        '/periode: ada tautan buka tahun 2025'
+      );
+      cek(
+        html.includes('tahun berjalan'),
+        '/periode: tahun berjalan ditandai'
+      );
+      // tahun berjalan dirender penuh (tabelnya ada)
+      cek(
+        html.includes('Nama periode'),
+        '/periode: tabel tahun berjalan dirender'
+      );
+      // ukuran HTML harus ringan: hanya SATU tahun dirender penuh.
+      // Sebelum perbaikan, 3 tahun (148 baris) dirender sekaligus = 469 KB.
+      cek(
+        html.length < 250_000,
+        `/periode: HTML tetap ringan (${(html.length / 1024).toFixed(0)} KB, dulu 469 KB)`
+      );
+      cek(
+        !html.includes('Minggu ke-5 Desember 2027'),
+        '/periode: tahun 2027 TIDAK dirender penuh'
+      );
+      cek(
+        !html.includes('Minggu ke-1 Januari 2025'),
+        '/periode: tahun 2025 TIDAK dirender penuh'
+      );
       continue;
     }
 

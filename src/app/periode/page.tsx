@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
@@ -14,11 +15,20 @@ import { PanelHariPenilaian } from '@/components/panel-hari-penilaian';
 
 export const metadata = { title: 'Periode' };
 
-export default async function HalamanPeriode() {
+export default async function HalamanPeriode({
+  searchParams,
+}: {
+  searchParams: Promise<{ tahun?: string }>;
+}) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
   if (saya.role !== 'ADMIN') redirect('/dasbor');
+
+  // Tahun yang dibuka lewat ?tahun=2025 — supaya halaman tetap bisa
+  // menampilkan tahun mana pun tanpa merender 148 baris sekaligus.
+  const { tahun } = await searchParams;
+  const tahunTerbuka = tahun ? Number(tahun) : null;
 
   // ===== buat periode otomatis =====
   // Periode dihitung mesin periode (src/lib/sip/periode.ts), tidak lagi
@@ -99,87 +109,115 @@ export default async function HalamanPeriode() {
           const berjalanDiGrup = grup.daftar.some(
             (p) => hariIni >= p.tanggalMulai && hariIni <= p.tanggalSelesai
           );
+          const terbuka = berjalanDiGrup || tahunTerbuka === grup.tahun;
           return (
             <div key={grup.tahun} className="mt-8">
-              <div className="mb-3 flex flex-wrap items-baseline gap-3">
-                <h2 className="text-lg font-bold text-abu-900">{grup.tahun}</h2>
-                {berjalanDiGrup && (
-                  <span className="rounded-full bg-btn-biru-100 px-2.5 py-1 text-[11px] font-semibold text-btn-biru-700">
-                    tahun berjalan
-                  </span>
-                )}
-                <span className="text-xs text-abu-500">{grup.daftar.length} periode</span>
-              </div>
+              {terbuka && (
+                <details open>
+                  <summary className="mb-3 flex cursor-pointer flex-wrap items-baseline gap-3 list-none">
+                    <span className="text-lg font-bold text-abu-900">
+                      <span className="text-abu-400 mr-1 text-sm">▾</span>
+                      {grup.tahun}
+                    </span>
+                    {berjalanDiGrup && (
+                      <span className="rounded-full bg-btn-biru-100 px-2.5 py-1 text-[11px] font-semibold text-btn-biru-700">
+                        tahun berjalan
+                      </span>
+                    )}
+                    <span className="text-xs text-abu-500">{grup.daftar.length} periode</span>
+                  </summary>
 
-              <div className="kartu overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="tabel-sip">
-                    <thead>
-                      <tr>
-                        <th>Nama periode</th>
-                        <th>Tanggal</th>
-                        <th className="text-right">Hari</th>
-                        <th className="text-right">Penilaian</th>
-                        <th>Status</th>
-                        <th className="text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {grup.daftar.map((p) => {
-                        const jumlahHari =
-                          Math.round(
-                            (p.tanggalSelesai.getTime() - p.tanggalMulai.getTime()) / 86_400_000
-                          ) + 1;
-                        const sedangBerjalan =
-                          hariIni >= p.tanggalMulai && hariIni <= p.tanggalSelesai;
-                        return (
-                          <tr
-                            key={p.id}
-                            className={sedangBerjalan ? 'bg-btn-biru-50/40' : undefined}
-                          >
-                            <td className="text-sm font-medium text-abu-900">
-                              {p.nama}
-                              {sedangBerjalan && (
-                                <span className="ml-2 rounded bg-btn-biru-100 px-1.5 py-0.5 text-[10px] font-semibold text-btn-biru-700">
-                                  berjalan
-                                </span>
-                              )}
-                            </td>
-                            <td className="text-xs text-abu-600 tabular-nums">
-                              {rentangPeriode(p.tanggalMulai, p.tanggalSelesai)}
-                            </td>
-                            <td className="text-right tabular-nums text-xs text-abu-600">
-                              {jumlahHari}
-                            </td>
-                            <td className="text-right tabular-nums text-sm text-abu-700">
-                              {p._count.penilaian}
-                            </td>
-                            <td>
-                              <div className="flex flex-wrap gap-1.5">
-                                <span
-                                  className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                                    p.aktif ? 'bg-sukses-bg text-sukses' : 'bg-abu-100 text-abu-500'
-                                  }`}
-                                >
-                                  {p.aktif ? 'Aktif' : 'Nonaktif'}
-                                </span>
-                                {p.dikunci && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-peringatan-bg px-2.5 py-1 text-[11px] font-medium text-peringatan">
-                                    🔒 Terkunci
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="text-right">
-                              <AksiPeriode periodeId={p.id} aktif={p.aktif} dikunci={p.dikunci} />
-                            </td>
+                  <div className="kartu overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="tabel-sip">
+                        <thead>
+                          <tr>
+                            <th>Nama periode</th>
+                            <th>Tanggal</th>
+                            <th className="text-right">Hari</th>
+                            <th className="text-right">Penilaian</th>
+                            <th>Status</th>
+                            <th className="text-right">Aksi</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                        </thead>
+                        <tbody>
+                          {grup.daftar.map((p) => {
+                            const jumlahHari =
+                              Math.round(
+                                (p.tanggalSelesai.getTime() - p.tanggalMulai.getTime()) / 86_400_000
+                              ) + 1;
+                            const sedangBerjalan =
+                              hariIni >= p.tanggalMulai && hariIni <= p.tanggalSelesai;
+                            return (
+                              <tr
+                                key={p.id}
+                                className={sedangBerjalan ? 'bg-btn-biru-50/40' : undefined}
+                              >
+                                <td className="text-sm font-medium text-abu-900">
+                                  {p.nama}
+                                  {sedangBerjalan && (
+                                    <span className="ml-2 rounded bg-btn-biru-100 px-1.5 py-0.5 text-[10px] font-semibold text-btn-biru-700">
+                                      berjalan
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="text-xs text-abu-600 tabular-nums">
+                                  {rentangPeriode(p.tanggalMulai, p.tanggalSelesai)}
+                                </td>
+                                <td className="text-right tabular-nums text-xs text-abu-600">
+                                  {jumlahHari}
+                                </td>
+                                <td className="text-right tabular-nums text-sm text-abu-700">
+                                  {p._count.penilaian}
+                                </td>
+                                <td>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <span
+                                      className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                                        p.aktif ? 'bg-sukses-bg text-sukses' : 'bg-abu-100 text-abu-500'
+                                      }`}
+                                    >
+                                      {p.aktif ? 'Aktif' : 'Nonaktif'}
+                                    </span>
+                                    {p.dikunci && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-peringatan-bg px-2.5 py-1 text-[11px] font-medium text-peringatan">
+                                        🔒 Terkunci
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="text-right">
+                                  <AksiPeriode periodeId={p.id} aktif={p.aktif} dikunci={p.dikunci} />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </details>
+              )}
+
+              {!terbuka && (
+                /* Tahun tertutup TIDAK dirender isinya (bukan sekadar
+                   disembunyikan <details>) supaya HTML tetap ringan —
+                   148 baris sekaligus membuat halaman ini 469 KB dan jadi
+                   halaman paling lambat. Daftarnya dibuka lewat tautan. */
+                <Link
+                  href={`/periode?tahun=${grup.tahun}`}
+                  className="mb-3 flex flex-wrap items-baseline gap-3 text-abu-700 hover:text-btn-biru-600"
+                >
+                  <span className="text-lg font-bold">
+                    <span className="text-abu-400 mr-1 text-sm">▸</span>
+                    {grup.tahun}
+                  </span>
+                  <span className="text-xs text-abu-500">{grup.daftar.length} periode</span>
+                  <span className="text-xs font-medium text-btn-biru-600 hover:underline">
+                    buka daftar
+                  </span>
+                </Link>
+              )}
             </div>
           );
         })}
