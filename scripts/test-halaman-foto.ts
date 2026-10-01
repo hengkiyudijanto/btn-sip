@@ -163,9 +163,13 @@ async function main() {
       const isi = await resFoto.arrayBuffer();
       cek(resFoto.status === 200, `route foto mengembalikan 200 (${resFoto.status})`);
       cek(isi.byteLength > 0, `route foto mengembalikan gambar (${isi.byteLength} byte)`);
+      // Foto pegawai bisa diganti kapan saja, jadi sengaja TIDAK di-cache
+      // lama — kalau di-cache, foto lama terus tampil di laporan setelah
+      // diganti. Yang diperiksa: server benar-benar melarang cache lama.
+      const cc = resFoto.headers.get('cache-control') ?? '';
       cek(
-        (resFoto.headers.get('cache-control') ?? '').includes('max-age='),
-        'foto boleh disimpan cache browser'
+        cc.includes('no-cache') || cc.includes('max-age=0'),
+        `foto pegawai tidak di-cache lama (${cc})`
       );
     }
     cek(!r3.html.includes('FOTO 3×4'), 'placeholder "FOTO 3x4" tidak muncul karena foto ada');

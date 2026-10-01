@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useKirimForm } from '@/components/use-kirim-form';
 import { kompresFoto, ukuranDataUrl, formatUkuran, UKURAN_FOTO } from '@/lib/foto';
 import {
@@ -58,6 +59,43 @@ export function FotoPenilaian({
   const [proses, setProses] = useState(false);
   const [galatLokal, setGalatLokal] = useState<string | null>(null);
   const berkas = useRef<HTMLInputElement>(null);
+  const sudahDisimpan = useRef(false);
+  const router = useRouter();
+
+  /**
+   * Setelah simpan berhasil, data di server berubah: alamat foto mendapat
+   * penanda versi BARU (lihat alamatFoto). Tanpa memuat ulang, panel masih
+   * menampilkan foto dari state peramban dan halaman laporan masih memakai
+   * alamat versi LAMA sehingga foto barunya tidak pernah terlihat.
+   * Jadi: begitu server melaporkan sukses, tarik ulang data dari server.
+   */
+  useEffect(() => {
+    if (stateSimpan.sukses && !sudahDisimpan.current) {
+      sudahDisimpan.current = true;
+      // Alamat foto berubah setelah simpan (penanda versi baru). Pratinjau
+      // disetel ke alamat server supaya panel menampilkan foto YANG SAMA
+      // dengan lembar laporan — bukan salinan dari memori peramban.
+      setPratinjau(fotoUrl);
+      setInfo(null);
+      router.refresh();
+    }
+    if (stateHapus.sukses) {
+      setPratinjau(null);
+      setInfo(null);
+      sudahDisimpan.current = false;
+      router.refresh();
+    }
+  }, [stateSimpan.sukses, stateHapus.sukses, router, fotoUrl]);
+
+  // Kalau halaman dimuat ulang dan alamat foto dari server sudah berubah
+  // (mis. dibuka di tab lain), samakan pratinjau dengan keadaan sebenarnya.
+  const alamatServerTerakhir = useRef(fotoUrl);
+  useEffect(() => {
+    if (fotoUrl !== alamatServerTerakhir.current) {
+      alamatServerTerakhir.current = fotoUrl;
+      setPratinjau(fotoUrl);
+    }
+  }, [fotoUrl]);
 
   const pilihBerkas = async (f: File) => {
     setGalatLokal(null);
@@ -77,7 +115,7 @@ export function FotoPenilaian({
 
   const adaFoto = Boolean(pratinjau);
   const fotoTersimpan = Boolean(ukuranAwal);
-  const belumDisimpan = adaFoto && pratinjau !== fotoUrl;
+  const belumDisimpan = adaFoto && pratinjau !== fotoUrl && pratinjau?.startsWith('data:');
   const hematPersen =
     info && pratinjau
       ? Math.max(

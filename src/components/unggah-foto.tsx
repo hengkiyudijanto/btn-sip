@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import { kompresFoto, ukuranDataUrl, formatUkuran, UKURAN_FOTO } from '@/lib/foto';
 import { simpanFoto, hapusFoto, simpanFotoDariUrl, type HasilFoto } from '@/app/actions/foto';
@@ -49,6 +50,26 @@ export function UnggahFoto({
   const [proses, setProses] = useState(false);
   const [galat, setGalat] = useState<string | null>(null);
   const [modeUrl, setModeUrl] = useState(false);
+  const router = useRouter();
+
+  /**
+   * Setelah simpan berhasil, alamat foto di server berubah. Tanpa memuat
+   * ulang data, panel masih menampilkan salinan dari memori peramban dan
+   * halaman lain (laporan) memakai alamat versi lama — akibatnya foto baru
+   * tidak pernah terlihat. Jadi tarik ulang data dari server.
+   */
+  useEffect(() => {
+    if (state.sukses || stateUrl.sukses) {
+      setPratinjau(fotoUrl);
+      setInfo(null);
+      router.refresh();
+    }
+    if (stateHapus.sukses) {
+      setPratinjau(null);
+      setInfo(null);
+      router.refresh();
+    }
+  }, [state.sukses, stateUrl.sukses, stateHapus.sukses, router, fotoUrl]);
   const berkas = useRef<HTMLInputElement>(null);
 
   const pilihBerkas = async (f: File) => {

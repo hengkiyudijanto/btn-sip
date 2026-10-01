@@ -22,6 +22,13 @@ import { prisma } from '@/lib/db';
 // (lihat alamatFoto di src/lib/sip/alamat-foto.ts).
 const CACHE_JANGKA_PANJANG = 'private, max-age=604800, immutable';
 
+// Selama penilaian masih DRAFT, fotonya MASIH BISA DIGANTI. Kalau tetap
+// di-cache lama, atasan yang baru mengganti foto akan melihat foto lama di
+// lembar laporan sampai cache-nya kedaluwarsa — pernah terjadi. Untuk DRAFT
+// foto selalu diambil ulang dari server; setelah dikirim (tidak bisa diubah
+// lagi) barulah boleh di-cache lama.
+const CACHE_DRAFT = 'private, no-cache, must-revalidate';
+
 const POLA_DATA_URL = /^data:(image\/(?:jpeg|png|webp));base64,([\s\S]+)$/;
 
 export async function GET(
@@ -41,6 +48,7 @@ export async function GET(
         fotoMime: true,
         penilaiId: true,
         pegawaiId: true,
+        status: true,
         pegawai: { select: { atasanId: true, cabangId: true } },
       },
     });
@@ -56,7 +64,9 @@ export async function GET(
       p.pegawai.atasanId === saya.id;
     if (!boleh) return new NextResponse(null, { status: 403 });
 
-    return kirim(p.fotoData, p.fotoMime);
+    // DRAFT/Dikembalikan masih bisa diubah -> jangan di-cache lama.
+    const bisaDiubah = p.status === 'DRAFT';
+    return kirim(p.fotoData, p.fotoMime, bisaDiubah ? CACHE_DRAFT : CACHE_JANGKA_PANJANG);
   }
 
   if (jenis === 'pegawai') {
@@ -72,14 +82,16 @@ export async function GET(
       p.cabangId === saya.cabang.id;
     if (!boleh) return new NextResponse(null, { status: 403 });
 
-    return kirim(p.fotoData, p.fotoMime);
+    // Foto pegawai bisa diganti kapan saja oleh admin, jadi jangan di-cache
+    // lama — kalau tidak, foto lama akan terus tampil di laporan.
+    return kirim(p.fotoData, p.fotoMime, CACHE_DRAFT);
   }
 
   return new NextResponse(null, { status: 400 });
 }
 
 /** Ubah data URL menjadi respons berkas gambar, tanpa mengubah isinya. */
-function kirim(dataUrl: string, mime: string | null) {
+function kirim(dataUrl: string, mime: string | null, cache: string) {
   const cocok = POLA_DATA_URL.exec(dataUrl);
   if (!cocok) return new NextResponse(null, { status: 422 });
 
@@ -91,7 +103,7 @@ function kirim(dataUrl: string, mime: string | null) {
     headers: {
       'Content-Type': contentType,
       'Content-Length': String(isi.length),
-      'Cache-Control': CACHE_JANGKA_PANJANG,
+      'Cache-Control': cache,
     },
   });
 }
