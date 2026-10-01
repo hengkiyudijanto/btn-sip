@@ -238,19 +238,16 @@ const FONT_POSISI = 'Aptos Display';
 // kotaknya daripada menyalakan shrinkText lagi.
 
 /**
- * Kotak nama cabang — posisi dari file referensi (Rectangle 39).
- * rectRadius diambil dari bingkai referensi (relatif 16% dari tinggi).
+ * Kotak nama cabang — posisi PERSIS dari file referensi (Group 20).
+ *
+ * PENTING: di referensi ada DUA kotak di area ini — Group 20 (3,271 x 0,505
+ * di y 1,259) yang BERISI teks nama cabang, dan Rectangle 39 (3,699 x 0,713
+ * di y 1,714) yang hanya bingkai kosong. Yang dipakai tampilannya adalah
+ * Group 20, jadi inilah yang diikuti. Sempat tertukar dengan Rectangle 39
+ * sehingga kotaknya kebesaran dan nama posisi tertelan.
  */
-const NAMA_CABANG = { x: 4.817, y: 1.380, w: 3.699, h: 0.713 };
-const RADIUS_NAMA_CABANG = 0.114;   // 16% x 0,713
-/**
- * Jarak tepi di dalam kotak nama cabang. Kotaknya diisi DUA baris teks
- * (nama cabang di atas, nama posisi di bawah); 0,04 di tepi atas dan bawah
- * memberi napas, sisanya dibagi dua rata.
- */
-const PAD_NAMA_CABANG = 0.04;
-/** Tinggi tiap baris teks di dalam kotak nama cabang. */
-const BARIS_NAMA_CABANG = (NAMA_CABANG.h - PAD_NAMA_CABANG * 2) / 2;
+const NAMA_CABANG = { x: 5.039, y: 1.259, w: 3.271, h: 0.505 };
+const RADIUS_NAMA_CABANG = 0.08;   // sudut membulat tipis
 const F_UNIT = 18;   // asli 20 — dikurangi 2 pt atas permintaan user
 
 /** Nilai dengan koma desimal (format Indonesia). */
@@ -304,8 +301,7 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
   // teksnya bisa mengecil sendiri; di sini shrinkText dimatikan supaya
   // ukuran font persis, jadi ruangnya dibagi dua.
   slide.addText(unit, {
-    x: NAMA_CABANG.x, y: NAMA_CABANG.y + PAD_NAMA_CABANG,
-    w: NAMA_CABANG.w, h: BARIS_NAMA_CABANG,
+    x: NAMA_CABANG.x, y: NAMA_CABANG.y, w: NAMA_CABANG.w, h: NAMA_CABANG.h,
     fontSize: F_UNIT, bold: false, color: PUTIH, align: 'center',
     valign: 'middle', fontFace: FONT_UNIT,
   });
@@ -318,10 +314,10 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
   // Di sini shrinkText sengaja dimatikan supaya ukuran font selalu persis,
   // jadi teksnya diletakkan di bawah kotak agar tidak saling menimpa.
   // Kotaknya tetap di posisi referensi; hanya teks posisi yang digeser.
-  // Nama posisi: di dalam kotak nama cabang, di bagian BAWAH-nya.
+  // Nama posisi: PERSIS di posisi referensi (TextBox 13) — terpisah di
+  // bawah kotak nama cabang, bukan di dalamnya.
   slide.addText(posisi, {
-    x: 5.219, y: NAMA_CABANG.y + PAD_NAMA_CABANG + BARIS_NAMA_CABANG,
-    w: 2.896, h: BARIS_NAMA_CABANG,
+    x: 5.219, y: 1.839, w: 2.896, h: 0.404,
     fontSize: F_POSISI, color: PUTIH, align: 'center', valign: 'middle',
     fontFace: FONT_POSISI,
   });
