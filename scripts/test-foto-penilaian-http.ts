@@ -155,7 +155,13 @@ async function main() {
   });
 
   const r4 = await get(`/penilaian/${petugas.id}?periode=${periode.id}`, token);
-  cek(r4.html.includes('data:image/jpeg;base64,'), 'foto tampil di panel');
+  // Sejak Opsi 1, foto tidak lagi ditanam sebagai data URL di HTML — panel
+  // memakai alamat /foto/penilaian/<id> supaya browser menyimpannya di cache.
+  cek(
+    r4.html.includes(`/foto/penilaian/${dibuat!.id}`),
+    'foto tampil di panel lewat alamat /foto/penilaian/<id>'
+  );
+  cek(!r4.html.includes('data:image/jpeg;base64,'), 'HTML tidak memuat data URL foto');
   cek(r4.html.includes('seragam lengkap'), 'keterangan foto tampil');
   cek(!r4.html.includes('Belum ada foto'), 'label "Belum ada foto" hilang');
   const nonaktif4 = kirimNonaktif(r4.html);
@@ -166,7 +172,11 @@ async function main() {
   console.log('\n--- 5. laporan menampilkan foto penilaian ---');
   const r5 = await get(`/laporan/${dibuat!.id}`, token);
   cek(r5.status === 200, `laporan terbuka (status ${r5.status})`);
-  cek(r5.html.includes('data:image/jpeg;base64,'), 'foto tampil di lembar laporan');
+  cek(
+    r5.html.includes(`/foto/penilaian/${dibuat!.id}`),
+    'foto tampil di lembar laporan lewat alamat /foto/penilaian/<id>'
+  );
+  cek(!r5.html.includes('data:image/jpeg;base64,'), 'HTML laporan tidak memuat data URL foto');
   cek(!r5.html.includes('FOTO 3×4'), 'placeholder FOTO 3x4 tidak muncul');
   cek(r5.html.includes('seragam lengkap'), 'keterangan foto tercetak di laporan');
 

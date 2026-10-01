@@ -5,6 +5,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { UnggahFoto } from '@/components/unggah-foto';
 import { LABEL_JENIS, WARNA_JENIS } from '@/lib/sip/hierarki';
+import { alamatFoto } from '@/lib/sip/alamat-foto';
 
 export const metadata = { title: 'Detail Pegawai' };
 
@@ -44,7 +45,9 @@ export default async function HalamanDetailPegawai({
     ADMIN: 'Administrator',
   };
 
-  const fotoTampil = p.fotoData ?? p.fotoUrl;
+  // Alamat route (/foto/...), bukan data URL — supaya browser menyimpan
+  // fotonya di cache. Lihat src/lib/sip/alamat-foto.ts.
+  const fotoTampil = alamatFoto('pegawai', p) ?? p.fotoUrl;
 
   return (
     <Kerangka pegawai={saya}>

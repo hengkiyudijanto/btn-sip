@@ -141,10 +141,33 @@ async function main() {
 
     const r3 = await get(`/laporan/${penilaian.id}`, token);
     cek(r3.status === 200, `halaman laporan bisa dibuka (status ${r3.status})`);
+    // Sejak Opsi 1, foto TIDAK lagi ditanam sebagai data URL di HTML —
+    // halaman memakai alamat /foto/... supaya browser bisa menyimpannya di
+    // cache dan tidak mengunduh ulang. Yang diperiksa: alamat itu benar-benar
+    // dipakai, DAN route-nya benar-benar mengembalikan gambar.
     cek(
-      r3.html.includes('data:image/jpeg;base64,'),
-      'foto pegawai dirender di laporan'
+      !r3.html.includes('data:image/jpeg;base64,'),
+      'HTML tidak lagi memuat data URL foto (hemat lalu lintas)'
     );
+    cek(
+      r3.html.includes('/foto/pegawai/'),
+      'foto pegawai dirender lewat alamat /foto/pegawai/<id>'
+    );
+    const ujiFoto = await get(`/laporan/${penilaian.id}`, token);
+    const alamat = /\/foto\/pegawai\/[^"?]+\?v=[a-z0-9]+/.exec(ujiFoto.html)?.[0];
+    cek(Boolean(alamat), `alamat foto punya penanda versi (${alamat ?? 'tidak ada'})`);
+    if (alamat) {
+      const resFoto = await fetch(`${BASE}${alamat}`, {
+        headers: { cookie: `sip_sesi=${token}` },
+      });
+      const isi = await resFoto.arrayBuffer();
+      cek(resFoto.status === 200, `route foto mengembalikan 200 (${resFoto.status})`);
+      cek(isi.byteLength > 0, `route foto mengembalikan gambar (${isi.byteLength} byte)`);
+      cek(
+        (resFoto.headers.get('cache-control') ?? '').includes('max-age='),
+        'foto boleh disimpan cache browser'
+      );
+    }
     cek(!r3.html.includes('FOTO 3×4'), 'placeholder "FOTO 3x4" tidak muncul karena foto ada');
 
     await prisma.penilaianDetail.deleteMany({ where: { penilaianId: penilaian.id } });

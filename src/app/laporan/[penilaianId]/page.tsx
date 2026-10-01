@@ -13,6 +13,7 @@ import {
   type DataLaporan,
 } from '@/lib/sip/laporan';
 import { PERFORMANCE_RATING } from '@/lib/sip/penilaian';
+import { alamatFoto } from '@/lib/sip/alamat-foto';
 import '@/app/laporan/laporan.css';
 
 export const metadata = { title: 'Laporan SIP' };
@@ -63,6 +64,20 @@ export default async function HalamanCetakLaporan({
     versi
   );
 
+  /**
+   * Urutan prioritas foto laporan: foto penilaian (kondisi petugas pada
+   * periode ini) lebih dulu, lalu foto pegawai sebagai cadangan supaya
+   * laporan lama tetap tercetak. Hasilnya berupa ALAMAT route, bukan data
+   * URL — lihat src/lib/sip/alamat-foto.ts.
+   */
+  function fotoLaporan(penilaian: NonNullable<typeof p>): string | null {
+    return (
+      alamatFoto('penilaian', penilaian) ??
+      alamatFoto('pegawai', penilaian.pegawai) ??
+      penilaian.pegawai.fotoUrl
+    );
+  }
+
   const data: DataLaporan = {
     nama: p.pegawai.nama,
     nip: p.pegawai.nip,
@@ -74,7 +89,10 @@ export default async function HalamanCetakLaporan({
     // Foto penilaian dipakai lebih dulu (foto kondisi petugas pada periode
     // ini). Kalau belum ada, baru jatuh ke foto pegawai sebagai cadangan —
     // supaya laporan lama yang dibuat sebelum aturan foto tetap tercetak.
-    fotoUrl: p.fotoData ?? p.pegawai.fotoData ?? p.pegawai.fotoUrl,
+    //
+    // Dikirim sebagai ALAMAT (/foto/...), bukan data URL, supaya browser
+    // menyimpannya di cache dan tidak mengunduh ulang tiap halaman dibuka.
+    fotoUrl: fotoLaporan(p),
     fotoCatatan: p.fotoCatatan,
     versi,
 

@@ -86,7 +86,30 @@ async function cetakPdf(url: string, keluar: string, token: string, marginMm: nu
   });
 
   await c.kirim('Page.navigate', { url });
-  await new Promise((r) => setTimeout(r, 5000));
+  await new Promise((r) => setTimeout(r, 1500));
+
+  // Foto laporan disajikan lewat route /foto, jadi halaman baru siap cetak
+  // setelah SEMUA gambar selesai dimuat. Jeda tetap saja tidak cukup: pada
+  // koneksi lambat PDF bisa tercetak tanpa foto. Tunggu sampai setiap
+  // <img> melaporkan selesai, dengan batas waktu supaya tidak menggantung.
+  const tungguGambar = await c.kirim('Runtime.evaluate', {
+    expression: `(async () => {
+      const batas = Date.now() + 20000;
+      while (Date.now() < batas) {
+        const imgs = [...document.querySelectorAll('.sip-laporan img')];
+        if (imgs.length === 0) return 'tidak ada gambar';
+        const selesai = imgs.every(i => i.complete && i.naturalWidth > 0);
+        if (selesai) return 'semua gambar dimuat (' + imgs.length + ')';
+        await new Promise(r => setTimeout(r, 200));
+      }
+      return 'BATAS WAKTU: ada gambar belum dimuat';
+    })()`,
+    awaitPromise: true,
+    returnByValue: true,
+  });
+  console.log(`   gambar: ${tungguGambar.result?.value ?? '(tidak diketahui)'}`);
+
+  await new Promise((r) => setTimeout(r, 600));
 
   // pastikan sudah masuk (bukan halaman login)
   const cek = await c.kirim('Runtime.evaluate', {

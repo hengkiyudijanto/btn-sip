@@ -7,6 +7,7 @@ import { simpanPenilaian } from '@/app/actions/penilaian';
 import { Kerangka } from '@/components/kerangka';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { FotoPenilaian } from '@/components/foto-penilaian';
+import { alamatFoto } from '@/lib/sip/alamat-foto';
 
 export const metadata = { title: 'Isi Penilaian' };
 
@@ -150,7 +151,7 @@ export default async function HalamanIsiPenilaian({
         <div className="mb-6">
           <FotoPenilaian
             penilaianId={tersimpan.id}
-            fotoUrl={tersimpan.fotoData}
+            fotoUrl={alamatFoto('penilaian', tersimpan)}
             ukuranAwal={tersimpan.fotoUkuran}
             catatanAwal={tersimpan.fotoCatatan}
             terkunci={terkunci}
