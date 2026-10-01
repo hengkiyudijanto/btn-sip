@@ -61,7 +61,7 @@ export const RUBRIK: Record<string, LevelRubrik[]> = {
   ],
   A4: [
     level(5, 'Area kerja sangat bersih, rapi, tertata, seluruh perlengkapan tersedia dan berada pada tempatnya; tidak terdapat barang pribadi/berkas yang mengganggu.'),
-    level(4, 'Area kerja bersih dan rapi, terdapat ketidaksempurnaan minor seperti 1-2 barang yang belum tertata namun tidak mengganggu.'),
+    level(4, 'Area kerja bersih dan rapi, terdapat ketidaksempurnaan minor seperti 1-2 barang yang belum tertata namun tidak mengganggu pelayanan.'),
     level(3, 'Area kerja cukup bersih tetapi terdapat beberapa barang/berkas yang kurang tertata atau perlengkapan yang belum ditempatkan sebagaimana mestinya.'),
     level(2, 'Area kerja terlihat kurang rapi/kotor, beberapa perlengkapan tidak tersedia atau tidak tertata sehingga mulai mengganggu kenyamanan pelayanan.'),
     level(1, 'Area kerja kotor/berantakan, perlengkapan banyak yang tidak tersedia/tidak pada tempatnya, dan kondisi tersebut mengganggu pelayanan.'),
@@ -85,7 +85,7 @@ export const RUBRIK: Record<string, LevelRubrik[]> = {
   B3: [
     level(5, 'Memahami produk secara menyeluruh, mampu menjelaskan manfaat, fitur, ketentuan, serta memberikan solusi yang tepat dan relevan dengan kebutuhan nasabah.'),
     level(4, 'Memahami produk dengan sangat baik dan mampu memberikan solusi yang tepat, terdapat minor gap pada detail tertentu.'),
-    level(3, 'Memahami informasi utama produk dan mampu menjelaskan solusi dasar, tetapi masih terdapat beberapa keterbatasan.'),
+    level(3, 'Memahami informasi utama produk dan mampu menjelaskan solusi dasar, tetapi masih terdapat beberapa keterbatasan pada detail/ketentuan.'),
     level(2, 'Pemahaman produk masih terbatas; mampu menjawab pertanyaan sederhana tetapi kesulitan memberikan solusi yang tepat untuk kebutuhan tertentu.'),
     level(1, 'Tidak memahami informasi dasar produk; memberikan informasi yang kurang tepat/salah, atau tidak mampu memberikan solusi kepada nasabah.'),
   ],
@@ -101,21 +101,21 @@ export const RUBRIK: Record<string, LevelRubrik[]> = {
     level(4, 'Komunikasi sangat jelas dan efektif; terdapat sedikit kekurangan dalam penyampaian namun tidak menghambat pemahaman nasabah.'),
     level(3, 'Komunikasi cukup jelas, tetapi terkadang kurang terstruktur, terlalu cepat/lambat, atau kurang menggali kebutuhan nasabah.'),
     level(2, 'Penyampaian kurang jelas/kurang terstruktur dan membutuhkan pengulangan atau klarifikasi agar nasabah memahami informasi.'),
-    level(1, 'Komunikasi tidak efektif, sulit dipahami, tidak mendengarkan dengan baik, atau informasi yang disampaikan tidak sesuai kebutuhan.'),
+    level(1, 'Komunikasi tidak efektif, sulit dipahami, tidak mendengarkan dengan baik, atau informasi yang disampaikan tidak sesuai kebutuhan nasabah.'),
   ],
 
   // ===================== C. SIKAP =====================
   C1: [
     level(5, 'Sangat ramah, sopan, hangat, dan menunjukkan ketulusan dalam melayani sejak awal hingga akhir interaksi.'),
     level(4, 'Ramah dan sopan secara konsisten; terdapat sedikit kekurangan dalam ekspresi namun tidak mengurangi kualitas interaksi.'),
-    level(3, 'Cukup ramah dan sopan, tetapi interaksi masih terasa formalis/standar dan belum menunjukkan kehangatan secara konsisten.'),
+    level(3, 'Cukup ramah dan sopan, tetapi interaksi masih terasa formal/standar dan belum menunjukkan kehangatan secara konsisten.'),
     level(2, 'Keramahan belum konsisten; beberapa respons/interaksi terasa datar, kurang hangat, atau kurang responsif.'),
     level(1, 'Kurang ramah/sopan, menunjukkan sikap acuh, tidak responsif, atau terdapat perilaku yang berpotensi membuat nasabah tidak nyaman.'),
   ],
   C2: [
     level(5, 'Proaktif mengidentifikasi kebutuhan nasabah, menawarkan bantuan/solusi yang relevan, dan menyelesaikan kebutuhan tanpa harus menunggu instruksi.'),
     level(4, 'Aktif menawarkan bantuan dan solusi yang relevan, dengan hanya sedikit momen yang masih menunggu arahan.'),
-    level(3, 'Menunjukkan inisiatif pada situasi umum, tetapi lebih sering menunggu perintah atau arahan nasabah.'),
+    level(3, 'Menunjukkan inisiatif pada situasi umum, tetapi lebih sering menunggu permintaan atau arahan nasabah.'),
     level(2, 'Cenderung pasif dan baru bertindak setelah mendapat instruksi/permintaan secara eksplisit.'),
     level(1, 'Tidak menunjukkan inisiatif, pasif, menunggu arahan, atau tidak berupaya membantu menyelesaikan kebutuhan nasabah.'),
   ],
@@ -130,7 +130,7 @@ export const RUBRIK: Record<string, LevelRubrik[]> = {
     level(5, 'Kontak mata natural, postur terbuka, gestur positif, menghadap nasabah, ekspresi mendukung, dan seluruh bahasa tubuh konsisten menunjukkan perhatian penuh kepada nasabah.'),
     level(4, 'Body language sangat baik; terdapat sedikit gestur/postur yang kurang optimal namun tidak mengganggu interaksi.'),
     level(3, 'Body language cukup baik, tetapi sesekali kurang menunjukkan perhatian, misalnya kontak mata kurang konsisten atau gestur masih kaku.'),
-    level(2, 'Sering menunjukkan body language yang kurang mendukung, seperti kontak mata, postur tertutup, terlalu banyak bergerak, atau terlalu kurang fokus.'),
+    level(2, 'Sering menunjukkan body language yang kurang mendukung, seperti kontak mata, postur tertutup, terlalu banyak bergerak, atau terlihat kurang fokus.'),
     level(1, 'Body language menunjukkan ketidakpedulian/ketidaksiapan, seperti menghindari kontak mata, membelakangi nasabah, memainkan benda, atau gestur yang tidak pantas.'),
   ],
 };
