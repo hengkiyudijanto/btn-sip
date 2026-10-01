@@ -438,7 +438,11 @@ function slideRanking(
   // lalu kotak nilai di sebelah kanannya lagi. Sebelumnya nama dan kotak
   // nilai mulai di x yang hampir sama sehingga kotak nilainya menutupi nama.
   const xNama = xFoto + wFoto + 0.18;   // langsung di kanan foto
-  const wNama = 2.05;                   // ruang untuk nama panjang
+  // Kolom nama dikecilkan dari 2,05 jadi 1,62 inci supaya tidak bertumpuk
+  // dengan kotak nilai yang digeser ke kiri (x 4,7222). Nama sudah diringkas
+  // (kata pertama penuh + inisial), jadi 1,62 inci masih longgar: "Irwan A."
+  // sekitar 1,0 inci, "Ahmad B. S." sekitar 1,4 inci.
+  const wNama = 1.62;
   const yAwal = 2.110;
   const jarakStandar = 0.962;
   // kalau lebih dari 4 orang, baris dirapatkan supaya tetap dalam area daftar
@@ -446,7 +450,12 @@ function slideRanking(
   const jarak = baris.length > 4 ? tinggiArea / baris.length : jarakStandar;
 
   // kotak nilai dimulai setelah kolom nama
-  const xKotak = xNama + wNama + 0.12;
+  // xKotak: tepi kiri kotak nilai dibuat SEJAJAR dengan huruf "r" pada kata
+  // "Service" di judul slide (permintaan user). Posisinya diukur dari hasil
+  // render (scripts/cari-huruf-r.py) karena judul ditulis di tengah kotaknya
+  // sehingga tepi kiri kotak judul bukan tempat huruf "S" dimulai.
+  // Lebar kolom tetap supaya skala batang 0..5 tidak berubah.
+  const xKotak = 4.7222;
   const wKotak = 4.35;
   const xKategori = xKotak + wKotak + 0.14;
   const wKategori = 1.30;
