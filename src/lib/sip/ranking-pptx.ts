@@ -64,13 +64,12 @@ const WARNA_UJUNG_NILAI = '7FA0F3';    // cadangan kalau mau balik ke bertangga
 const WARNA_BATAS_NILAI = 'D1D1D1';
 
 /**
- * Latar kotak label "SKALA PENILAIAN".
- * Disamakan dengan warna garis batas kotak nilai (#D1D1D1) sesuai permintaan
- * user. Karena latarnya jadi terang, teksnya diganti biru tua supaya tetap
- * terbaca (putih di atas abu terang tidak terbaca).
+ * Kotak label "SKALA PENILAIAN" — latar biru tua, teks putih.
+ * Warna teks dipisah jadi konstanta supaya mudah disetel tanpa menyentuh
+ * tata letaknya.
  */
-const WARNA_LABEL_LEGENDA = 'D1D1D1';
-const WARNA_TEKS_LABEL_LEGENDA = '142D64';
+const WARNA_LABEL_LEGENDA = '0B1E6B';
+const WARNA_TEKS_LABEL_LEGENDA = 'FFFFFF';
 
 const GRADASI_NILAI: Array<{ warna: string; atur: number; tinggi: number }> = [
   // --- 25% atas: satu warna datar #2C4CCC ---
@@ -225,8 +224,11 @@ function legenda(slide: PptxGenJS.Slide) {
     fill: { color: WARNA_LABEL_LEGENDA },
     line: { color: WARNA_LABEL_LEGENDA, width: 0 }, rectRadius: 0.18,
   });
+  // Teks ditempatkan PERSIS seukuran kotaknya (fokus sama dengan kotak label),
+  // jadi center-nya tepat di tengah kotak. Sebelumnya teks digeser +0,03 dari
+  // posisi kotak sehingga center-nya meleset ke bawah.
   slide.addText('SKALA PENILAIAN', {
-    x: LEG_LABEL.x, y: LEG_LABEL.y + 0.03, w: LEG_LABEL.w, h: 0.280,
+    x: LEG_LABEL.x, y: LEG_LABEL.y, w: LEG_LABEL.w, h: LEG_LABEL.h,
     fontSize: 10, bold: true, color: WARNA_TEKS_LABEL_LEGENDA,
     align: 'center', valign: 'middle', fontFace: FONT,
   });
