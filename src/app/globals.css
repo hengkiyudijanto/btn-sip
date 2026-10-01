@@ -198,6 +198,18 @@ body {
   border-spacing: 0;
   font-size: 0.875rem;
 }
+/*
+ * Tabel dengan lebar kolom tetap.
+ *
+ * Tanpa ini, tiap tabel menghitung lebar kolomnya sendiri dari isinya — jadi
+ * dua tabel dengan kolom sama tapi jumlah baris berbeda akan punya posisi awal
+ * kolom yang berbeda. Dipakai di daftar ranking (beberapa tabel bertumpuk).
+ * Lebar tiap kolom ditetapkan lewat <colgroup>, jadi jangan tambahkan aturan
+ * lebar di th/td — nanti bertabrakan.
+ */
+.tabel-sip.tabel-lebar-tetap {
+  table-layout: fixed;
+}
 .tabel-sip thead th {
   background: var(--abu-50);
   padding: 0.625rem 0.875rem;

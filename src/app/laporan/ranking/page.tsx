@@ -214,10 +214,25 @@ export default async function HalamanRanking({
                     <div className="text-xs text-abu-500">{k.posisi}</div>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="tabel-sip">
+                    {/*
+                      Lebar kolom ditetapkan lewat colgroup, bukan diserahkan
+                      ke peramban. Tanpa ini, setiap tabel menghitung lebarnya
+                      sendiri sesuai isinya — jadi tabel Customer Service
+                      (1 baris) dan Teller Service (2 baris) punya posisi awal
+                      kolom yang berbeda. Sudah dibuktikan di laporan cetak
+                      bahwa cara ini yang paling andal.
+                    */}
+                    <table className="tabel-sip tabel-lebar-tetap">
+                      <colgroup>
+                        <col style={{ width: '12%' }} />
+                        <col style={{ width: '30%' }} />
+                        <col style={{ width: '18%' }} />
+                        <col style={{ width: '18%' }} />
+                        <col style={{ width: '22%' }} />
+                      </colgroup>
                       <thead>
                         <tr>
-                          <th className="text-right w-12">Peringkat</th>
+                          <th className="text-right">Peringkat</th>
                           <th>Petugas</th>
                           <th>NIP</th>
                           <th className="text-right">Nilai akhir</th>
