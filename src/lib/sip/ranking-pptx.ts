@@ -189,13 +189,12 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
  *   titik & teks   x 3,030 / 4,460 / 5,946 / 7,399 / 8,868
  */
 const LEG_PANEL = { x: 2.850, y: 6.750, w: 6.861, h: 0.720 };
-// Label menempel TEPAT di atas panel putih (batas bawah label = tepi atas
-// panel) dan di-CENTER secara mendatar terhadap panel — x-nya dihitung dari
-// titik tengah panel, jadi kalau panelnya digeser/diubah lebarnya labelnya
-// ikut center sendiri.
+// Label menempel di atas panel putih dan di-CENTER mendatar terhadap panel.
+// Posisi tegaknya diturunkan 50% dari tinggi label sendiri, jadi separuh
+// kotak label menempel menutupi tepi atas panel.
 const LEG_LABEL = {
   x: LEG_PANEL.x + LEG_PANEL.w / 2 - 1.000,   // 1,000 = setengah lebar label
-  y: LEG_PANEL.y - 0.270,
+  y: LEG_PANEL.y - 0.270 + 0.270 / 2,          // turun 50% tinggi label
   w: 2.000,
   h: 0.270,
 };
@@ -213,8 +212,8 @@ function legenda(slide: PptxGenJS.Slide) {
     rectRadius: 0.06,
   });
 
-  // label "SKALA PENILAIAN" — kotak BERLATAR BIRU DONKER, diletakkan tepat
-  // di ATAS panel legenda (menempel di tepi atasnya), teks putih.
+  // label "SKALA PENILAIAN" — kotak berlatar biru muda (biru Telegram),
+  // digambar SETELAH panel supaya tetap terlihat di atas panel.
   slide.addShape('roundRect', {
     x: LEG_LABEL.x, y: LEG_LABEL.y, w: LEG_LABEL.w, h: LEG_LABEL.h,
     fill: { color: WARNA_LABEL_LEGENDA },
