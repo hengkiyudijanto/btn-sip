@@ -15,8 +15,18 @@
 
 import sharp from 'sharp';
 
-/** Ukuran kotak foto di slide (inci) — harus sama dengan generator slide. */
-export const KOTAK_FOTO = { w: 1.191, h: 0.962 };
+/**
+ * Ukuran kotak foto di slide (inci).
+ *
+ * HARUS sama dengan yang dipakai generator slide: tinggi = jarak antar baris
+ * (0,962) dikurangi JARAK_ANTAR_FOTO (0,10), lebarnya dari rasio asli kotak
+ * foto di berkas acuan (1,191 / 0,962). Kalau salah satu berubah, ubah
+ * keduanya — kalau tidak, fotonya akan gepeng atau tidak pas.
+ */
+export const KOTAK_FOTO = {
+  w: (0.962 - 0.10) * (1.191 / 0.962),
+  h: 0.962 - 0.10,
+};
 
 /** Radius sudut kotak foto (inci) — sama dengan RADIUS_FOTO di generator. */
 export const RADIUS_FOTO = 0.18;

@@ -27,7 +27,7 @@ import PptxGenJS from 'pptxgenjs';
 import type { DataRanking } from './ranking';
 import { BACKGROUND, LOGO_DANANTARA, LOGO_BTN } from './ranking-gambar';
 import { ringkasNama } from './nama-petugas';
-import { hitungPenempatanFoto, rasioFotoJpeg } from './potong-foto';
+import { perbaikiEfekBayanganPptx } from './bayangan-pptx';
 
 // ---- warna ----
 const BIRU_TUA = '1226AA';
@@ -89,6 +89,44 @@ const TEBAL_BINGKAI_FOTO = 0.05;
  * sudut bolong.
  */
 const RADIUS_FOTO = 0.18;
+
+/**
+ * Jarak antar kotak foto, dalam inci.
+ *
+ * Jarak antar baris adalah 0,962 inci. Sebelumnya tinggi kotak foto juga
+ * 0,962 sehingga kotak dua petugas bersentuhan tepat (tidak ada celah sama
+ * sekali). Kotaknya dikecilkan sedikit supaya ada jarak, tapi tetap di tengah
+ * barisnya.
+ */
+const JARAK_ANTAR_FOTO = 0.10;
+
+/**
+ * Warna alas bayangan kotak foto.
+ *
+ * Bentuk beralas ini diperlukan karena penampil tidak merender bayangan pada
+ * bentuk yang isinya kosong — sedangkan kotak foto kita transparan.
+ *
+ * Warnanya sengaja lebih GELAP dari latar slide (#1226AA): kalau disamakan
+ * dengan latar, bayangannya menyatu dan tidak terlihat. Alas ini hampir
+ * seluruhnya tertutup foto; yang terlihat hanya bayangan yang meluber.
+ */
+const WARNA_ALAS_BAYANGAN = '04123F';
+
+/**
+ * Ukuran kotak foto. Tingginya = jarak antar baris dikurangi jarak pisah,
+ * lebarnya mengikuti supaya proporsinya tetap.
+ */
+const RASIO_FOTO = 1.191 / 0.962;   // rasio asli kotak foto dari referensi
+
+/** Bayangan untuk kotak foto dan pil kriteria. */
+const BAYANGAN = {
+  type: 'outer' as const,
+  color: '000000',
+  opacity: 0.45,
+  blur: 6,
+  offset: 2,
+  angle: 90,          // 90 = ke bawah
+};
 
 /**
  * Skala penilaian 0..5 yang dipetakan ke panjang kotak nilai.
@@ -447,12 +485,23 @@ function slideRanking(
   kop(slide, kelompok.unit, kelompok.posisi);
 
   const baris = kelompok.baris;
-  const xFoto = 1.608;
-  const wFoto = 1.191;
-  const hFoto = 0.962;
   /**
-   * Kotak di dalam bingkai putih — ini yang dipakai foto sebagai area isinya.
-   * Dipakai juga oleh `sizing: cover` sebagai kotak tujuan pemotongan.
+   * Ukuran kotak foto.
+   *
+   * Tingginya = jarak antar baris dikurangi JARAK_ANTAR_FOTO, supaya kotak
+   * dua petugas tidak bersentuhan. Sebelumnya tinggi kotak (0,962) sama
+   * persis dengan jarak antar baris sehingga tidak ada celah sama sekali.
+   * Lebarnya dihitung dari rasio asli supaya bentuknya tidak berubah.
+   */
+  const jarakBaris = 0.962;                       // jarak antar baris (inci)
+  const hFoto = jarakBaris - JARAK_ANTAR_FOTO;
+  const wFoto = hFoto * RASIO_FOTO;
+  /** Supaya kotaknya tetap di tengah barisnya, bukan menempel ke atas. */
+  const geserFoto = JARAK_ANTAR_FOTO / 2;
+  const xFoto = 1.608 + (1.191 - wFoto) / 2;      // tetap di tengah kolom foto
+  /**
+   * Kotak di dalam bingkai putih — area isi foto. Dipakai juga oleh
+   * penyiapan foto (foto-bulat.ts) sebagai ukuran kanvas.
    */
   const kotakIsiFoto = {
     x: xFoto + TEBAL_BINGKAI_FOTO,
@@ -496,11 +545,27 @@ function slideRanking(
   });
 
   baris.forEach((b, i) => {
-    const y = yAwal + i * jarak;
+    // Foto diletakkan di TENGAH barisnya (bukan menempel ke atas), karena
+    // kotaknya sekarang lebih pendek dari jarak antar baris.
+    const y = yAwal + i * jarak + geserFoto;
     kotakIsiFoto.y = y + TEBAL_BINGKAI_FOTO;
 
-    // Bingkai foto: latar transparan, hanya garis putih. Kalau petugas belum
-    // punya foto, kotaknya tetap terlihat dari garis putihnya saja.
+    // Alas bayangan: bentuk berisi warna latar, digambar SEBELUM foto dan
+    // bingkai. Bentuk berisi ini yang membawa bayangan; fotonya menutupinya,
+    // jadi yang terlihat hanya bayangan yang meluber ke luar. Tanpa alas ini
+    // bayangannya tidak muncul, karena bentuk transparan tidak diberi bayangan
+    // oleh penampil.
+    slide.addShape('roundRect', {
+      x: xFoto, y, w: wFoto, h: hFoto,
+      fill: { color: WARNA_ALAS_BAYANGAN },
+      line: { color: WARNA_ALAS_BAYANGAN, width: 0 },
+      rectRadius: RADIUS_FOTO,
+      shadow: BAYANGAN,
+    });
+
+    // Bingkai foto: latar transparan, hanya garis putih, digambar setelah
+    // alas sehingga berada di atasnya. Kalau petugas belum punya foto,
+    // yang terlihat adalah alas berbayangan itu.
     slide.addShape('roundRect', {
       x: xFoto, y, w: wFoto, h: hFoto,
       fill: { type: 'none' } as never,
@@ -582,6 +647,7 @@ function slideRanking(
       x: xPil, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
       fill: { color: WARNA_KATEGORI[kat] ?? WARNA_KATEGORI.Kurang },
       line: { color: PUTIH, width: 1 }, rectRadius: KOTAK_NILAI_TINGGI / 2,
+      shadow: BAYANGAN,
     });
     slide.addText(kat, {
       x: xPil, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
@@ -640,5 +706,9 @@ export async function bangunPptxRanking(
     slideRanking(prs, k, petaFoto);
   }
 
-  return (await prs.write({ outputType: 'nodebuffer' })) as Buffer;
+  const keluaran = (await prs.write({ outputType: 'nodebuffer' })) as Buffer;
+
+  // pptxgenjs mengalikan satuan bayangan pt -> EMU DUA KALI, sehingga
+  // bayangannya tidak terlihat. Nilainya dihitung ulang setelah berkas jadi.
+  return perbaikiEfekBayanganPptx(keluaran);
 }
