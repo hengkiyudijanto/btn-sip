@@ -63,6 +63,9 @@ const WARNA_UJUNG_NILAI = '7FA0F3';    // cadangan kalau mau balik ke bertangga
 /** Garis tepi kotak nilai — nilai persis dari user (#D1D1D1). */
 const WARNA_BATAS_NILAI = 'D1D1D1';
 
+/** Latar kotak label "SKALA PENILAIAN" — biru donker. */
+const WARNA_LABEL_LEGENDA = '0B1E6B';
+
 const GRADASI_NILAI: Array<{ warna: string; atur: number; tinggi: number }> = [
   // --- 25% atas: satu warna datar #2C4CCC ---
   { warna: WARNA_SISI_NILAI, atur: 0.00, tinggi: SISI_PROPORSI },
@@ -186,7 +189,9 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
  *   titik & teks   x 3,030 / 4,460 / 5,946 / 7,399 / 8,868
  */
 const LEG_PANEL = { x: 2.850, y: 6.750, w: 6.861, h: 0.720 };
-const LEG_LABEL = { x: 5.200, y: 6.480, w: 2.000, h: 0.340 };
+// Label menempel TEPAT di atas panel putih (batas bawah label = tepi atas
+// panel), jadi terlihat sebagai judul kotak legenda.
+const LEG_LABEL = { x: 5.200, y: LEG_PANEL.y - 0.270, w: 2.000, h: 0.270 };
 const LEG_X_TITIK = [3.030, 4.460, 5.946, 7.399, 8.868];
 const LEG_Y_TITIK = 6.970;          // titik warna di dalam panel
 const LEG_UKURAN_TITIK = 0.120;
@@ -201,14 +206,15 @@ function legenda(slide: PptxGenJS.Slide) {
     rectRadius: 0.06,
   });
 
-  // label "SKALA PENILAIAN" — kotak transparan bergaris putih, di ATAS panel
+  // label "SKALA PENILAIAN" — kotak BERLATAR BIRU DONKER, diletakkan tepat
+  // di ATAS panel legenda (menempel di tepi atasnya), teks putih.
   slide.addShape('roundRect', {
     x: LEG_LABEL.x, y: LEG_LABEL.y, w: LEG_LABEL.w, h: LEG_LABEL.h,
-    fill: { type: 'none' } as never,
-    line: { color: PUTIH, width: 1 }, rectRadius: 0.18,
+    fill: { color: WARNA_LABEL_LEGENDA },
+    line: { color: WARNA_LABEL_LEGENDA, width: 0 }, rectRadius: 0.18,
   });
   slide.addText('SKALA PENILAIAN', {
-    x: LEG_LABEL.x, y: LEG_LABEL.y + 0.03, w: LEG_LABEL.w, h: 0.250,
+    x: LEG_LABEL.x, y: LEG_LABEL.y + 0.03, w: LEG_LABEL.w, h: 0.280,
     fontSize: 10, bold: true, color: PUTIH, align: 'center',
     valign: 'middle', fontFace: FONT,
   });
