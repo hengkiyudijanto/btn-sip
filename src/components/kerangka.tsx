@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { LogoBTN } from '@/components/logo-btn';
 import { MenuMobile, NavigasiMenu } from '@/components/navigasi-menu';
+import { saringMenu } from '@/components/menu';
 import { keluar } from '@/app/actions/auth';
 import type { PegawaiSesi } from '@/lib/auth';
 
@@ -10,81 +11,6 @@ const LABEL_ROLE: Record<string, string> = {
   MANAGER: 'Manager',
   ADMIN: 'Administrator',
 };
-
-export type ItemMenu = {
-  href: string;
-  label: string;
-  /** role yang boleh melihat menu ini; undefined = semua */
-  role?: string[];
-};
-
-export type ItemMenuPohon = {
-  /** halaman menu itu sendiri; boleh kosong kalau hanya wadah submenu */
-  href?: string;
-  label: string;
-  /** role yang boleh melihat menu ini; undefined = semua */
-  role?: string[];
-  anak?: Array<{ href: string; label: string; role?: string[] }>;
-};
-
-/**
- * Struktur menu. Dua menu digabung jadi submenu atas permintaan user:
- *   - Laporan (isi: Laporan & Rekap, Ranking PPTX)
- *   - Pegawai (isi: Data Pegawai, Usul Pegawai)
- *
- * Cakupan role dihitung dari anak yang terlihat: menu induk hanya muncul
- * kalau setidaknya ada satu anak yang boleh diakses role tersebut. Jadi
- * supervisor tidak melihat menu "Pegawai" (dia hanya boleh mengusulkan,
- * dan submenu itu ada di dalamnya — sengaja tidak dipisah supaya tidak ada
- * dua pintu menuju halaman yang sama).
- */
-const MENU: ItemMenuPohon[] = [
-  { href: '/dasbor', label: 'Dasbor' },
-  { href: '/penilaian', label: 'Penilaian' },
-  { href: '/persetujuan', label: 'Persetujuan', role: ['MANAGER', 'ADMIN'] },
-  {
-    label: 'Laporan',
-    href: '/laporan',
-    anak: [
-      { href: '/laporan', label: 'Laporan & Rekap' },
-      { href: '/laporan/ranking', label: 'Ranking PPTX' },
-    ],
-  },
-  {
-    label: 'Pegawai',
-    anak: [
-      { href: '/pegawai', label: 'Data Pegawai', role: ['ADMIN', 'MANAGER'] },
-      {
-        href: '/pengajuan-pegawai',
-        label: 'Usul Pegawai',
-        role: ['SUPERVISOR', 'MANAGER', 'ADMIN'],
-      },
-    ],
-  },
-  { href: '/cabang', label: 'Cabang', role: ['ADMIN'] },
-  { href: '/periode', label: 'Periode', role: ['ADMIN'] },
-];
-
-/** Saring menu sesuai role, sekaligus membuang anak yang tidak boleh dilihat. */
-function saringMenu(role: string): ItemMenuPohon[] {
-  const hasil: ItemMenuPohon[] = [];
-
-  for (const m of MENU) {
-    if (m.role && !m.role.includes(role)) continue;
-
-    if (m.anak) {
-      const anak = m.anak.filter((a) => !a.role || a.role.includes(role));
-      // menu induk hanya muncul kalau ada anak yang bisa diakses
-      if (anak.length === 0) continue;
-      hasil.push({ ...m, anak });
-      continue;
-    }
-
-    hasil.push(m);
-  }
-
-  return hasil;
-}
 
 export function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; children: React.ReactNode }) {
   const menu = saringMenu(pegawai.role);
