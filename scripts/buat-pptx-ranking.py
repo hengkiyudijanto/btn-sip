@@ -136,8 +136,17 @@ def slide_ranking(data: dict, prs: Presentation):
     gambar_latar(slide)
 
     # ---------- kop ----------
-    tambah_teks(slide, 'Danantara', 0.35, 0.18, 2.0, 0.3, 13, True, PUTIH)
-    tambah_teks(slide, 'Indonesia', 0.35, 0.44, 2.0, 0.3, 13, True, PUTIH)
+    # Logo Danantara berlatar putih, diletakkan di atas kotak putih membulat
+    # supaya menyatu dengan slide biru tua (seperti lampiran).
+    # Logo Danantara rasionya PERSEGI (1:1) — kotak putihnya harus persegi
+    # juga, kalau tidak logonya gepeng.
+    kotak_logo = tambah_bentuk(slide, MSO_SHAPE.ROUNDED_RECTANGLE,
+                               0.30, 0.22, 0.78, 0.78, PUTIH)
+    kotak_logo.adjustments[0] = 0.12
+    logo_path = Path(__file__).resolve().parent.parent / 'public' / 'danantara-logo.png'
+    if logo_path.exists():
+        slide.shapes.add_picture(str(logo_path), Inches(0.34), Inches(0.26),
+                                 Inches(0.70), Inches(0.70))
     tambah_teks(slide, 'btn', LEBAR - 1.5, 0.25, 1.15, 0.55, 34, True, PUTIH,
                 PP_ALIGN.RIGHT)
 
