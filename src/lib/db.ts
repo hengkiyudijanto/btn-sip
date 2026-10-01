@@ -20,8 +20,8 @@ const globalForPrisma = globalThis as unknown as {
   prisma: ReturnType<typeof buatClient> | undefined;
 };
 
-/** Model yang hasil namanya perlu dirapikan. */
-const MODEL_PERLU_RAPI = new Set(['Pegawai', 'Cabang', 'Jabatan']);
+/** Model yang nama-nya memakai aturan khusus cabang (KC/KCP kapital semua). */
+const MODEL_COBA_RAPI = new Set(['Pegawai', 'Cabang', 'Jabatan']);
 
 function buatClient() {
   const connectionString = process.env.DATABASE_URL;
@@ -46,8 +46,21 @@ function buatClient() {
       $allModels: {
         async $allOperations({ model, args, query }) {
           const hasil = await query(args);
-          if (!model || !MODEL_PERLU_RAPI.has(model)) return hasil;
-          return rapikanHasil(hasil, model);
+
+          // JANGAN saring berdasarkan nama model di sini.
+          //
+          // Awalnya kode ini melewati model yang tidak ada di daftar, dan
+          // akibatnya nama pada RELASI bersarang tidak ikut dirapikan:
+          // `prisma.penilaian.findMany({ select: { pegawai: { select: {
+          // nama: true } } } })` mengembalikan "MARINA KADIR" apa adanya,
+          // karena query-nya ke model Penilaian (bukan Pegawai) sehingga
+          // dilewati lebih dulu. Yang salah bukan hanya nilainya, tapi
+          // seluruh hasil query itu jadi tidak pernah ditelusuri.
+          //
+          // Penelusurannya murah (hanya menyentuh objek yang punya `nama`),
+          // jadi dijalankan untuk semua model. Aturan mana yang dipakai
+          // ditentukan dari nama model yang sebenarnya (lihat rapikanHasil).
+          return rapikanHasil(hasil, model ?? '', MODEL_COBA_RAPI);
         },
       },
     },

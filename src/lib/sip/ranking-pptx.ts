@@ -27,6 +27,7 @@ import PptxGenJS from 'pptxgenjs';
 import type { DataRanking } from './ranking';
 import { BACKGROUND, LOGO_DANANTARA, LOGO_BTN } from './ranking-gambar';
 import { ringkasNama } from './nama-petugas';
+import { kapitalkan } from './teks';
 import { perbaikiEfekBayanganPptx } from './bayangan-pptx';
 
 // ---- warna ----
@@ -588,7 +589,12 @@ function slideRanking(
 
     // Nama petugas — di sebelah kanan foto. Ditulis RINGKAS: kata pertama
     // penuh, kata berikutnya hanya huruf depannya ("Irwan Allo" -> "Irwan A.")
-    slide.addText(ringkasNama(b.nama), {
+    //
+    // Kapitalisasi dipastikan di sini juga, bukan hanya mengandalkan lapisan
+    // data: kalau nama masuk dalam keadaan huruf besar semua, ringkasNama
+    // akan menghasilkan inisial yang ikut kapital ("MARINA KADIR" ->
+    // "MARINA K."). Jadi dirapikan dulu, baru diringkas.
+    slide.addText(ringkasNama(kapitalkan(b.nama)), {
       x: xNama, y, w: wNama, h: hFoto,
       fontSize: F_NAMA, bold: true, color: PUTIH, valign: 'middle',
       align: 'left', fontFace: FONT, wrap: false,
