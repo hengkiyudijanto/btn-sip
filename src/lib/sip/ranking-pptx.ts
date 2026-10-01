@@ -593,18 +593,21 @@ function slideRanking(
     // Nama petugas — di sebelah kanan foto.
     //
     // Ditulis SELEBAR YANG MASIH MUAT: kata kedua tetap ditulis penuh kalau
-    // tidak menabrak kotak nilai, baru diringkas jadi inisial kalau perlu.
-    // Lebar yang tersedia dihitung dari posisi kotak nilainya, bukan angka
-    // tetap, supaya tetap benar kalau tata letaknya bergeser.
+    // tidak menabrak apa pun di kanannya, baru diringkas jadi inisial kalau
+    // perlu.
     //
-    // Jarak amannya 0,15 inci (sekitar 1,5 karakter). Sebelumnya 0,08 inci
-    // dan itu terlihat terlalu mepet untuk nama panjang seperti
-    // "Husnia Paraditha".
+    // PENTING: batasnya dihitung dari GARIS PEMISAH TEGAK, bukan dari kotak
+    // nilai. Yang lebih dulu menghalangi nama adalah garis itu (x kira-kira
+    // 4,485), sedangkan kotak nilai baru mulai di 4,7222. Menghitung dari
+    // kotak nilai membuat nama diberi ruang 1,757 inci padahal yang tersedia
+    // hanya sekitar 1,520 — akibatnya ujung nama menempel ke garisnya.
+    //
+    // Jarak amannya 0,15 inci (sekitar 1,5 karakter).
     //
     // Kapitalisasi dipastikan di sini juga, bukan hanya mengandalkan lapisan
     // data: kalau nama masuk dalam keadaan huruf besar semua, inisialnya akan
     // ikut kapital ("MARINA KADIR" -> "MARINA K."). Jadi dirapikan dulu.
-    const lebarNamaTersedia = xKotak - 0.15 - xNama;
+    const lebarNamaTersedia = xGaris - 0.15 - xNama;
     slide.addText(
       namaSelebarMungkin(kapitalkan(b.nama), lebarNamaTersedia), {
       x: xNama, y, w: wNama, h: hFoto,
