@@ -62,8 +62,9 @@ def kategori(nilai: float) -> str:
 
 
 # ukuran slide 16:9 (inci)
+# Ukuran slide mengikuti rasio background asli (1280x740).
 LEBAR = 13.333
-TINGGI = 7.5
+TINGGI = 7.7081
 
 
 def tambah_teks(slide, teks, kiri, atas, lebar, tinggi,
@@ -96,17 +97,17 @@ def tambah_bentuk(slide, bentuk, kiri, atas, lebar, tinggi, isi):
 
 
 def gambar_latar(slide):
-    """Latar biru tua + pita merah melengkung di bawah (seperti lampiran)."""
-    tambah_bentuk(slide, MSO_SHAPE.RECTANGLE, 0, 0, LEBAR, TINGGI, BIRU_TUA)
-    # pita merah: dua kotak miring supaya terlihat seperti pita melengkung
-    pita = slide.shapes.add_shape(
-        MSO_SHAPE.WAVE, Inches(-0.5), Inches(TINGGI - 1.15),
-        Inches(LEBAR + 1), Inches(1.35)
-    )
-    pita.fill.solid()
-    pita.fill.fore_color.rgb = MERAH
-    pita.line.fill.background()
-    pita.shadow.inherit = False
+    """Tempel background asli sebagai satu gambar penuh.
+
+    Gambar ini sudah memuat latar biru, pita merah, logo Danantara, dan logo
+    btn — jadi tidak ada bentuk tambahan yang boleh digambar di sini.
+    """
+    latar_path = Path(__file__).resolve().parent.parent / 'public' / 'background-ranking.jpg'
+    if latar_path.exists():
+        slide.shapes.add_picture(str(latar_path), 0, 0,
+                                 Inches(LEBAR), Inches(TINGGI))
+    else:
+        tambah_bentuk(slide, MSO_SHAPE.RECTANGLE, 0, 0, LEBAR, TINGGI, BIRU_TUA)
 
 
 def tambah_foto_bulat(slide, gambar: str | None, kiri, atas, ukuran):
@@ -136,19 +137,7 @@ def slide_ranking(data: dict, prs: Presentation):
     gambar_latar(slide)
 
     # ---------- kop ----------
-    # Logo Danantara berlatar putih, diletakkan di atas kotak putih membulat
-    # supaya menyatu dengan slide biru tua (seperti lampiran).
-    # Logo Danantara rasionya PERSEGI (1:1) — kotak putihnya harus persegi
-    # juga, kalau tidak logonya gepeng.
-    kotak_logo = tambah_bentuk(slide, MSO_SHAPE.ROUNDED_RECTANGLE,
-                               0.30, 0.22, 0.78, 0.78, PUTIH)
-    kotak_logo.adjustments[0] = 0.12
-    logo_path = Path(__file__).resolve().parent.parent / 'public' / 'danantara-logo.png'
-    if logo_path.exists():
-        slide.shapes.add_picture(str(logo_path), Inches(0.34), Inches(0.26),
-                                 Inches(0.70), Inches(0.70))
-    tambah_teks(slide, 'btn', LEBAR - 1.5, 0.25, 1.15, 0.55, 34, True, PUTIH,
-                PP_ALIGN.RIGHT)
+    # Logo Danantara dan btn sudah ada di dalam gambar background.
 
     # ---------- judul ----------
     tambah_teks(slide, 'Service Drill Ranking', 0, 0.28, LEBAR, 0.75,
@@ -324,10 +313,7 @@ def slide_ringkasan(data: dict, prs: Presentation):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     gambar_latar(slide)
 
-    tambah_teks(slide, 'Danantara', 0.35, 0.18, 2.0, 0.3, 13, True, PUTIH)
-    tambah_teks(slide, 'Indonesia', 0.35, 0.44, 2.0, 0.3, 13, True, PUTIH)
-    tambah_teks(slide, 'btn', LEBAR - 1.5, 0.25, 1.15, 0.55, 34, True, PUTIH,
-                PP_ALIGN.RIGHT)
+    # Logo sudah ada di dalam gambar background — tidak digambar ulang.
 
     tambah_teks(slide, 'Service Drill Ranking', 0, 0.8, LEBAR, 0.8,
                 40, True, PUTIH, PP_ALIGN.CENTER)
