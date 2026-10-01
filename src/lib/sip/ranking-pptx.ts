@@ -50,29 +50,26 @@ const TENGAH_PROPORSI = 0.5;   // bagian tengah yang tetap biru sekarang
 const SISI_PROPORSI = (1 - TENGAH_PROPORSI) / 2;   // 0,25 atas + 0,25 bawah
 
 /**
- * Warna tengah kotak nilai — nilai persis dari user (#0322B8).
- * Warna tangga gradasinya dihitung dari sini supaya peralihannya rata:
- * campuran bertahap antara WARNA_TENGAH_NILAI dan WARNA_UJUNG_NILAI.
+ * Warna kotak nilai — nilai persis dari user.
+ *
+ * Komposisi:
+ *   tepi atas & bawah : #2C4CCC (satu warna datar, tanpa tangga)
+ *   tengah  (50%)     : #0322B8
  */
 const WARNA_TENGAH_NILAI = '0322B8';
-const WARNA_UJUNG_NILAI = '7FA0F3';    // biru muda di tepi atas & bawah
-const NILAI_PEKAT_NILAI = '2C4CCC';    // 1/3 jalan dari tengah ke ujung
-const NILAI_SEDANG_NILAI = '5676DF';   // 2/3 jalan dari tengah ke ujung
+const WARNA_SISI_NILAI = '2C4CCC';
+const WARNA_UJUNG_NILAI = '7FA0F3';    // cadangan kalau mau balik ke bertangga
 
 /** Garis tepi kotak nilai — nilai persis dari user (#D1D1D1). */
 const WARNA_BATAS_NILAI = 'D1D1D1';
 
 const GRADASI_NILAI: Array<{ warna: string; atur: number; tinggi: number }> = [
-  // --- 25% atas: gradasi dari biru lebih muda ke biru sekarang ---
-  { warna: WARNA_UJUNG_NILAI, atur: 0.00, tinggi: SISI_PROPORSI / 3 },
-  { warna: NILAI_SEDANG_NILAI, atur: SISI_PROPORSI / 3, tinggi: SISI_PROPORSI / 3 },
-  { warna: NILAI_PEKAT_NILAI, atur: (SISI_PROPORSI / 3) * 2, tinggi: SISI_PROPORSI / 3 },
+  // --- 25% atas: satu warna datar #2C4CCC ---
+  { warna: WARNA_SISI_NILAI, atur: 0.00, tinggi: SISI_PROPORSI },
   // --- 50% tengah: biru pekat merata ---
   { warna: WARNA_TENGAH_NILAI, atur: SISI_PROPORSI, tinggi: TENGAH_PROPORSI },
-  // --- 25% bawah: gradasi dari biru sekarang ke biru lebih muda ---
-  { warna: NILAI_PEKAT_NILAI, atur: SISI_PROPORSI + TENGAH_PROPORSI, tinggi: SISI_PROPORSI / 3 },
-  { warna: NILAI_SEDANG_NILAI, atur: SISI_PROPORSI + TENGAH_PROPORSI + SISI_PROPORSI / 3, tinggi: SISI_PROPORSI / 3 },
-  { warna: WARNA_UJUNG_NILAI, atur: SISI_PROPORSI + TENGAH_PROPORSI + (SISI_PROPORSI / 3) * 2, tinggi: SISI_PROPORSI / 3 },
+  // --- 25% bawah: satu warna datar #2C4CCC ---
+  { warna: WARNA_SISI_NILAI, atur: SISI_PROPORSI + TENGAH_PROPORSI, tinggi: SISI_PROPORSI },
 ];
 const PUTIH = 'FFFFFF';
 
