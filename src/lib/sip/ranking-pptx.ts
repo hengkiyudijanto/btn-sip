@@ -32,18 +32,35 @@ const BIRU_TUA = '1226AA';
 const BIRU_KOTAK_NAMA = '2E4FD6';
 
 /**
- * Gradasi kotak nilai: biru LEBIH MUDA di bagian atas dan bawah, dan biru
- * seperti warna sekarang di bagian TENGAH.
+ * Gradasi kotak nilai.
+ *
+ * Aturan komposisi (permintaan user):
+ *   - bagian TENGAH = 50% tinggi kotak, tetap biru seperti warna sekarang
+ *   - bagian ATAS   = 25% tinggi kotak, gradasi ke biru lebih muda
+ *   - bagian BAWAH  = 25% tinggi kotak, gradasi ke biru lebih muda
  *
  * pptxgenjs tidak punya gradasi asli (ShapeFillProps hanya 'solid' atau
- * 'none'), jadi gradasi dibuat dari beberapa lapis kotak tipis dengan warna
- * bertingkat. Lapisnya berdekatan sehingga terlihat mulus.
+ * 'none'), jadi gradasi dibuat dari beberapa lapis kotak tipis. Lapisnya
+ * berdekatan sehingga terlihat mulus.
  *
- * Urutan warna: terang -> sedang -> GELAP (tengah) -> sedang -> terang
+ * `atur` = posisi dari tepi atas kotak, `tinggi` = proporsi tinggi kotak
+ * (dalam pecahan 0..1, dikalikan tinggi kotak sebenarnya saat menggambar).
  */
-const GRADASI_NILAI = ['6E93F0', '4E76E4', '2E56D4', '4E76E4', '6E93F0'];
-/** Titik tengah gradasi (indeks lapis yang paling gelap). */
-const GRADASI_TENGAH = Math.floor(GRADASI_NILAI.length / 2);
+const TENGAH_PROPORSI = 0.5;   // bagian tengah yang tetap biru sekarang
+const SISI_PROPORSI = (1 - TENGAH_PROPORSI) / 2;   // 0,25 atas + 0,25 bawah
+
+const GRADASI_NILAI: Array<{ warna: string; atur: number; tinggi: number }> = [
+  // --- 25% atas: gradasi dari biru lebih muda ke biru sekarang ---
+  { warna: '7FA0F3', atur: 0.00, tinggi: SISI_PROPORSI / 3 },
+  { warna: '5A82EA', atur: SISI_PROPORSI / 3, tinggi: SISI_PROPORSI / 3 },
+  { warna: '3D68DF', atur: (SISI_PROPORSI / 3) * 2, tinggi: SISI_PROPORSI / 3 },
+  // --- 50% tengah: biru seperti warna sekarang ---
+  { warna: '2E56D4', atur: SISI_PROPORSI, tinggi: TENGAH_PROPORSI },
+  // --- 25% bawah: gradasi dari biru sekarang ke biru lebih muda ---
+  { warna: '3D68DF', atur: SISI_PROPORSI + TENGAH_PROPORSI, tinggi: SISI_PROPORSI / 3 },
+  { warna: '5A82EA', atur: SISI_PROPORSI + TENGAH_PROPORSI + SISI_PROPORSI / 3, tinggi: SISI_PROPORSI / 3 },
+  { warna: '7FA0F3', atur: SISI_PROPORSI + TENGAH_PROPORSI + (SISI_PROPORSI / 3) * 2, tinggi: SISI_PROPORSI / 3 },
+];
 const PUTIH = 'FFFFFF';
 
 const WARNA_KATEGORI: Record<string, string> = {
@@ -287,17 +304,22 @@ function slideRanking(
     });
 
     // Kotak nilai: gradasi biru LEBIH MUDA di atas & bawah, biru sekarang
-    // di tengah. Dibuat bertingkat karena pptxgenjs tidak punya gradasi asli.
+    // di tengah. Bagian tengah (biru sekarang) mengambil 50% tinggi kotak,
+    // sisanya 50% dibagi rata untuk ke dua sisi (25% atas, 25% bawah).
+    // Dibuat bertingkat karena pptxgenjs tidak punya gradasi asli.
     const kotakAtas = y + hFoto / 2 - 0.20;
     const kotakTinggi = 0.40;
-    const tinggiLapis = kotakTinggi / GRADASI_NILAI.length;
-    GRADASI_NILAI.forEach((warna, lapis) => {
+    for (const lapis of GRADASI_NILAI) {
       slide.addShape('rect', {
-        x: xKotak, y: kotakAtas + lapis * tinggiLapis,
-        w: wKotak, h: tinggiLapis + 0.01,
-        fill: { color: warna }, line: { color: warna, width: 0 },
+        x: xKotak,
+        y: kotakAtas + lapis.atur * kotakTinggi,
+        w: wKotak,
+        // lebihkan sedikit supaya tidak ada garis tipis di antara lapis
+        h: lapis.tinggi * kotakTinggi + 0.01,
+        fill: { color: lapis.warna },
+        line: { color: lapis.warna, width: 0 },
       });
-    });
+    }
     // garis tepi putih di atas gradasi
     slide.addShape('rect', {
       x: xKotak, y: kotakAtas, w: wKotak, h: kotakTinggi,
