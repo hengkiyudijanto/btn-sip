@@ -44,6 +44,19 @@ const WARNA_KATEGORI: Record<string, string> = {
 const LEBAR = 13.3333;
 const TINGGI = 7.5;
 
+/**
+ * Font isi slide.
+ *
+ * Aptos adalah font bawaan Microsoft 365 / Office 2023+. PPTX hanya menyimpan
+ * NAMA font, bukan gambar hurufnya — jadi berkas ini akan memakai Aptos asli
+ * saat dibuka di komputer yang punya font itu.
+ *
+ * Catatan: font ini TIDAK ada di server Linux tempat uji coba, sehingga
+ * pratinjau render memakai font pengganti. Hasil di komputer user tetap
+ * Aptos selama Microsoft Office-nya versi terbaru.
+ */
+const FONT = 'Aptos';
+
 // ---- ukuran huruf (pt) ----
 const F_JUDUL = 40;
 const F_POSISI = 24;
@@ -83,7 +96,7 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
   slide.addText('Service Drill Ranking', {
     x: 3.576, y: 0.344, w: 6.225, h: 0.841,
     fontSize: F_JUDUL, bold: true, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: 'Arial', shrinkText: true,
+    valign: 'middle', fontFace: 'Aptos', shrinkText: true,
   });
 
   slide.addShape('roundRect', {
@@ -94,13 +107,13 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
   slide.addText(unit, {
     x: 5.039, y: 1.259, w: 3.271, h: 0.505,
     fontSize: F_UNIT, bold: true, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: 'Arial', shrinkText: true,
+    valign: 'middle', fontFace: 'Aptos', shrinkText: true,
   });
 
   slide.addText(posisi, {
     x: 5.219, y: 1.839, w: 2.896, h: 0.404,
     fontSize: F_POSISI, color: PUTIH, align: 'center', valign: 'middle',
-    fontFace: 'Arial', shrinkText: true,
+    fontFace: 'Aptos', shrinkText: true,
   });
 }
 
@@ -127,7 +140,7 @@ function legenda(slide: PptxGenJS.Slide) {
   slide.addText('SKALA PENILAIAN', {
     x: x0 + wPanel / 2 - 0.95, y: y0 - 0.19, w: 1.9, h: 0.30,
     fontSize: 10, bold: true, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: 'Arial',
+    valign: 'middle', fontFace: 'Aptos',
   });
 
   const item: Array<[string, string]> = [
@@ -149,12 +162,12 @@ function legenda(slide: PptxGenJS.Slide) {
     slide.addText(rentang, {
       x: x + 0.16, y: y0 + 0.20, w: lebarItem - 0.22, h: 0.24,
       fontSize: F_LEGENDA, bold: true, color: '222222',
-      valign: 'middle', fontFace: 'Arial', shrinkText: true,
+      valign: 'middle', fontFace: 'Aptos', shrinkText: true,
     });
     slide.addText(nama, {
       x: x + 0.16, y: y0 + 0.44, w: lebarItem - 0.22, h: 0.26,
       fontSize: F_LEGENDA, color: '333333',
-      valign: 'middle', fontFace: 'Arial', shrinkText: true,
+      valign: 'middle', fontFace: 'Aptos', shrinkText: true,
     });
   });
 }
@@ -214,7 +227,7 @@ function slideRanking(
     slide.addText(b.nama, {
       x: xNama, y, w: 2.3, h: hFoto,
       fontSize: F_NAMA, bold: true, color: PUTIH, valign: 'middle',
-      fontFace: 'Arial', wrap: false, shrinkText: true,
+      fontFace: 'Aptos', wrap: false, shrinkText: true,
     });
 
     // kotak nilai: latar biru, garis putih
@@ -225,7 +238,7 @@ function slideRanking(
     slide.addText(angkaID(b.nilai), {
       x: xKotak, y: y + hFoto / 2 - 0.20, w: wKotak - 0.10, h: 0.40,
       fontSize: F_NILAI, bold: true, color: PUTIH, align: 'right',
-      valign: 'middle', fontFace: 'Arial',
+      valign: 'middle', fontFace: 'Aptos',
     });
 
     // pil kategori
@@ -238,7 +251,7 @@ function slideRanking(
     slide.addText(kat, {
       x: xKategori, y: y + hFoto / 2 - 0.26, w: wKategori, h: 0.52,
       fontSize: F_KATEGORI, bold: true, color: PUTIH, align: 'center',
-      valign: 'middle', fontFace: 'Arial', shrinkText: true,
+      valign: 'middle', fontFace: 'Aptos', shrinkText: true,
     });
   });
 
@@ -253,7 +266,7 @@ function slideRingkasan(prs: PptxGenJS, data: DataRanking) {
 
   slide.addText(data.periode, {
     x: 3.576, y: 2.38, w: 6.225, h: 0.4,
-    fontSize: 18, color: PUTIH, align: 'center', fontFace: 'Arial',
+    fontSize: 18, color: PUTIH, align: 'center', fontFace: 'Aptos',
   });
 
   const baris: Array<[string, string]> = [
@@ -267,11 +280,11 @@ function slideRingkasan(prs: PptxGenJS, data: DataRanking) {
     const y = 2.95 + i * 0.5;
     slide.addText(label, {
       x: 3.9, y, w: 2.2, h: 0.4,
-      fontSize: 14, color: PUTIH, align: 'right', fontFace: 'Arial',
+      fontSize: 14, color: PUTIH, align: 'right', fontFace: 'Aptos',
     });
     slide.addText(': ' + nilai, {
       x: 6.2, y, w: 4.0, h: 0.4,
-      fontSize: 14, bold: true, color: PUTIH, fontFace: 'Arial',
+      fontSize: 14, bold: true, color: PUTIH, fontFace: 'Aptos',
     });
   });
 
