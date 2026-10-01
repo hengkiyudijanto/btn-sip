@@ -32,36 +32,55 @@ const BIRU_TUA = '1226AA';
 const BIRU_KOTAK_NAMA = '2E4FD6';
 
 /**
- * Gradasi kotak nilai.
+ * Komposisi kotak nilai: pita tipis "biru berpendar" di tepi atas & bawah,
+ * sisanya biru pekat di tengah.
  *
- * Aturan komposisi (permintaan user):
- *   - bagian TENGAH = 50% tinggi kotak, tetap biru seperti warna sekarang
- *   - bagian ATAS   = 25% tinggi kotak, gradasi ke biru lebih muda
- *   - bagian BAWAH  = 25% tinggi kotak, gradasi ke biru lebih muda
+ * Pita pinggir masing-masing 6,5% tinggi kotak (permintaan user). Karena
+ * pinggirnya mengecil dari 25% jadi 6,5%, bagian tengahnya otomatis
+ * membesar jadi 87%.
  *
  * pptxgenjs tidak punya gradasi asli (ShapeFillProps hanya 'solid' atau
- * 'none'), jadi gradasi dibuat dari beberapa lapis kotak tipis. Lapisnya
- * berdekatan sehingga terlihat mulus.
+ * 'none'), jadi "berpendar" dibuat dari beberapa lapis kotak tipis yang
+ * makin terang ke arah tepi. Lapisnya berdekatan sehingga terlihat mulus.
  *
  * `atur` = posisi dari tepi atas kotak, `tinggi` = proporsi tinggi kotak
  * (dalam pecahan 0..1, dikalikan tinggi kotak sebenarnya saat menggambar).
  */
-const TENGAH_PROPORSI = 0.5;   // bagian tengah yang tetap biru sekarang
-const SISI_PROPORSI = (1 - TENGAH_PROPORSI) / 2;   // 0,25 atas + 0,25 bawah
+const PINGGIR_PROPORSI = 0.065;                    // 6,5% per pinggir
+const TENGAH_PROPORSI = 1 - PINGGIR_PROPORSI * 2;  // 87%
+/** Jumlah lapis di tiap pita pinggir (makin banyak makin halus). */
+const LAPIS_PINGGIR = 3;
 
 /**
  * Warna kotak nilai — nilai persis dari user.
  *
  * Komposisi:
- *   tepi atas & bawah : #2C4CCC (satu warna datar, tanpa tangga)
- *   tengah  (50%)     : #0322B8
+ *   tepi atas & bawah : biru berpendar (makin terang ke arah tepi)
+ *   tengah  (87%)     : #0322B8
  */
 const WARNA_TENGAH_NILAI = '0322B8';
-const WARNA_SISI_NILAI = '2C4CCC';
-const WARNA_UJUNG_NILAI = '7FA0F3';    // cadangan kalau mau balik ke bertangga
+/** Warna paling terang di ujung tepi pita pinggir. */
+const WARNA_PENDAR_NILAI = '7FA0F3';
 
 /** Garis tepi kotak nilai — nilai persis dari user (#D1D1D1). */
 const WARNA_BATAS_NILAI = 'D1D1D1';
+
+/**
+ * Mencampur dua warna hex. `t` = 0 menghasilkan warna1, `t` = 1 menghasilkan
+ * warna2. Dipakai untuk menghitung tangga warna pendar secara rata, supaya
+ * tidak ada nilai warna yang dikarang.
+ */
+function campurWarna(warna1: string, warna2: string, t: number): string {
+  const potong = (h: string) => [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+  const a = potong(warna1);
+  const b = potong(warna2);
+  const hasil = a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  return hasil.map((v) => v.toString(16).padStart(2, '0').toUpperCase()).join('');
+}
 
 /**
  * Kotak label "SKALA PENILAIAN" — latar biru tua, teks putih.
@@ -71,14 +90,53 @@ const WARNA_BATAS_NILAI = 'D1D1D1';
 const WARNA_LABEL_LEGENDA = '0B1E6B';
 const WARNA_TEKS_LABEL_LEGENDA = 'FFFFFF';
 
-const GRADASI_NILAI: Array<{ warna: string; atur: number; tinggi: number }> = [
-  // --- 25% atas: satu warna datar #2C4CCC ---
-  { warna: WARNA_SISI_NILAI, atur: 0.00, tinggi: SISI_PROPORSI },
-  // --- 50% tengah: biru pekat merata ---
-  { warna: WARNA_TENGAH_NILAI, atur: SISI_PROPORSI, tinggi: TENGAH_PROPORSI },
-  // --- 25% bawah: satu warna datar #2C4CCC ---
-  { warna: WARNA_SISI_NILAI, atur: SISI_PROPORSI + TENGAH_PROPORSI, tinggi: SISI_PROPORSI },
-];
+/**
+ * Menyusun daftar lapis untuk kotak nilai.
+ *
+ * Struktur: pita "berpendar" di tepi atas & bawah (masing-masing
+ * PINGGIR_PROPORSI), sisanya biru pekat di tengah.
+ *
+ * Warna pita dihitung dengan mencampur warna pekat ke warna pendar, makin
+ * terang ke arah tepi — jadi bukan warna karangan, tapi tangga yang rata.
+ * Dibuat fungsi (bukan konstanta datar) supaya jumlah lapisnya bisa diubah
+ * lewat LAPIS_PINGGIR tanpa menyunting daftar manual.
+ */
+function lapisKotakNilai(): Array<{ warna: string; atur: number; tinggi: number }> {
+  const hasil: Array<{ warna: string; atur: number; tinggi: number }> = [];
+  const tinggiLapisPinggir = PINGGIR_PROPORSI / LAPIS_PINGGIR;
+
+  // --- pita ATAS: dari tepi (paling terang) makin pekat ke arah tengah ---
+  for (let i = 0; i < LAPIS_PINGGIR; i++) {
+    // i=0 ada di tepi paling atas -> campuran paling terang
+    const t = 1 - i / LAPIS_PINGGIR;
+    hasil.push({
+      warna: campurWarna(WARNA_TENGAH_NILAI, WARNA_PENDAR_NILAI, t),
+      atur: i * tinggiLapisPinggir,
+      tinggi: tinggiLapisPinggir,
+    });
+  }
+
+  // --- bagian TENGAH: biru pekat merata ---
+  hasil.push({
+    warna: WARNA_TENGAH_NILAI,
+    atur: PINGGIR_PROPORSI,
+    tinggi: TENGAH_PROPORSI,
+  });
+
+  // --- pita BAWAH: dari pekat ke tepi (paling terang) ---
+  for (let i = 0; i < LAPIS_PINGGIR; i++) {
+    const t = (i + 1) / LAPIS_PINGGIR;
+    hasil.push({
+      warna: campurWarna(WARNA_TENGAH_NILAI, WARNA_PENDAR_NILAI, t),
+      atur: PINGGIR_PROPORSI + TENGAH_PROPORSI + i * tinggiLapisPinggir,
+      tinggi: tinggiLapisPinggir,
+    });
+  }
+
+  return hasil;
+}
+
+const GRADASI_NILAI = lapisKotakNilai();
 const PUTIH = 'FFFFFF';
 
 const WARNA_KATEGORI: Record<string, string> = {
@@ -118,13 +176,19 @@ const FONT = 'Aptos';
 // Kelima baris terakhir adalah hasil pengukuran dari file asli, bukan
 // perkiraan. Kalau file aslinya berubah, jalankan ulang
 // scripts/ekstrak-font-pptx.py lalu sesuaikan angka di bawah.
+// Semua ukuran font sesuai file referensi, KECUALI F_NILAI yang diturunkan
+// 2 pt dari aslinya (permintaan user: hanya font NILAI yang dikecilkan).
+// Kalau perlu balik ke ukuran asli, ubah hanya F_NILAI.
 const F_JUDUL = 44;
 const F_POSISI = 18;
 const F_NAMA = 16;
-const F_NILAI = 20;
+const F_NILAI = 18;          // asli 20 — sengaja 2 pt lebih kecil
 const F_KATEGORI = 12;
 const F_LEGENDA_ANGKA = 10;
 const F_LEGENDA_NAMA = 8.5;
+const F_PERIODE = 18;
+const F_BARIS_LEGENDA = 14;
+const F_LABEL_LEGENDA = 10;
 
 /** Nama unit memakai Poppins (berbeda dari isi slide yang memakai Aptos). */
 const FONT_UNIT = 'Poppins';
@@ -229,7 +293,7 @@ function legenda(slide: PptxGenJS.Slide) {
   // posisi kotak sehingga center-nya meleset ke bawah.
   slide.addText('SKALA PENILAIAN', {
     x: LEG_LABEL.x, y: LEG_LABEL.y, w: LEG_LABEL.w, h: LEG_LABEL.h,
-    fontSize: 10, bold: true, color: WARNA_TEKS_LABEL_LEGENDA,
+    fontSize: F_LABEL_LEGENDA, bold: true, color: WARNA_TEKS_LABEL_LEGENDA,
     align: 'center', valign: 'middle', fontFace: FONT,
   });
 
@@ -339,13 +403,17 @@ function slideRanking(
     // Dibuat bertingkat karena pptxgenjs tidak punya gradasi asli.
     const kotakAtas = y + hFoto / 2 - 0.20;
     const kotakTinggi = 0.40;
+    // Tiap lapis digambar sesuai porsinya. TIDAK ada tambahan tinggi di sini:
+    // dulu tiap lapis ditambah 0,01 inci supaya tidak ada celah, tapi sejak
+    // jumlah lapisnya jadi 7, tambahan itu menumpuk sehingga total kotaknya
+    // melebihi 0,400 inci (122%). Celah tipis tidak terjadi karena lapisnya
+    // bersinggungan tepat dan garis tepinya tidak berisi.
     for (const lapis of GRADASI_NILAI) {
       slide.addShape('rect', {
         x: xKotak,
         y: kotakAtas + lapis.atur * kotakTinggi,
         w: wKotak,
-        // lebihkan sedikit supaya tidak ada garis tipis di antara lapis
-        h: lapis.tinggi * kotakTinggi + 0.01,
+        h: lapis.tinggi * kotakTinggi,
         fill: { color: lapis.warna },
         line: { color: lapis.warna, width: 0 },
       });
@@ -387,7 +455,7 @@ function slideRingkasan(prs: PptxGenJS, data: DataRanking) {
 
   slide.addText(data.periode, {
     x: 3.576, y: 2.38, w: 6.225, h: 0.4,
-    fontSize: 18, color: PUTIH, align: 'center', fontFace: FONT,
+    fontSize: F_PERIODE, color: PUTIH, align: 'center', fontFace: FONT,
   });
 
   const baris: Array<[string, string]> = [
@@ -401,11 +469,11 @@ function slideRingkasan(prs: PptxGenJS, data: DataRanking) {
     const y = 2.95 + i * 0.5;
     slide.addText(label, {
       x: 3.9, y, w: 2.2, h: 0.4,
-      fontSize: 14, color: PUTIH, align: 'right', fontFace: FONT,
+      fontSize: F_BARIS_LEGENDA, color: PUTIH, align: 'right', fontFace: FONT,
     });
     slide.addText(': ' + nilai, {
       x: 6.2, y, w: 4.0, h: 0.4,
-      fontSize: 14, bold: true, color: PUTIH, fontFace: FONT,
+      fontSize: F_BARIS_LEGENDA, bold: true, color: PUTIH, fontFace: FONT,
     });
   });
 
