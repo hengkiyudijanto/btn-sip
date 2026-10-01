@@ -32,14 +32,18 @@ const BIRU_TUA = '1226AA';
 const BIRU_KOTAK_NAMA = '2E4FD6';
 
 /**
- * Gradasi kotak nilai: biru muda (atas) -> biru tua (bawah).
+ * Gradasi kotak nilai: biru LEBIH MUDA di bagian atas dan bawah, dan biru
+ * seperti warna sekarang di bagian TENGAH.
  *
- * pptxgenjs TIDAK mendukung gradasi (ShapeFillProps hanya 'solid' atau
+ * pptxgenjs tidak punya gradasi asli (ShapeFillProps hanya 'solid' atau
  * 'none'), jadi gradasi dibuat dari beberapa lapis kotak tipis dengan warna
- * bertingkat. Hasilnya terlihat sebagai gradasi mulus karena lapisnya
- * berdekatan.
+ * bertingkat. Lapisnya berdekatan sehingga terlihat mulus.
+ *
+ * Urutan warna: terang -> sedang -> GELAP (tengah) -> sedang -> terang
  */
-const GRADASI_NILAI = ['4E7BE8', '3D68DF', '2E56D4', '2348C4', '1B3AAE'];
+const GRADASI_NILAI = ['6E93F0', '4E76E4', '2E56D4', '4E76E4', '6E93F0'];
+/** Titik tengah gradasi (indeks lapis yang paling gelap). */
+const GRADASI_TENGAH = Math.floor(GRADASI_NILAI.length / 2);
 const PUTIH = 'FFFFFF';
 
 const WARNA_KATEGORI: Record<string, string> = {
@@ -282,8 +286,8 @@ function slideRanking(
       align: 'left', fontFace: FONT, wrap: false, shrinkText: true,
     });
 
-    // Kotak nilai: gradasi biru muda (atas) -> biru tua (bawah).
-    // Dibuat bertingkat karena pptxgenjs tidak punya gradasi asli.
+    // Kotak nilai: gradasi biru LEBIH MUDA di atas & bawah, biru sekarang
+    // di tengah. Dibuat bertingkat karena pptxgenjs tidak punya gradasi asli.
     const kotakAtas = y + hFoto / 2 - 0.20;
     const kotakTinggi = 0.40;
     const tinggiLapis = kotakTinggi / GRADASI_NILAI.length;
