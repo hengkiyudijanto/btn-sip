@@ -122,23 +122,28 @@ async function main() {
   cek(!t2.includes('Dasar penilaian'), 'TIDAK memuat label "Dasar penilaian"');
   cek(t2.includes(CATATAN_ATASAN), 'catatan atasan TETAP ditampilkan');
   cek(t2.includes(CATATAN_UMUM), 'catatan umum penilai TETAP ditampilkan');
-  cek(t2.includes('Versi ringkas'), 'ada penanda "Versi ringkas" di lembar');
 
-  // ===== 2b. kop versi lite tanpa tulisan di bawah logo =====
-  console.log('\n--- 2b. kop versi lite ---');
+  // ===== 2b. tidak ada penanda versi di lembar cetak =====
+  console.log('\n--- 2b. penanda versi ---');
+  cek(!t2.includes('Versi ringkas'), 'versi lite tidak memuat penanda "Versi ringkas"');
   cek(
-    !t2.includes('PT Bank Tabungan Negara'),
-    'versi lite TIDAK memuat tulisan "PT Bank Tabungan Negara" di bawah logo'
+    !t1.includes('Versi ringkas') && !t2.includes('Versi ringkas'),
+    'tidak ada penanda "Versi ringkas" di kedua versi'
+  );
+
+  // ===== 2c. tulisan di bawah logo tetap ada di KEDUA versi =====
+  console.log('\n--- 2c. tulisan di bawah logo ---');
+  cek(
+    t1.includes('PT Bank Tabungan Negara') && t2.includes('PT Bank Tabungan Negara'),
+    'tulisan "PT Bank Tabungan Negara" ada di kedua versi'
   );
   cek(
-    t1.includes('PT Bank Tabungan Negara'),
-    'versi lengkap TETAP memuat tulisan itu'
+    t1.includes('Cabang') && t2.includes('Cabang'),
+    'nama cabang tetap tercetak di kedua versi'
   );
-  cek(t2.includes('SISTEM INFORMASI PENILAIAN'), 'judul kop tetap ada di versi lite');
-  cek(t2.includes('PETUGAS FRONTLINER'), 'subjudul kop tetap ada di versi lite');
 
-  // ===== 2c. NIP atasan di blok tanda tangan =====
-  console.log('\n--- 2c. blok tanda tangan atasan ---');
+  // ===== 2d. NIP atasan di blok tanda tangan =====
+  console.log('\n--- 2d. blok tanda tangan atasan ---');
   cek(
     t1.includes(`NIP ${NIP_S}`) && t2.includes(`NIP ${NIP_S}`),
     `NIP atasan (${NIP_S}) tercetak di kedua versi`
