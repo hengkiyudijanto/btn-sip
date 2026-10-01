@@ -63,8 +63,8 @@ const WARNA_UJUNG_NILAI = '7FA0F3';    // cadangan kalau mau balik ke bertangga
 /** Garis tepi kotak nilai — nilai persis dari user (#D1D1D1). */
 const WARNA_BATAS_NILAI = 'D1D1D1';
 
-/** Latar kotak label "SKALA PENILAIAN" — biru donker. */
-const WARNA_LABEL_LEGENDA = '0B1E6B';
+/** Latar kotak label "SKALA PENILAIAN" — biru agak muda (biru Telegram). */
+const WARNA_LABEL_LEGENDA = '2AABEE';
 
 const GRADASI_NILAI: Array<{ warna: string; atur: number; tinggi: number }> = [
   // --- 25% atas: satu warna datar #2C4CCC ---
@@ -190,8 +190,15 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
  */
 const LEG_PANEL = { x: 2.850, y: 6.750, w: 6.861, h: 0.720 };
 // Label menempel TEPAT di atas panel putih (batas bawah label = tepi atas
-// panel), jadi terlihat sebagai judul kotak legenda.
-const LEG_LABEL = { x: 5.200, y: LEG_PANEL.y - 0.270, w: 2.000, h: 0.270 };
+// panel) dan di-CENTER secara mendatar terhadap panel — x-nya dihitung dari
+// titik tengah panel, jadi kalau panelnya digeser/diubah lebarnya labelnya
+// ikut center sendiri.
+const LEG_LABEL = {
+  x: LEG_PANEL.x + LEG_PANEL.w / 2 - 1.000,   // 1,000 = setengah lebar label
+  y: LEG_PANEL.y - 0.270,
+  w: 2.000,
+  h: 0.270,
+};
 const LEG_X_TITIK = [3.030, 4.460, 5.946, 7.399, 8.868];
 const LEG_Y_TITIK = 6.970;          // titik warna di dalam panel
 const LEG_UKURAN_TITIK = 0.120;
