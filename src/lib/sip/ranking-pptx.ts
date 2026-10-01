@@ -30,6 +30,16 @@ import { BACKGROUND, LOGO_DANANTARA, LOGO_BTN } from './ranking-gambar';
 // ---- warna ----
 const BIRU_TUA = '1226AA';
 const BIRU_KOTAK_NAMA = '2E4FD6';
+
+/**
+ * Gradasi kotak nilai: biru muda (atas) -> biru tua (bawah).
+ *
+ * pptxgenjs TIDAK mendukung gradasi (ShapeFillProps hanya 'solid' atau
+ * 'none'), jadi gradasi dibuat dari beberapa lapis kotak tipis dengan warna
+ * bertingkat. Hasilnya terlihat sebagai gradasi mulus karena lapisnya
+ * berdekatan.
+ */
+const GRADASI_NILAI = ['4E7BE8', '3D68DF', '2E56D4', '2348C4', '1B3AAE'];
 const PUTIH = 'FFFFFF';
 
 const WARNA_KATEGORI: Record<string, string> = {
@@ -134,28 +144,40 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
   });
 }
 
-/** Legenda SKALA PENILAIAN (posisi dari file asli). */
-function legenda(slide: PptxGenJS.Slide) {
-  const x0 = 3.098;
-  const y0 = 6.477;
-  const wPanel = 6.861;
-  const hPanel = 0.99;
+/**
+ * Legenda SKALA PENILAIAN — SEMUA UKURAN DIAMBIL DARI FILE REFERENSI
+ * (ppt/slides/slide2.xml, Group 5). Jalankan scripts/ekstrak-tata-letak.py
+ * kalau perlu memeriksa ulang angkanya.
+ *
+ *   panel putih    x 2,850  y 6,130  6,861 x 0,720
+ *   label          x 5,200  y 5,860  2,000 x 0,340
+ *   titik & teks   x 3,030 / 4,460 / 5,946 / 7,399 / 8,868
+ */
+const LEG_X = 3.098;
+const LEG_PANEL = { x: 2.850, y: 6.130, w: 6.861, h: 0.720 };
+const LEG_LABEL = { x: 5.200, y: 5.860, w: 2.000, h: 0.340 };
+const LEG_X_TITIK = [3.030, 4.460, 5.946, 7.399, 8.868];
+const LEG_Y_TITIK = 6.350;
+const LEG_UKURAN_TITIK = 0.120;
+const LEG_Y_RENTANG = 6.288;
+const LEG_Y_NAMA = 6.490;
 
-  // URUTAN PENTING: panel putih digambar LEBIH DULU, label biru
-  // "SKALA PENILAIAN" digambar SETELAHNYA supaya tidak tertutup panel.
+function legenda(slide: PptxGenJS.Slide) {
+  // panel putih legenda (tinggi 0,720 inci, sesuai file referensi)
   slide.addShape('roundRect', {
-    x: x0, y: y0, w: wPanel, h: hPanel,
+    x: LEG_PANEL.x, y: LEG_PANEL.y, w: LEG_PANEL.w, h: LEG_PANEL.h,
     fill: { color: PUTIH }, line: { color: PUTIH, width: 0 },
     rectRadius: 0.06,
   });
 
+  // label "SKALA PENILAIAN" — kotak transparan bergaris putih, di ATAS panel
   slide.addShape('roundRect', {
-    x: x0 + wPanel / 2 - 0.95, y: y0 - 0.19, w: 1.9, h: 0.30,
-    fill: { color: BIRU_KOTAK_NAMA },
-    line: { color: BIRU_KOTAK_NAMA, width: 0 }, rectRadius: 0.10,
+    x: LEG_LABEL.x, y: LEG_LABEL.y, w: LEG_LABEL.w, h: LEG_LABEL.h,
+    fill: { type: 'none' } as never,
+    line: { color: PUTIH, width: 1 }, rectRadius: 0.18,
   });
   slide.addText('SKALA PENILAIAN', {
-    x: x0 + wPanel / 2 - 0.95, y: y0 - 0.19, w: 1.9, h: 0.30,
+    x: LEG_LABEL.x, y: LEG_LABEL.y + 0.03, w: LEG_LABEL.w, h: 0.250,
     fontSize: 10, bold: true, color: PUTIH, align: 'center',
     valign: 'middle', fontFace: FONT,
   });
@@ -168,21 +190,26 @@ function legenda(slide: PptxGenJS.Slide) {
     ['<3,59', 'Kurang'],
   ];
 
-  const lebarItem = wPanel / item.length;
   item.forEach(([rentang, nama], i) => {
-    const x = x0 + i * lebarItem + 0.10;
+    const x = LEG_X_TITIK[i] ?? LEG_X_TITIK[0] + i * 1.43;
+
+    // titik warna
     slide.addShape('ellipse', {
-      x, y: y0 + 0.30, w: 0.13, h: 0.13,
+      x, y: LEG_Y_TITIK, w: LEG_UKURAN_TITIK, h: LEG_UKURAN_TITIK,
       fill: { color: WARNA_KATEGORI[nama] },
       line: { color: WARNA_KATEGORI[nama], width: 0 },
     });
+
+    // rentang angka
     slide.addText(rentang, {
-      x: x + 0.16, y: y0 + 0.20, w: lebarItem - 0.22, h: 0.24,
+      x: x + 0.163, y: LEG_Y_RENTANG, w: 0.85, h: 0.269,
       fontSize: F_LEGENDA_ANGKA, bold: true, color: '142D64',
       valign: 'middle', fontFace: FONT, shrinkText: true,
     });
+
+    // nama kategori
     slide.addText(nama, {
-      x: x + 0.16, y: y0 + 0.44, w: lebarItem - 0.22, h: 0.26,
+      x: x + 0.170, y: LEG_Y_NAMA, w: 1.05, h: 0.180,
       fontSize: F_LEGENDA_NAMA, color: '142D64',
       valign: 'middle', fontFace: FONT, shrinkText: true,
     });
@@ -200,21 +227,27 @@ function slideRanking(
   kop(slide, kelompok.unit, kelompok.posisi);
 
   const baris = kelompok.baris;
-  const xGaris = 4.09;
   const xFoto = 1.608;
   const wFoto = 1.191;
   const hFoto = 0.962;
-  const xNama = 4.10;
+  // Nama petugas ditulis LANGSUNG di sebelah kanan foto (permintaan user),
+  // lalu kotak nilai di sebelah kanannya lagi. Sebelumnya nama dan kotak
+  // nilai mulai di x yang hampir sama sehingga kotak nilainya menutupi nama.
+  const xNama = xFoto + wFoto + 0.18;   // langsung di kanan foto
+  const wNama = 2.05;                   // ruang untuk nama panjang
   const yAwal = 2.110;
   const jarakStandar = 0.962;
   // kalau lebih dari 4 orang, baris dirapatkan supaya tetap dalam area daftar
   const tinggiArea = 4.604;
   const jarak = baris.length > 4 ? tinggiArea / baris.length : jarakStandar;
 
-  const xKotak = 4.09;
-  const wKotak = 5.06;
-  const xKategori = 9.78;
-  const wKategori = 1.32;
+  // kotak nilai dimulai setelah kolom nama
+  const xKotak = xNama + wNama + 0.12;
+  const wKotak = 4.35;
+  const xKategori = xKotak + wKotak + 0.14;
+  const wKategori = 1.30;
+  // garis tegak pemisah, tepat di antara kolom nama dan kotak nilai
+  const xGaris = xNama + wNama + 0.05;
 
   // garis tegak pemisah
   const tinggiGaris = baris.length <= 1 ? 0.6 : (baris.length - 1) * jarak + 0.55;
@@ -227,9 +260,11 @@ function slideRanking(
     const y = yAwal + i * jarak;
 
     // foto: bingkai + gambar (foto penilaian periode ini)
+    // Bingkai foto: latar transparan (kalau foto belum ada, kotaknya tetap
+    // terlihat dari garis putihnya saja)
     slide.addShape('roundRect', {
       x: xFoto, y, w: wFoto, h: hFoto,
-      fill: { color: BIRU_KOTAK_NAMA }, line: { color: PUTIH, width: 1.25 },
+      fill: { type: 'none' } as never, line: { color: PUTIH, width: 1.25 },
       rectRadius: 0.18,
     });
     const foto = petaFoto.get(b.nip);
@@ -240,17 +275,29 @@ function slideRanking(
       });
     }
 
-    // nama
+    // nama petugas — di sebelah kanan foto
     slide.addText(b.nama, {
-      x: xNama, y, w: 2.3, h: hFoto,
+      x: xNama, y, w: wNama, h: hFoto,
       fontSize: F_NAMA, bold: true, color: PUTIH, valign: 'middle',
-      fontFace: FONT, wrap: false, shrinkText: true,
+      align: 'left', fontFace: FONT, wrap: false, shrinkText: true,
     });
 
-    // kotak nilai: latar biru, garis putih
+    // Kotak nilai: gradasi biru muda (atas) -> biru tua (bawah).
+    // Dibuat bertingkat karena pptxgenjs tidak punya gradasi asli.
+    const kotakAtas = y + hFoto / 2 - 0.20;
+    const kotakTinggi = 0.40;
+    const tinggiLapis = kotakTinggi / GRADASI_NILAI.length;
+    GRADASI_NILAI.forEach((warna, lapis) => {
+      slide.addShape('rect', {
+        x: xKotak, y: kotakAtas + lapis * tinggiLapis,
+        w: wKotak, h: tinggiLapis + 0.01,
+        fill: { color: warna }, line: { color: warna, width: 0 },
+      });
+    });
+    // garis tepi putih di atas gradasi
     slide.addShape('rect', {
-      x: xKotak, y: y + hFoto / 2 - 0.20, w: wKotak, h: 0.40,
-      fill: { color: BIRU_TUA }, line: { color: PUTIH, width: 1 },
+      x: xKotak, y: kotakAtas, w: wKotak, h: kotakTinggi,
+      fill: { type: 'none' } as never, line: { color: PUTIH, width: 1 },
     });
     slide.addText(angkaID(b.nilai), {
       x: xKotak, y: y + hFoto / 2 - 0.20, w: wKotak - 0.10, h: 0.40,
