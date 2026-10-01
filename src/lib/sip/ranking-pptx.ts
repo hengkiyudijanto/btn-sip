@@ -131,9 +131,10 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
     fill: { type: 'none' } as never,
     line: { color: PUTIH, width: 1.25 }, rectRadius: 0.10,
   });
+  // Nama cabang TIDAK bold (permintaan user) — cukup reguler
   slide.addText(unit, {
     x: 5.039, y: 1.259, w: 3.271, h: 0.505,
-    fontSize: F_UNIT, bold: true, color: PUTIH, align: 'center',
+    fontSize: F_UNIT, bold: false, color: PUTIH, align: 'center',
     valign: 'middle', fontFace: FONT_UNIT, shrinkText: true,
   });
 
@@ -153,14 +154,13 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
  *   label          x 5,200  y 5,860  2,000 x 0,340
  *   titik & teks   x 3,030 / 4,460 / 5,946 / 7,399 / 8,868
  */
-const LEG_X = 3.098;
-const LEG_PANEL = { x: 2.850, y: 6.130, w: 6.861, h: 0.720 };
-const LEG_LABEL = { x: 5.200, y: 5.860, w: 2.000, h: 0.340 };
+const LEG_PANEL = { x: 2.850, y: 6.750, w: 6.861, h: 0.720 };
+const LEG_LABEL = { x: 5.200, y: 6.480, w: 2.000, h: 0.340 };
 const LEG_X_TITIK = [3.030, 4.460, 5.946, 7.399, 8.868];
-const LEG_Y_TITIK = 6.350;
+const LEG_Y_TITIK = 6.970;          // titik warna di dalam panel
 const LEG_UKURAN_TITIK = 0.120;
-const LEG_Y_RENTANG = 6.288;
-const LEG_Y_NAMA = 6.490;
+const LEG_Y_RENTANG = 6.908;        // baris rentang angka
+const LEG_Y_NAMA = 7.110;           // baris nama kategori
 
 function legenda(slide: PptxGenJS.Slide) {
   // panel putih legenda (tinggi 0,720 inci, sesuai file referensi)
