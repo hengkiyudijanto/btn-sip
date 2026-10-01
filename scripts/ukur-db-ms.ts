@@ -70,8 +70,8 @@ async function main() {
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
     log: [{ emit: 'event', level: 'query' }],
   });
-  // @ts-expect-error event kueri Prisma
-  terhitung.$on('query', () => { n++; });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (terhitung as any).$on('query', () => { n++; });
   await terhitung.penilaian.findMany({
     take: 20,
     include: { pegawai: { include: { cabang: true, jabatan: true } }, periode: true },
