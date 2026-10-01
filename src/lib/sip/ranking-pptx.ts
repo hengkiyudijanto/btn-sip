@@ -513,11 +513,14 @@ function slideRanking(
   // Nama petugas ditulis LANGSUNG di sebelah kanan foto (permintaan user),
   // lalu kotak nilai di sebelah kanannya lagi. Sebelumnya nama dan kotak
   // nilai mulai di x yang hampir sama sehingga kotak nilainya menutupi nama.
-  const xNama = xFoto + wFoto + 0.18;   // langsung di kanan foto
-  // Kolom nama dikecilkan dari 2,05 jadi 1,62 inci supaya tidak bertumpuk
-  // dengan kotak nilai yang digeser ke kiri (x 4,7222). Nama sudah diringkas
-  // (kata pertama penuh + inisial), jadi 1,62 inci masih longgar: "Irwan A."
-  // sekitar 1,0 inci, "Ahmad B. S." sekitar 1,4 inci.
+  // Nama digeser satu karakter ke kiri dari posisi aslinya supaya ada jarak
+  // ke kotak nilai. Dengan nama terpanjang ("Husnia Paraditha", 1,540 inci),
+  // sisa ruangnya jadi 3 karakter, bukan 2 — sebelumnya terlihat terlalu
+  // mepet. Jeda dari tepi kanan foto masih 0,140 inci, jadi tidak menempel
+  // ke fotonya.
+  const xNama = xFoto + wFoto + 0.078;
+  // Lebar kolom nama; dipakai untuk batas perhitungan nama. Batas yang
+  // sebenarnya dipakai saat menulis nama dihitung dari xKotak (lihat bawah).
   const wNama = 1.62;
   const yAwal = 2.110;
   const jarakStandar = 0.962;
@@ -594,10 +597,14 @@ function slideRanking(
     // Lebar yang tersedia dihitung dari posisi kotak nilainya, bukan angka
     // tetap, supaya tetap benar kalau tata letaknya bergeser.
     //
+    // Jarak amannya 0,15 inci (sekitar 1,5 karakter). Sebelumnya 0,08 inci
+    // dan itu terlihat terlalu mepet untuk nama panjang seperti
+    // "Husnia Paraditha".
+    //
     // Kapitalisasi dipastikan di sini juga, bukan hanya mengandalkan lapisan
     // data: kalau nama masuk dalam keadaan huruf besar semua, inisialnya akan
     // ikut kapital ("MARINA KADIR" -> "MARINA K."). Jadi dirapikan dulu.
-    const lebarNamaTersedia = xKotak - 0.08 - xNama;
+    const lebarNamaTersedia = xKotak - 0.15 - xNama;
     slide.addText(
       namaSelebarMungkin(kapitalkan(b.nama), lebarNamaTersedia), {
       x: xNama, y, w: wNama, h: hFoto,
