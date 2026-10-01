@@ -27,6 +27,8 @@ import PptxGenJS from 'pptxgenjs';
 import type { DataRanking } from './ranking';
 import { BACKGROUND, LOGO_DANANTARA, LOGO_BTN } from './ranking-gambar';
 import { ringkasNama } from './nama-petugas';
+import { potongGambarPerSlide, type Potongan } from './potong-gambar-pptx';
+import { hitungPenempatanFoto, rasioFotoJpeg } from './potong-foto';
 
 // ---- warna ----
 const BIRU_TUA = '1226AA';
@@ -73,6 +75,12 @@ const WARNA_BATAS_NILAI = 'D1D1D1';
  * ditulis terpisah (0,40 vs 0,52) dan jadi tidak sama.
  */
 const KOTAK_NILAI_TINGGI = 0.40;
+
+/**
+ * Tebal bingkai putih di dalam kotak foto (inci). Foto ditempatkan di dalam
+ * bingkai ini supaya tidak menutupi garis putihnya.
+ */
+const TEBAL_BINGKAI_FOTO = 0.05;
 
 /**
  * Skala penilaian 0..5 yang dipetakan ke panjang kotak nilai.
@@ -424,7 +432,11 @@ function legenda(slide: PptxGenJS.Slide) {
 function slideRanking(
   prs: PptxGenJS,
   kelompok: DataRanking['kelompok'][number],
-  petaFoto: Map<string, string>
+  petaFoto: Map<string, string>,
+  /** Diisi fungsi ini: nomor slide -> potongan foto yang dipakai. */
+  potongan: Map<number, Potongan>,
+  /** Nomor slide ini di dalam berkas PPTX (slide 1 = ringkasan). */
+  nomorSlide: number
 ) {
   const slide = prs.addSlide();
   latar(slide);
@@ -434,6 +446,16 @@ function slideRanking(
   const xFoto = 1.608;
   const wFoto = 1.191;
   const hFoto = 0.962;
+  /**
+   * Kotak di dalam bingkai putih — ini yang dipakai foto sebagai area isinya.
+   * Dipakai juga oleh `sizing: cover` sebagai kotak tujuan pemotongan.
+   */
+  const kotakIsiFoto = {
+    x: xFoto + TEBAL_BINGKAI_FOTO,
+    y: 0,                                   // diisi per baris di bawah
+    w: wFoto - TEBAL_BINGKAI_FOTO * 2,
+    h: hFoto - TEBAL_BINGKAI_FOTO * 2,
+  };
   // Nama petugas ditulis LANGSUNG di sebelah kanan foto (permintaan user),
   // lalu kotak nilai di sebelah kanannya lagi. Sebelumnya nama dan kotak
   // nilai mulai di x yang hampir sama sehingga kotak nilainya menutupi nama.
@@ -471,6 +493,7 @@ function slideRanking(
 
   baris.forEach((b, i) => {
     const y = yAwal + i * jarak;
+    kotakIsiFoto.y = y + TEBAL_BINGKAI_FOTO;
 
     // foto: bingkai + gambar (foto penilaian periode ini)
     // Bingkai foto: latar transparan (kalau foto belum ada, kotaknya tetap
@@ -482,10 +505,30 @@ function slideRanking(
     });
     const foto = petaFoto.get(b.nip);
     if (foto) {
+      // Foto selalu mengisi penuh kotaknya tanpa gepeng.
+      //
+      // Gambar ditaruh MEMENUHI kotak (w,h = kotak), lalu kelebihan sisi
+      // dipotong lewat srcRect yang disisipkan setelah PPTX jadi — lihat
+      // potong-gambar-pptx.ts. pptxgenjs sendiri tidak bisa menulis srcRect;
+      // opsi `sizing: cover` miliknya hanya merentangkan gambar (gepeng).
       slide.addImage({
         data: `data:image/jpeg;base64,${foto}`,
-        x: xFoto + 0.05, y: y + 0.05, w: wFoto - 0.10, h: hFoto - 0.10,
+        x: kotakIsiFoto.x, y: kotakIsiFoto.y,
+        w: kotakIsiFoto.w, h: kotakIsiFoto.h,
       });
+
+      // Hitung berapa bagian yang harus dipotong supaya proporsi foto asli
+      // dipertahankan (sama seperti object-fit: cover).
+      const rasio = rasioFotoJpeg(foto);
+      if (rasio) {
+        const tempat = hitungPenempatanFoto(kotakIsiFoto, rasio);
+        potongan.set(nomorSlide, {
+          kiri: tempat.potongKiri,
+          kanan: tempat.potongKanan,
+          atas: tempat.potongAtas,
+          bawah: tempat.potongBawah,
+        });
+      }
     }
 
     // Nama petugas — di sebelah kanan foto. Ditulis RINGKAS: kata pertama
@@ -602,11 +645,20 @@ export async function bangunPptxRanking(
   prs.defineLayout({ name: 'LAYAR', width: LEBAR, height: TINGGI });
   prs.layout = 'LAYAR';
 
+  // Nomor slide -> potongan foto. Diisi saat menggambar tiap slide, lalu
+  // diterapkan ke XML setelah berkasnya jadi.
+  const potongan = new Map<number, Potongan>();
+
   slideRingkasan(prs, data);
-  for (const k of data.kelompok) {
-    slideRanking(prs, k, petaFoto);
+  for (let i = 0; i < data.kelompok.length; i++) {
+    // Slide 1 = ringkasan, jadi slide ranking pertama bernomor 2.
+    slideRanking(prs, data.kelompok[i], petaFoto, potongan, i + 2);
   }
 
-  const keluaran = await prs.write({ outputType: 'nodebuffer' });
-  return keluaran as Buffer;
+  const keluaran = (await prs.write({ outputType: 'nodebuffer' })) as Buffer;
+
+  // pptxgenjs tidak bisa menulis srcRect (atribut potongan gambar), jadi
+  // disisipkan setelahnya. Tanpa ini foto akan gepeng karena direntangkan.
+  if (potongan.size === 0) return keluaran;
+  return potongGambarPerSlide(keluaran, potongan);
 }
