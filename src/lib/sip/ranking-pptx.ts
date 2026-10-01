@@ -168,8 +168,18 @@ const WARNA_KATEGORI: Record<string, string> = {
 };
 
 // ---- ukuran slide (dari file asli: 12192000 x 6858000 EMU) ----
-const LEBAR = 13.3333;
-const TINGGI = 7.5;
+/**
+ * Ukuran slide — PERSIS SAMA dengan file referensi.
+ *
+ * File referensi (sip.pptx) mendefinisikan <p:sldSz cx="12192000"
+ * cy="6858000"/> = 13,33333… x 7,5 inci (16:9, 960 x 540 pt).
+ *
+ * Angka inci di bawah sengaja ditulis sebagai pecahan 12192000/914400 dan
+ * 6858000/914400, BUKAN 13,3333 — pembulatan 4 desimal membuat lebarnya
+ * meleset 30 EMU dari file referensi.
+ */
+const LEBAR = 12192000 / 914400;   // 13,333333... inci
+const TINGGI = 6858000 / 914400;   // 7,5 inci
 
 /**
  * Font isi slide.
