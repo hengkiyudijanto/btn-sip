@@ -26,6 +26,7 @@
 import PptxGenJS from 'pptxgenjs';
 import type { DataRanking } from './ranking';
 import { BACKGROUND, LOGO_DANANTARA, LOGO_BTN } from './ranking-gambar';
+import { ringkasNama } from './nama-petugas';
 
 // ---- warna ----
 const BIRU_TUA = '1226AA';
@@ -72,6 +73,14 @@ const WARNA_BATAS_NILAI = 'D1D1D1';
  * ditulis terpisah (0,40 vs 0,52) dan jadi tidak sama.
  */
 const KOTAK_NILAI_TINGGI = 0.40;
+
+/**
+ * Skala penilaian 0..5 yang dipetakan ke panjang kotak nilai.
+ * Nilai 0 -> lebar 0, nilai 5 -> lebar penuh kolom. Sesuai permintaan user:
+ * panjang kotak mengikuti nilainya, jadi bar 5,00 akan penuh dan bar 3,51
+ * sekitar 70% lebar kolom.
+ */
+const NILAI_MAKSIMUM = 5;
 
 /**
  * Mencampur dua warna hex. `t` = 0 menghasilkan warna1, `t` = 1 menghasilkan
@@ -470,8 +479,9 @@ function slideRanking(
       });
     }
 
-    // nama petugas — di sebelah kanan foto
-    slide.addText(b.nama, {
+    // Nama petugas — di sebelah kanan foto. Ditulis RINGKAS: kata pertama
+    // penuh, kata berikutnya hanya huruf depannya ("Irwan Allo" -> "Irwan A.")
+    slide.addText(ringkasNama(b.nama), {
       x: xNama, y, w: wNama, h: hFoto,
       fontSize: F_NAMA, bold: true, color: PUTIH, valign: 'middle',
       align: 'left', fontFace: FONT, wrap: false,
@@ -483,6 +493,11 @@ function slideRanking(
     // Dibuat bertingkat karena pptxgenjs tidak punya gradasi asli.
     const kotakAtas = y + hFoto / 2 - KOTAK_NILAI_TINGGI / 2;
     const kotakTinggi = KOTAK_NILAI_TINGGI;
+    // Panjang kotak nilai MENGIKUTI NILAINYA (skala 0..5 -> 0..lebar penuh).
+    // Nilai 5,00 akan penuh; 3,51 jadi sekitar 70% lebar kolom.
+    const porsiNilai = Math.max(0, Math.min(1, b.nilai / NILAI_MAKSIMUM));
+    const wKotakIsi = wKotak * porsiNilai;
+
     // Tiap lapis digambar sesuai porsinya. TIDAK ada tambahan tinggi di sini:
     // dulu tiap lapis ditambah 0,01 inci supaya tidak ada celah, tapi sejak
     // jumlah lapisnya jadi 7, tambahan itu menumpuk sehingga total kotaknya
@@ -492,26 +507,30 @@ function slideRanking(
       slide.addShape('rect', {
         x: xKotak,
         y: kotakAtas + lapis.atur * kotakTinggi,
-        w: wKotak,
+        w: wKotakIsi,
         h: lapis.tinggi * kotakTinggi,
         fill: { color: lapis.warna },
         line: { color: lapis.warna, width: 0 },
       });
     }
-    // garis tepi kotak nilai: #D1D1D1, 0,5 pt (nilai dari user)
+    // garis tepi kotak nilai: #D1D1D1, 0,5 pt (nilai dari user).
+    // Ditaruh juga garis samar sepanjang kolom penuh supaya terlihat sisa
+    // skala yang belum tercapai (0..5).
     slide.addShape('rect', {
       x: xKotak, y: kotakAtas, w: wKotak, h: kotakTinggi,
       fill: { type: 'none' } as never,
       line: { color: WARNA_BATAS_NILAI, width: 0.5 },
     });
+    // Angka nilai ditulis di UJUNG kotak yang terisi, bukan di ujung kolom,
+    // supaya selalu menempel pada batang nilainya.
     slide.addText(angkaID(b.nilai), {
-      x: xKotak, y: kotakAtas, w: wKotak - 0.10, h: KOTAK_NILAI_TINGGI,
+      x: xKotak, y: kotakAtas, w: Math.max(wKotakIsi - 0.08, 0.60),
+      h: KOTAK_NILAI_TINGGI,
       fontSize: F_NILAI, bold: true, color: PUTIH, align: 'right',
       valign: 'middle', fontFace: FONT,
     });
 
-    // pil kategori — tingginya DISAMAKAN dengan kotak nilai (0,40 inci),
-    // dan titik tengahnya sejajar dengan kotak nilai.
+    // Kriteria (pil) ditempatkan di samping KANAN kotak nilai.
     const kat = b.kategori;
     const pilAtas = y + hFoto / 2 - KOTAK_NILAI_TINGGI / 2;
     slide.addShape('roundRect', {
