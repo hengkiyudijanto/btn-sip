@@ -27,7 +27,6 @@ import PptxGenJS from 'pptxgenjs';
 import type { DataRanking } from './ranking';
 import { BACKGROUND, LOGO_DANANTARA, LOGO_BTN } from './ranking-gambar';
 import { ringkasNama } from './nama-petugas';
-import { isikanFotoKeBentukPptx, type BentukBerfoto } from './foto-ke-bentuk';
 import { hitungPenempatanFoto, rasioFotoJpeg } from './potong-foto';
 
 // ---- warna ----
@@ -440,10 +439,6 @@ function slideRanking(
   prs: PptxGenJS,
   kelompok: DataRanking['kelompok'][number],
   petaFoto: Map<string, string>,
-  /** Diisi fungsi ini: daftar bentuk yang harus diisi foto. */
-  bentukBerfoto: BentukBerfoto[],
-  /** Nomor slide ini di dalam berkas PPTX (slide 1 = ringkasan). */
-  nomorSlide: number
 ) {
   const slide = prs.addSlide();
   latar(slide);
@@ -502,43 +497,25 @@ function slideRanking(
     const y = yAwal + i * jarak;
     kotakIsiFoto.y = y + TEBAL_BINGKAI_FOTO;
 
-    // Kotak foto dibuat sebagai BENTUK membulat, bukan gambar biasa.
-    //
-    // Bentuknya diberi nama FOTO_n sebagai penanda. Setelah berkas PPTX jadi,
-    // bentuk ini diisi fotonya lewat blipFill (lihat foto-ke-bentuk.ts),
-    // sehingga fotonya MENGIKUTI bentuk membulat kotaknya — tidak ada lagi
-    // sudut bolong seperti waktu fotonya digambar sebagai gambar kotak.
-    //
-    // Kalau petugas belum punya foto, bentuknya tetap terlihat dari garis
-    // putihnya saja (latar transparan).
+    // Bingkai foto: latar transparan, hanya garis putih. Kalau petugas belum
+    // punya foto, kotaknya tetap terlihat dari garis putihnya saja.
     slide.addShape('roundRect', {
       x: xFoto, y, w: wFoto, h: hFoto,
       fill: { type: 'none' } as never,
       line: { color: PUTIH, width: 1.25 },
       rectRadius: RADIUS_FOTO,
-      objectName: `FOTO_${nomorSlide}_${i}`,
     });
     const foto = petaFoto.get(b.nip);
     if (foto) {
-      // Hitung potongannya supaya proporsi foto asli dipertahankan saat
-      // diisikan ke bentuk membulat (sama seperti object-fit: cover).
-      const rasio = rasioFotoJpeg(foto) ?? wFoto / hFoto;
-      const tempat = hitungPenempatanFoto(kotakIsiFoto, rasio);
-
-      // Catat bentuk mana yang harus diisi foto ini; pengisiannya dilakukan
-      // setelah berkas PPTX jadi (foto-ke-bentuk.ts), karena pptxgenjs tidak
-      // bisa mengisi BENTUK dengan gambar.
-      bentukBerfoto.push({
-        slide: nomorSlide,
-        nama: `FOTO_${nomorSlide}_${i}`,
-        base64: foto,
-        jenis: 'jpeg',
-        potongan: {
-          kiri: tempat.potongKiri,
-          kanan: tempat.potongKanan,
-          atas: tempat.potongAtas,
-          bawah: tempat.potongBawah,
-        },
+      // Foto ditempel sebagai gambar biasa. Sudutnya SUDAH membulat dan
+      // tembus pandang karena fotonya disiapkan lebih dulu di sisi server
+      // (src/lib/sip/foto-bulat.ts, memakai sharp) — jadi tidak ada lagi
+      // sudut bolong, dan hasilnya tampil sama di semua penampil.
+      //
+      // Ukurannya persis sama dengan kotak, jadi tidak perlu dihitung lagi.
+      slide.addImage({
+        data: `data:image/png;base64,${foto}`,
+        x: xFoto, y, w: wFoto, h: hFoto,
       });
     }
 
@@ -656,21 +633,10 @@ export async function bangunPptxRanking(
   prs.defineLayout({ name: 'LAYAR', width: LEBAR, height: TINGGI });
   prs.layout = 'LAYAR';
 
-  // Daftar bentuk kotak foto yang harus diisi gambar. Diisi saat menggambar
-  // tiap slide, lalu diterapkan ke XML setelah berkasnya jadi.
-  const bentukBerfoto: BentukBerfoto[] = [];
-
   slideRingkasan(prs, data);
-  for (let i = 0; i < data.kelompok.length; i++) {
-    // Slide 1 = ringkasan, jadi slide ranking pertama bernomor 2.
-    slideRanking(prs, data.kelompok[i], petaFoto, bentukBerfoto, i + 2);
+  for (const k of data.kelompok) {
+    slideRanking(prs, k, petaFoto);
   }
 
-  const keluaran = (await prs.write({ outputType: 'nodebuffer' })) as Buffer;
-
-  // pptxgenjs tidak bisa mengisi BENTUK dengan gambar, jadi foto diisikan
-  // setelah berkasnya jadi. Ini yang membuat foto mengikuti bentuk membulat
-  // kotaknya (tanpa sudut bolong).
-  if (bentukBerfoto.length === 0) return keluaran;
-  return isikanFotoKeBentukPptx(keluaran, bentukBerfoto);
+  return (await prs.write({ outputType: 'nodebuffer' })) as Buffer;
 }

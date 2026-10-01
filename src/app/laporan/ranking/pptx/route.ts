@@ -3,6 +3,7 @@ import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { susunRanking } from '@/lib/sip/ranking';
 import { bangunPptxRanking } from '@/lib/sip/ranking-pptx';
+import { siapkanFotoUntukKotak } from '@/lib/sip/foto-bulat';
 import type { JenisCabang } from '@prisma/client';
 
 /**
@@ -67,12 +68,24 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // Peta nip -> isi foto (base64 tanpa awalan data URL)
+  // Peta nip -> isi foto, sudah disiapkan untuk slide.
+  //
+  // Fotonya diubah dulu di sini: dipotong mengisi kotaknya tanpa gepeng, dan
+  // sudutnya dibuat membulat + tembus pandang (src/lib/sip/foto-bulat.ts).
+  // Kalau penyiapan gagal, foto aslinya tetap dipakai — lebih baik tampil
+  // apa adanya daripada tidak tampil sama sekali.
   const petaFoto = new Map<string, string>();
   for (const p of penilaian) {
     if (!p.fotoData) continue;
     const koma = p.fotoData.indexOf(',');
-    if (koma > 0) petaFoto.set(p.pegawai.nip, p.fotoData.slice(koma + 1));
+    if (koma <= 0) continue;
+
+    const base64Asli = p.fotoData.slice(koma + 1);
+    const siap = await siapkanFotoUntukKotak(Buffer.from(base64Asli, 'base64'));
+    petaFoto.set(
+      p.pegawai.nip,
+      siap ? siap.toString('base64') : base64Asli
+    );
   }
 
   const buffer = await bangunPptxRanking(hasil, petaFoto);
