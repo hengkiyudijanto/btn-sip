@@ -222,6 +222,35 @@ const F_LABEL_LEGENDA = 10;
 
 /** Nama unit memakai Poppins (berbeda dari isi slide yang memakai Aptos). */
 const FONT_UNIT = 'Poppins';
+
+/**
+ * Nama posisi ("Teller Service"). Di file referensi, teks ini memakai
+ * typeface "+mj-lt" — yaitu font TEMA (majorFont), yang di theme1.xml
+ * bernilai "Aptos Display". Slot font referensi: 38x Aptos, 5x Poppins,
+ * 1x +mj-lt, dan yang +mj-lt itu justru nama posisi.
+ */
+const FONT_POSISI = 'Aptos Display';
+
+// CATATAN: shrinkText sengaja TIDAK dipakai di seluruh slide ini. Opsi itu
+// membuat PowerPoint mengecilkan teks otomatis kalau tidak muat, sehingga
+// ukuran font yang tampil bisa berbeda dari yang diset. File referensi juga
+// tidak memakainya. Kalau nanti ada teks yang meluber, lebih baik lebarkan
+// kotaknya daripada menyalakan shrinkText lagi.
+
+/**
+ * Kotak nama cabang — posisi dari file referensi (Rectangle 39).
+ * rectRadius diambil dari bingkai referensi (relatif 16% dari tinggi).
+ */
+const NAMA_CABANG = { x: 4.817, y: 1.380, w: 3.699, h: 0.713 };
+const RADIUS_NAMA_CABANG = 0.114;   // 16% x 0,713
+/**
+ * Jarak tepi di dalam kotak nama cabang. Kotaknya diisi DUA baris teks
+ * (nama cabang di atas, nama posisi di bawah); 0,04 di tepi atas dan bawah
+ * memberi napas, sisanya dibagi dua rata.
+ */
+const PAD_NAMA_CABANG = 0.04;
+/** Tinggi tiap baris teks di dalam kotak nama cabang. */
+const BARIS_NAMA_CABANG = (NAMA_CABANG.h - PAD_NAMA_CABANG * 2) / 2;
 const F_UNIT = 18;   // asli 20 — dikurangi 2 pt atas permintaan user
 
 /** Nilai dengan koma desimal (format Indonesia). */
@@ -254,27 +283,47 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
   slide.addText('Service Drill Ranking', {
     x: 3.576, y: 0.344, w: 6.225, h: 0.841,
     fontSize: F_JUDUL, bold: true, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: FONT, shrinkText: true,
+    valign: 'middle', fontFace: FONT,
   });
 
-  // Kotak nama unit: latar TRANSPARAN (background di baliknya terlihat),
-  // hanya bergaris putih. Font Poppins sesuai file asli.
+  // Kotak nama cabang: latar transparan, hanya bergaris putih.
+  //
+  // Posisi mengikuti file referensi. Di referensi ada dua elemen bertumpuk:
+  // Group 20 (y 1,259 h 0,505) dan Rectangle 39 (y 1,714 h 0,713) dengan
+  // teksnya TextBox 17 (y 1,826 h 0,488). Yang TAMPIL adalah pasangan
+  // Rectangle 39 + TextBox 17, jadi itulah yang dipakai di sini.
   slide.addShape('roundRect', {
-    x: 5.039, y: 1.259, w: 3.271, h: 0.505,
+    x: NAMA_CABANG.x, y: NAMA_CABANG.y, w: NAMA_CABANG.w, h: NAMA_CABANG.h,
     fill: { type: 'none' } as never,
-    line: { color: PUTIH, width: 1.25 }, rectRadius: 0.10,
+    line: { color: PUTIH, width: 1.25 },
+    rectRadius: RADIUS_NAMA_CABANG,
   });
   // Nama cabang TIDAK bold (permintaan user) — cukup reguler
+  // Nama cabang: teks di bagian ATAS kotak. Di referensi nama cabang dan
+  // nama posisi berada di area yang sama (bertumpuk secara angka) karena
+  // teksnya bisa mengecil sendiri; di sini shrinkText dimatikan supaya
+  // ukuran font persis, jadi ruangnya dibagi dua.
   slide.addText(unit, {
-    x: 5.039, y: 1.259, w: 3.271, h: 0.505,
+    x: NAMA_CABANG.x, y: NAMA_CABANG.y + PAD_NAMA_CABANG,
+    w: NAMA_CABANG.w, h: BARIS_NAMA_CABANG,
     fontSize: F_UNIT, bold: false, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: FONT_UNIT, shrinkText: true,
+    valign: 'middle', fontFace: FONT_UNIT,
   });
 
+  // Nama posisi diletakkan TEPAT DI BAWAH kotak nama cabang.
+  //
+  // Di file referensi angka y-nya (1,839) memang masuk ke area kotak nama
+  // cabang (1,714 .. 2,427) sehingga secara angka bertumpuk, tapi di sana
+  // teksnya bisa mengecil sendiri (autofit) dan posisinya diatur manual.
+  // Di sini shrinkText sengaja dimatikan supaya ukuran font selalu persis,
+  // jadi teksnya diletakkan di bawah kotak agar tidak saling menimpa.
+  // Kotaknya tetap di posisi referensi; hanya teks posisi yang digeser.
+  // Nama posisi: di dalam kotak nama cabang, di bagian BAWAH-nya.
   slide.addText(posisi, {
-    x: 5.219, y: 1.839, w: 2.896, h: 0.404,
+    x: 5.219, y: NAMA_CABANG.y + PAD_NAMA_CABANG + BARIS_NAMA_CABANG,
+    w: 2.896, h: BARIS_NAMA_CABANG,
     fontSize: F_POSISI, color: PUTIH, align: 'center', valign: 'middle',
-    fontFace: FONT, shrinkText: true,
+    fontFace: FONT_POSISI,
   });
 }
 
@@ -354,14 +403,14 @@ function legenda(slide: PptxGenJS.Slide) {
     slide.addText(rentang, {
       x: x + 0.163, y: LEG_Y_RENTANG, w: 0.85, h: 0.269,
       fontSize: F_LEGENDA_ANGKA, bold: true, color: '142D64',
-      valign: 'middle', fontFace: FONT, shrinkText: true,
+      valign: 'middle', fontFace: FONT,
     });
 
     // nama kategori
     slide.addText(nama, {
       x: x + 0.170, y: LEG_Y_NAMA, w: 1.05, h: 0.180,
       fontSize: F_LEGENDA_NAMA, color: '142D64',
-      valign: 'middle', fontFace: FONT, shrinkText: true,
+      valign: 'middle', fontFace: FONT,
     });
   });
 }
@@ -429,7 +478,7 @@ function slideRanking(
     slide.addText(b.nama, {
       x: xNama, y, w: wNama, h: hFoto,
       fontSize: F_NAMA, bold: true, color: PUTIH, valign: 'middle',
-      align: 'left', fontFace: FONT, wrap: false, shrinkText: true,
+      align: 'left', fontFace: FONT, wrap: false,
     });
 
     // Kotak nilai: gradasi biru LEBIH MUDA di atas & bawah, biru sekarang
@@ -477,7 +526,7 @@ function slideRanking(
     slide.addText(kat, {
       x: xKategori, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
       fontSize: F_KATEGORI, bold: true, color: PUTIH, align: 'center',
-      valign: 'middle', fontFace: FONT, shrinkText: true,
+      valign: 'middle', fontFace: FONT,
     });
   });
 
