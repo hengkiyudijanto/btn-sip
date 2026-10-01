@@ -49,17 +49,30 @@ const BIRU_KOTAK_NAMA = '2E4FD6';
 const TENGAH_PROPORSI = 0.5;   // bagian tengah yang tetap biru sekarang
 const SISI_PROPORSI = (1 - TENGAH_PROPORSI) / 2;   // 0,25 atas + 0,25 bawah
 
+/**
+ * Warna tengah kotak nilai — nilai persis dari user (#0322B8).
+ * Warna tangga gradasinya dihitung dari sini supaya peralihannya rata:
+ * campuran bertahap antara WARNA_TENGAH_NILAI dan WARNA_UJUNG_NILAI.
+ */
+const WARNA_TENGAH_NILAI = '0322B8';
+const WARNA_UJUNG_NILAI = '7FA0F3';    // biru muda di tepi atas & bawah
+const NILAI_PEKAT_NILAI = '2C4CCC';    // 1/3 jalan dari tengah ke ujung
+const NILAI_SEDANG_NILAI = '5676DF';   // 2/3 jalan dari tengah ke ujung
+
+/** Garis tepi kotak nilai — nilai persis dari user (#D1D1D1). */
+const WARNA_BATAS_NILAI = 'D1D1D1';
+
 const GRADASI_NILAI: Array<{ warna: string; atur: number; tinggi: number }> = [
   // --- 25% atas: gradasi dari biru lebih muda ke biru sekarang ---
-  { warna: '7FA0F3', atur: 0.00, tinggi: SISI_PROPORSI / 3 },
-  { warna: '5A82EA', atur: SISI_PROPORSI / 3, tinggi: SISI_PROPORSI / 3 },
-  { warna: '3D68DF', atur: (SISI_PROPORSI / 3) * 2, tinggi: SISI_PROPORSI / 3 },
-  // --- 50% tengah: biru seperti warna sekarang ---
-  { warna: '2E56D4', atur: SISI_PROPORSI, tinggi: TENGAH_PROPORSI },
+  { warna: WARNA_UJUNG_NILAI, atur: 0.00, tinggi: SISI_PROPORSI / 3 },
+  { warna: NILAI_SEDANG_NILAI, atur: SISI_PROPORSI / 3, tinggi: SISI_PROPORSI / 3 },
+  { warna: NILAI_PEKAT_NILAI, atur: (SISI_PROPORSI / 3) * 2, tinggi: SISI_PROPORSI / 3 },
+  // --- 50% tengah: biru pekat merata ---
+  { warna: WARNA_TENGAH_NILAI, atur: SISI_PROPORSI, tinggi: TENGAH_PROPORSI },
   // --- 25% bawah: gradasi dari biru sekarang ke biru lebih muda ---
-  { warna: '3D68DF', atur: SISI_PROPORSI + TENGAH_PROPORSI, tinggi: SISI_PROPORSI / 3 },
-  { warna: '5A82EA', atur: SISI_PROPORSI + TENGAH_PROPORSI + SISI_PROPORSI / 3, tinggi: SISI_PROPORSI / 3 },
-  { warna: '7FA0F3', atur: SISI_PROPORSI + TENGAH_PROPORSI + (SISI_PROPORSI / 3) * 2, tinggi: SISI_PROPORSI / 3 },
+  { warna: NILAI_PEKAT_NILAI, atur: SISI_PROPORSI + TENGAH_PROPORSI, tinggi: SISI_PROPORSI / 3 },
+  { warna: NILAI_SEDANG_NILAI, atur: SISI_PROPORSI + TENGAH_PROPORSI + SISI_PROPORSI / 3, tinggi: SISI_PROPORSI / 3 },
+  { warna: WARNA_UJUNG_NILAI, atur: SISI_PROPORSI + TENGAH_PROPORSI + (SISI_PROPORSI / 3) * 2, tinggi: SISI_PROPORSI / 3 },
 ];
 const PUTIH = 'FFFFFF';
 
@@ -320,10 +333,11 @@ function slideRanking(
         line: { color: lapis.warna, width: 0 },
       });
     }
-    // garis tepi putih di atas gradasi
+    // garis tepi kotak nilai: #D1D1D1, 0,5 pt (nilai dari user)
     slide.addShape('rect', {
       x: xKotak, y: kotakAtas, w: wKotak, h: kotakTinggi,
-      fill: { type: 'none' } as never, line: { color: PUTIH, width: 1 },
+      fill: { type: 'none' } as never,
+      line: { color: WARNA_BATAS_NILAI, width: 0.5 },
     });
     slide.addText(angkaID(b.nilai), {
       x: xKotak, y: y + hFoto / 2 - 0.20, w: wKotak - 0.10, h: 0.40,
