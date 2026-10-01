@@ -26,7 +26,7 @@
 import PptxGenJS from 'pptxgenjs';
 import type { DataRanking } from './ranking';
 import { BACKGROUND, LOGO_DANANTARA, LOGO_BTN } from './ranking-gambar';
-import { ringkasNama } from './nama-petugas';
+import { namaSelebarMungkin } from './nama-petugas';
 import { kapitalkan } from './teks';
 import { perbaikiEfekBayanganPptx } from './bayangan-pptx';
 
@@ -587,14 +587,19 @@ function slideRanking(
       });
     }
 
-    // Nama petugas — di sebelah kanan foto. Ditulis RINGKAS: kata pertama
-    // penuh, kata berikutnya hanya huruf depannya ("Irwan Allo" -> "Irwan A.")
+    // Nama petugas — di sebelah kanan foto.
+    //
+    // Ditulis SELEBAR YANG MASIH MUAT: kata kedua tetap ditulis penuh kalau
+    // tidak menabrak kotak nilai, baru diringkas jadi inisial kalau perlu.
+    // Lebar yang tersedia dihitung dari posisi kotak nilainya, bukan angka
+    // tetap, supaya tetap benar kalau tata letaknya bergeser.
     //
     // Kapitalisasi dipastikan di sini juga, bukan hanya mengandalkan lapisan
-    // data: kalau nama masuk dalam keadaan huruf besar semua, ringkasNama
-    // akan menghasilkan inisial yang ikut kapital ("MARINA KADIR" ->
-    // "MARINA K."). Jadi dirapikan dulu, baru diringkas.
-    slide.addText(ringkasNama(kapitalkan(b.nama)), {
+    // data: kalau nama masuk dalam keadaan huruf besar semua, inisialnya akan
+    // ikut kapital ("MARINA KADIR" -> "MARINA K."). Jadi dirapikan dulu.
+    const lebarNamaTersedia = xKotak - 0.08 - xNama;
+    slide.addText(
+      namaSelebarMungkin(kapitalkan(b.nama), lebarNamaTersedia), {
       x: xNama, y, w: wNama, h: hFoto,
       fontSize: F_NAMA, bold: true, color: PUTIH, valign: 'middle',
       align: 'left', fontFace: FONT, wrap: false,
