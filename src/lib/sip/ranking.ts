@@ -12,6 +12,7 @@
 
 import { prisma } from '@/lib/db';
 import { kumpulkanTurunan } from './hierarki';
+import { labelPosisi } from './label-posisi';
 import type { JenisCabang } from '@prisma/client';
 
 export type FilterRanking = {
@@ -129,7 +130,7 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
       pegawai: {
         select: {
           nama: true, nip: true,
-          jabatan: { select: { nama: true } },
+          jabatan: { select: { kode: true, nama: true } },
           cabang: { select: { kode: true, nama: true } },
         },
       },
@@ -141,7 +142,12 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
 
   for (const p of penilaian) {
     if (p.nilaiAkhir === null) continue;
-    const posisi = p.pegawai.jabatan?.nama ?? 'Tanpa jabatan';
+    // Label posisi untuk slide (mis. "Teller" -> "Teller Service").
+    // Lihat src/lib/sip/label-posisi.ts — nama jabatan di database tidak diubah.
+    const posisi = labelPosisi(
+      p.pegawai.jabatan?.kode ?? null,
+      p.pegawai.jabatan?.nama ?? 'Tanpa jabatan'
+    );
     const kunci = `${p.pegawai.cabang.kode}|${posisi}`;
     if (!peta.has(kunci)) {
       peta.set(kunci, {
