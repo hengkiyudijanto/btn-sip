@@ -266,16 +266,6 @@
 .sip-padat .sip-identitas table {
   font-size: 9px;
 }
-.sip-padat .sip-foto {
-  width: 72px;
-  height: 96px;
-  font-size: 7.5px;
-}
-.sip-padat .sip-foto-keterangan {
-  width: 72px;
-  font-size: 6.5px;
-  margin-top: 2px;
-}
 
 /* tabel A/B/C */
 .sip-padat .sip-tabel {
@@ -370,6 +360,10 @@
 .sip-padat .sip-identitas {
   padding: 4px 6px;
   margin-bottom: 4px;
+  /* lebar kolom foto HARUS sama dengan .sip-padat .sip-foto (96px),
+     kalau tidak foto dipaksa mengecil dan rasionya rusak */
+  grid-template-columns: 1fr 96px;
+  gap: 8px;
 }
 .sip-padat .sip-identitas table {
   font-size: 8px;
@@ -380,13 +374,17 @@
   padding: 0.5px 0 !important;
 }
 .sip-padat .sip-foto {
-  width: 54px;
-  height: 72px;
+  width: 96px;
+  height: 128px; /* rasio 3:4 — jangan diubah tanpa menyesuaikan lebar */
+  min-width: 96px;
+  min-height: 128px;
+  font-size: 8px;
+  box-sizing: border-box;
 }
 .sip-padat .sip-foto-keterangan {
-  width: 54px;
-  font-size: 5.5px;
-  margin-top: 1px;
+  width: 96px;
+  font-size: 6.5px;
+  margin-top: 2px;
 }
 .sip-padat .sip-tabel {
   font-size: 7.5px;
@@ -449,12 +447,20 @@
   padding-top: 2px;
 }
 
+/* kolom Skor 1-5 dijaga satu baris */
 
-/* kolom Skor 1-5 dinaikkan sedikit supaya teksnya tidak terbelah dua baris */
-.sip-padat .sip-tabel th:nth-child(4),
-.sip-padat .sip-tabel td:nth-child(4) {
-  white-space: nowrap;
+.sip-padat .sip-tabel td:last-child {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
 }
 
-}
+/* ---- Lebar kolom tabel ---- */
+
+/* Versi lengkap */
+
+/* Versi lite: Aspek dikecilkan, kolom angka dipadatkan supaya Catatan
+   mendapat ruang paling luas untuk catatan atasan yang panjang. */
+
+/* catatan panjang boleh membungkus rapi, tidak meluber keluar sel */
 

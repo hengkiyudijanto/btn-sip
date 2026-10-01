@@ -7,7 +7,7 @@ import 'dotenv/config';
 import crypto from 'node:crypto';
 import net from 'node:net';
 import { spawn } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
@@ -71,11 +71,35 @@ async function cetakPdf(url: string, keluar: string, token: string, marginMm: nu
   const c = await cdp(tab.webSocketDebuggerUrl);
   await c.kirim('Page.enable');
   await c.kirim('Network.enable');
+
+  // Cookie HARUS memakai domain dari BASE, bukan selalu 'localhost'.
+  // Kalau salah domain, sesi tidak terbaca dan yang tercetak adalah
+  // halaman login, bukan laporan.
+  const host = new URL(BASE).hostname;
+  const bagian = host.split('.');
+  // untuk domain seperti btn-sip.vercel.app, pakai domain utuh tanpa leading dot
   await c.kirim('Network.setCookie', {
-    name: 'sip_sesi', value: token, domain: 'localhost', path: '/',
+    name: 'sip_sesi',
+    value: token,
+    domain: host,
+    path: '/',
   });
+
   await c.kirim('Page.navigate', { url });
   await new Promise((r) => setTimeout(r, 5000));
+
+  // pastikan sudah masuk (bukan halaman login)
+  const cek = await c.kirim('Runtime.evaluate', {
+    expression: 'document.body.innerText.slice(0, 60)',
+    returnByValue: true,
+  });
+  const teks = String(cek.result?.value ?? '');
+  if (teks.includes('Masuk') && teks.includes('Password')) {
+    throw new Error(
+      `sesi tidak terbaca di ${host} — yang terbuka halaman login. ` +
+        `Periksa domain cookie.`
+    );
+  }
 
   // CDP memakai inci
   const margin = marginMm / 25.4;
@@ -88,8 +112,9 @@ async function cetakPdf(url: string, keluar: string, token: string, marginMm: nu
     preferCSSPageSize: false,
   });
   writeFileSync(keluar, Buffer.from(pdf.data, 'base64'));
-  console.log(`  → ${keluar} (margin ${marginMm}mm)`);
+  console.log(`  → ${keluar} (margin ${marginMm}mm, host ${host})`);
 
+  void bagian;
   c.tutup();
   chrome.kill();
 }
@@ -125,8 +150,9 @@ async function main() {
   });
 
   // foto penilaian
-  const potret =
-    'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==';
+  // Foto uji 300x400 piksel (rasio 3:4 asli) supaya proporsi kotak foto
+  // di PDF benar-benar terukur. Foto 1x1 px tidak bisa dipakai mengukur.
+  const potret = readFileSync('/home/ubuntu/projects/btn-sip/foto-uji-3x4.txt', 'utf8').trim();
 
   const pen = await prisma.penilaian.create({
     data: {

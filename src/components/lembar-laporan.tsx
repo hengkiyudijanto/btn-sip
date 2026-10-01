@@ -7,6 +7,18 @@ import { angkaID } from '@/lib/sip/laporan';
  * Semua nilai sudah dihitung di server; komponen ini murni tampilan.
  */
 export function LembarLaporan({ data }: { data: DataLaporan }) {
+  /**
+   * Lebar kolom tabel A/B/C.
+   *
+   * Diberikan lewat <colgroup> karena dengan table-layout: fixed, lebar
+   * pada <th> diabaikan browser (akibatnya semua kolom dibagi rata).
+   * Versi lite memakai lebar angka yang lebih kecil supaya kolom Catatan
+   * mendapat ruang paling luas untuk catatan atasan yang panjang.
+   */
+  const padat = data.versi === 'lite';
+  const kolomLebar = padat
+    ? { no: '16px', aspek: '21%', angka: '28px', skor: '38px', bobot: '30px', nilai: '30px' }
+    : { no: '28px', aspek: '30%', angka: '42px', skor: '48px', bobot: '42px', nilai: '42px' };
   return (
     <div
       className={`sip-laporan bg-white mx-auto${data.versi === 'lite' ? ' sip-padat' : ''}`}
@@ -105,13 +117,14 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
           </caption>
           <thead>
             <tr>
-              <th style={{ width: '28px' }}>No</th>
-              <th>Aspek</th>
-              <th style={{ width: '42px' }}>Angka</th>
-              <th style={{ width: '46px', whiteSpace: 'nowrap' }}>Skor 1&ndash;5</th>
-              <th style={{ width: '42px' }}>Bobot</th>
-              <th style={{ width: '46px' }}>Nilai</th>
-              <th style={{ width: '30%' }}>Catatan</th>
+              <th style={{ width: kolomLebar.no }}>No</th>
+              <th style={{ width: kolomLebar.aspek }}>Aspek</th>
+              <th style={{ width: kolomLebar.angka }}>Angka</th>
+              <th style={{ width: kolomLebar.skor, whiteSpace: 'nowrap' }}>Skor 1&ndash;5</th>
+              <th style={{ width: kolomLebar.bobot }}>Bobot</th>
+              <th style={{ width: kolomLebar.nilai }}>Nilai</th>
+              {/* Catatan tanpa lebar -> menyerap sisa ruang tabel */}
+              <th>Catatan</th>
             </tr>
           </thead>
           <tbody>
