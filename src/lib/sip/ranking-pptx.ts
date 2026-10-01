@@ -513,16 +513,16 @@ function slideRanking(
         line: { color: lapis.warna, width: 0 },
       });
     }
-    // garis tepi kotak nilai: #D1D1D1, 0,5 pt (nilai dari user).
-    // Ditaruh juga garis samar sepanjang kolom penuh supaya terlihat sisa
-    // skala yang belum tercapai (0..5).
+    // Garis tepi kotak nilai: #D1D1D1, 0,5 pt — hanya mengelilingi bagian
+    // yang terisi (sepanjang nilainya), BUKAN kolom penuh. Bingkai samar
+    // sepanjang kolom 0..5 sudah dihapus atas permintaan user: kotaknya
+    // sebesar ukurannya saja.
     slide.addShape('rect', {
-      x: xKotak, y: kotakAtas, w: wKotak, h: kotakTinggi,
+      x: xKotak, y: kotakAtas, w: wKotakIsi, h: kotakTinggi,
       fill: { type: 'none' } as never,
       line: { color: WARNA_BATAS_NILAI, width: 0.5 },
     });
-    // Angka nilai ditulis di UJUNG kotak yang terisi, bukan di ujung kolom,
-    // supaya selalu menempel pada batang nilainya.
+    // Angka nilai ditulis di UJUNG kotak, menempel pada batangnya.
     slide.addText(angkaID(b.nilai), {
       x: xKotak, y: kotakAtas, w: Math.max(wKotakIsi - 0.08, 0.60),
       h: KOTAK_NILAI_TINGGI,
@@ -530,16 +530,19 @@ function slideRanking(
       valign: 'middle', fontFace: FONT,
     });
 
-    // Kriteria (pil) ditempatkan di samping KANAN kotak nilai.
+    // Kriteria (pil) ditempatkan di samping KANAN kotak nilai — jadi x-nya
+    // mengikuti ujung batang, bukan posisi tetap. Nilai kecil berarti pil
+    // ikut bergeser ke kiri.
     const kat = b.kategori;
     const pilAtas = y + hFoto / 2 - KOTAK_NILAI_TINGGI / 2;
+    const xPil = xKotak + wKotakIsi + 0.14;
     slide.addShape('roundRect', {
-      x: xKategori, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
+      x: xPil, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
       fill: { color: WARNA_KATEGORI[kat] ?? WARNA_KATEGORI.Kurang },
       line: { color: PUTIH, width: 1 }, rectRadius: KOTAK_NILAI_TINGGI / 2,
     });
     slide.addText(kat, {
-      x: xKategori, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
+      x: xPil, y: pilAtas, w: wKategori, h: KOTAK_NILAI_TINGGI,
       fontSize: F_KATEGORI, bold: true, color: PUTIH, align: 'center',
       valign: 'middle', fontFace: FONT,
     });
