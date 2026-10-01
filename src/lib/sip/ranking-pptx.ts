@@ -95,8 +95,14 @@ function campurWarna(warna1: string, warna2: string, t: number): string {
  * Warna teks dipisah jadi konstanta supaya mudah disetel tanpa menyentuh
  * tata letaknya.
  */
-const WARNA_LABEL_LEGENDA = '0B1E6B';
+const WARNA_LABEL_LEGENDA = '0F44BE';
 const WARNA_TEKS_LABEL_LEGENDA = 'FFFFFF';
+/**
+ * Radius sudut kotak label "SKALA PENILAIAN", dalam inci.
+ * Kotaknya setinggi 0,270 inci; 0,06 memberi sudut membulat tipis saja
+ * sehingga sisi kanan-kirinya terlihat agak kotak, bukan seperti pil.
+ */
+const RADIUS_LABEL_LEGENDA = 0.06;
 
 /**
  * Menyusun daftar lapis untuk kotak nilai.
@@ -291,10 +297,14 @@ function legenda(slide: PptxGenJS.Slide) {
 
   // label "SKALA PENILAIAN" — kotak berlatar biru muda (biru Telegram),
   // digambar SETELAH panel supaya tetap terlihat di atas panel.
+  // Sudut label dibuat AGAK KOTAK (sebelumnya rectRadius 0,18 dari tinggi
+  // 0,270 = hampir setengah tinggi, jadi sisi kanan-kirinya terlihat sangat
+  // bulat seperti pil). 0,06 inci memberi sudut membulat tipis saja.
   slide.addShape('roundRect', {
     x: LEG_LABEL.x, y: LEG_LABEL.y, w: LEG_LABEL.w, h: LEG_LABEL.h,
     fill: { color: WARNA_LABEL_LEGENDA },
-    line: { color: WARNA_LABEL_LEGENDA, width: 0 }, rectRadius: 0.18,
+    line: { color: WARNA_LABEL_LEGENDA, width: 0 },
+    rectRadius: RADIUS_LABEL_LEGENDA,
   });
   // Teks ditempatkan PERSIS seukuran kotaknya (fokus sama dengan kotak label),
   // jadi center-nya tepat di tengah kotak. Sebelumnya teks digeser +0,03 dari
