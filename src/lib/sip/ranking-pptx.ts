@@ -32,12 +32,13 @@ const BIRU_TUA = '1226AA';
 const BIRU_KOTAK_NAMA = '2E4FD6';
 
 /**
- * Komposisi kotak nilai: pita tipis "biru berpendar" di tepi atas & bawah,
- * sisanya biru pekat di tengah.
+ * Komposisi kotak nilai: pita "biru berpendar" di tepi atas & bawah, sisanya
+ * biru pekat di tengah.
  *
- * Pita pinggir masing-masing 6,5% tinggi kotak (permintaan user). Karena
- * pinggirnya mengecil dari 25% jadi 6,5%, bagian tengahnya otomatis
- * membesar jadi 87%.
+ * Pita pinggir masing-masing 12% tinggi kotak. Awalnya 6,5% atas permintaan
+ * user, tapi hasilnya cuma 1,87 pt di kotak setinggi 28,8 pt — terlalu tipis
+ * sehingga pendarnya nyaris tidak terlihat. Diperlebar jadi 12% (3,46 pt)
+ * supaya proporsional terhadap kotak.
  *
  * pptxgenjs tidak punya gradasi asli (ShapeFillProps hanya 'solid' atau
  * 'none'), jadi "berpendar" dibuat dari beberapa lapis kotak tipis yang
@@ -46,10 +47,10 @@ const BIRU_KOTAK_NAMA = '2E4FD6';
  * `atur` = posisi dari tepi atas kotak, `tinggi` = proporsi tinggi kotak
  * (dalam pecahan 0..1, dikalikan tinggi kotak sebenarnya saat menggambar).
  */
-const PINGGIR_PROPORSI = 0.065;                    // 6,5% per pinggir
-const TENGAH_PROPORSI = 1 - PINGGIR_PROPORSI * 2;  // 87%
+const PINGGIR_PROPORSI = 0.12;                     // 12% per pinggir
+const TENGAH_PROPORSI = 1 - PINGGIR_PROPORSI * 2;  // 76%
 /** Jumlah lapis di tiap pita pinggir (makin banyak makin halus). */
-const LAPIS_PINGGIR = 3;
+const LAPIS_PINGGIR = 5;
 
 /**
  * Warna kotak nilai — nilai persis dari user.
