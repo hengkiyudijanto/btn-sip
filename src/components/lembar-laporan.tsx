@@ -32,10 +32,14 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
             <br />
             PETUGAS FRONTLINER
           </div>
-          <div className="sip-kop-sub">
-            PT Bank Tabungan Negara (Persero) Tbk &middot; Cabang {data.kodeCabang}{' '}
-            {data.cabang}
-          </div>
+          {/* Tulisan di bawah logo disembunyikan pada versi lite supaya kop
+              lebih ringkas dan laporan tetap muat 1 halaman. */}
+          {data.versi !== 'lite' && (
+            <div className="sip-kop-sub">
+              PT Bank Tabungan Negara (Persero) Tbk &middot; Cabang {data.kodeCabang}{' '}
+              {data.cabang}
+            </div>
+          )}
         </div>
         <Image
           src="/btn-logo.png"
@@ -279,9 +283,7 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
             <div style={{ marginBottom: '4px' }}>Tanda Tangan Atasan</div>
             <div className="sip-ttd-ruang" />
             <div style={{ fontWeight: 600 }}>{data.penilai}</div>
-            <div style={{ color: '#64748b' }}>
-              {data.penilaiJabatan}
-            </div>
+            <div style={{ color: '#64748b' }}>NIP {data.penilaiNip}</div>
           </div>
         </div>
       </div>

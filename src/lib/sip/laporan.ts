@@ -93,6 +93,8 @@ export type DataLaporan = {
   // tanda tangan
   penilai: string;
   penilaiJabatan: string;
+  /** NIP atasan penilai — tercetak di bawah namanya pada blok tanda tangan */
+  penilaiNip: string;
 
   // metadata
   tanggalCetak: string;

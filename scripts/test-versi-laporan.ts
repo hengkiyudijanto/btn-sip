@@ -124,6 +124,31 @@ async function main() {
   cek(t2.includes(CATATAN_UMUM), 'catatan umum penilai TETAP ditampilkan');
   cek(t2.includes('Versi ringkas'), 'ada penanda "Versi ringkas" di lembar');
 
+  // ===== 2b. kop versi lite tanpa tulisan di bawah logo =====
+  console.log('\n--- 2b. kop versi lite ---');
+  cek(
+    !t2.includes('PT Bank Tabungan Negara'),
+    'versi lite TIDAK memuat tulisan "PT Bank Tabungan Negara" di bawah logo'
+  );
+  cek(
+    t1.includes('PT Bank Tabungan Negara'),
+    'versi lengkap TETAP memuat tulisan itu'
+  );
+  cek(t2.includes('SISTEM INFORMASI PENILAIAN'), 'judul kop tetap ada di versi lite');
+  cek(t2.includes('PETUGAS FRONTLINER'), 'subjudul kop tetap ada di versi lite');
+
+  // ===== 2c. NIP atasan di blok tanda tangan =====
+  console.log('\n--- 2c. blok tanda tangan atasan ---');
+  cek(
+    t1.includes(`NIP ${NIP_S}`) && t2.includes(`NIP ${NIP_S}`),
+    `NIP atasan (${NIP_S}) tercetak di kedua versi`
+  );
+  cek(
+    !t1.includes('Atasan Langsung') && !t2.includes('Atasan Langsung'),
+    'tulisan "Atasan Langsung" sudah tidak ada'
+  );
+  cek(t1.includes('SPV Versi'), 'nama atasan tetap tercetak');
+
   // ===== 3. data angka identik =====
   console.log('\n--- 3. angka identik di kedua versi ---');
   const angkaLengkap = t1.match(/\b\d{1,3}\b/g) ?? [];

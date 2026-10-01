@@ -90,6 +90,7 @@ export default async function HalamanCetakLaporan({
 
     penilai: p.penilai.nama,
     penilaiJabatan: p.penilai.jabatan?.nama ?? 'Atasan Langsung',
+    penilaiNip: p.penilai.nip,
 
     tanggalCetak: tanggalID(new Date()),
     status: p.status,
