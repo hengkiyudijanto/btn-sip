@@ -57,14 +57,29 @@ const TINGGI = 7.5;
  */
 const FONT = 'Aptos';
 
-// ---- ukuran huruf (pt) ----
-const F_JUDUL = 40;
+// ---- ukuran huruf (pt) — DIAMBIL DARI FILE ASLI via ekstrak-font-pptx.py ----
+//
+//   Judul "Service Drill Ranking"   44 pt  tebal
+//   Nama unit (kotak)               20 pt  Poppins   <-- font berbeda
+//   Nama posisi                     +mj-lt (ikut tema)
+//   Legenda: rentang angka          10 pt  tebal
+//   Legenda: nama kategori           8,5 pt biasa
+//   Pil kategori (Istimewa/Kurang)  12 pt  tebal
+//
+// Kelima baris terakhir adalah hasil pengukuran dari file asli, bukan
+// perkiraan. Kalau file aslinya berubah, jalankan ulang
+// scripts/ekstrak-font-pptx.py lalu sesuaikan angka di bawah.
+const F_JUDUL = 44;
 const F_POSISI = 24;
-const F_UNIT = 20;
 const F_NAMA = 20;
 const F_NILAI = 20;
-const F_KATEGORI = 14;
-const F_LEGENDA = 11;
+const F_KATEGORI = 12;
+const F_LEGENDA_ANGKA = 10;
+const F_LEGENDA_NAMA = 8.5;
+
+/** Nama unit memakai Poppins (berbeda dari isi slide yang memakai Aptos). */
+const FONT_UNIT = 'Poppins';
+const F_UNIT = 20;
 
 /** Nilai dengan koma desimal (format Indonesia). */
 function angkaID(n: number): string {
@@ -96,24 +111,26 @@ function kop(slide: PptxGenJS.Slide, unit: string, posisi: string) {
   slide.addText('Service Drill Ranking', {
     x: 3.576, y: 0.344, w: 6.225, h: 0.841,
     fontSize: F_JUDUL, bold: true, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: 'Aptos', shrinkText: true,
+    valign: 'middle', fontFace: FONT, shrinkText: true,
   });
 
+  // Kotak nama unit: latar TRANSPARAN (background di baliknya terlihat),
+  // hanya bergaris putih. Font Poppins sesuai file asli.
   slide.addShape('roundRect', {
     x: 5.039, y: 1.259, w: 3.271, h: 0.505,
-    fill: { color: BIRU_KOTAK_NAMA }, line: { color: PUTIH, width: 1 },
-    rectRadius: 0.08,
+    fill: { type: 'none' } as never,
+    line: { color: PUTIH, width: 1.25 }, rectRadius: 0.10,
   });
   slide.addText(unit, {
     x: 5.039, y: 1.259, w: 3.271, h: 0.505,
     fontSize: F_UNIT, bold: true, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: 'Aptos', shrinkText: true,
+    valign: 'middle', fontFace: FONT_UNIT, shrinkText: true,
   });
 
   slide.addText(posisi, {
     x: 5.219, y: 1.839, w: 2.896, h: 0.404,
     fontSize: F_POSISI, color: PUTIH, align: 'center', valign: 'middle',
-    fontFace: 'Aptos', shrinkText: true,
+    fontFace: FONT, shrinkText: true,
   });
 }
 
@@ -140,7 +157,7 @@ function legenda(slide: PptxGenJS.Slide) {
   slide.addText('SKALA PENILAIAN', {
     x: x0 + wPanel / 2 - 0.95, y: y0 - 0.19, w: 1.9, h: 0.30,
     fontSize: 10, bold: true, color: PUTIH, align: 'center',
-    valign: 'middle', fontFace: 'Aptos',
+    valign: 'middle', fontFace: FONT,
   });
 
   const item: Array<[string, string]> = [
@@ -161,13 +178,13 @@ function legenda(slide: PptxGenJS.Slide) {
     });
     slide.addText(rentang, {
       x: x + 0.16, y: y0 + 0.20, w: lebarItem - 0.22, h: 0.24,
-      fontSize: F_LEGENDA, bold: true, color: '222222',
-      valign: 'middle', fontFace: 'Aptos', shrinkText: true,
+      fontSize: F_LEGENDA_ANGKA, bold: true, color: '142D64',
+      valign: 'middle', fontFace: FONT, shrinkText: true,
     });
     slide.addText(nama, {
       x: x + 0.16, y: y0 + 0.44, w: lebarItem - 0.22, h: 0.26,
-      fontSize: F_LEGENDA, color: '333333',
-      valign: 'middle', fontFace: 'Aptos', shrinkText: true,
+      fontSize: F_LEGENDA_NAMA, color: '142D64',
+      valign: 'middle', fontFace: FONT, shrinkText: true,
     });
   });
 }
@@ -227,7 +244,7 @@ function slideRanking(
     slide.addText(b.nama, {
       x: xNama, y, w: 2.3, h: hFoto,
       fontSize: F_NAMA, bold: true, color: PUTIH, valign: 'middle',
-      fontFace: 'Aptos', wrap: false, shrinkText: true,
+      fontFace: FONT, wrap: false, shrinkText: true,
     });
 
     // kotak nilai: latar biru, garis putih
@@ -238,7 +255,7 @@ function slideRanking(
     slide.addText(angkaID(b.nilai), {
       x: xKotak, y: y + hFoto / 2 - 0.20, w: wKotak - 0.10, h: 0.40,
       fontSize: F_NILAI, bold: true, color: PUTIH, align: 'right',
-      valign: 'middle', fontFace: 'Aptos',
+      valign: 'middle', fontFace: FONT,
     });
 
     // pil kategori
@@ -251,7 +268,7 @@ function slideRanking(
     slide.addText(kat, {
       x: xKategori, y: y + hFoto / 2 - 0.26, w: wKategori, h: 0.52,
       fontSize: F_KATEGORI, bold: true, color: PUTIH, align: 'center',
-      valign: 'middle', fontFace: 'Aptos', shrinkText: true,
+      valign: 'middle', fontFace: FONT, shrinkText: true,
     });
   });
 
@@ -266,7 +283,7 @@ function slideRingkasan(prs: PptxGenJS, data: DataRanking) {
 
   slide.addText(data.periode, {
     x: 3.576, y: 2.38, w: 6.225, h: 0.4,
-    fontSize: 18, color: PUTIH, align: 'center', fontFace: 'Aptos',
+    fontSize: 18, color: PUTIH, align: 'center', fontFace: FONT,
   });
 
   const baris: Array<[string, string]> = [
@@ -280,11 +297,11 @@ function slideRingkasan(prs: PptxGenJS, data: DataRanking) {
     const y = 2.95 + i * 0.5;
     slide.addText(label, {
       x: 3.9, y, w: 2.2, h: 0.4,
-      fontSize: 14, color: PUTIH, align: 'right', fontFace: 'Aptos',
+      fontSize: 14, color: PUTIH, align: 'right', fontFace: FONT,
     });
     slide.addText(': ' + nilai, {
       x: 6.2, y, w: 4.0, h: 0.4,
-      fontSize: 14, bold: true, color: PUTIH, fontFace: 'Aptos',
+      fontSize: 14, bold: true, color: PUTIH, fontFace: FONT,
     });
   });
 
