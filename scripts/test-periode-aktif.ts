@@ -172,6 +172,21 @@ async function main() {
       tahunIni + 1 >= 2027,
     'tidak ada masa depan jauh (mis. Desember 2027) di dropdown'
   );
+
+  // ===== aturan terbaru: batas atas adalah PERIODE BERJALAN =====
+  // Periode yang belum dimulai tidak boleh bisa dipilih sama sekali — user
+  // pernah memilihnya tanpa sadar dan laporannya jadi tidak nyata.
+  const belumDimulai = dropdown.filter((p) => p.tanggalMulai.getTime() > Date.now());
+  cek(
+    belumDimulai.length === 0,
+    `tidak ada satu pun periode yang belum dimulai di dropdown${
+      belumDimulai.length ? ` (ditemukan: ${belumDimulai.map((p) => p.nama).join(', ')})` : ''
+    }`
+  );
+  cek(
+    !tahunDropdown.some((t) => t > tahunIni),
+    `tidak ada periode tahun depan (${tahunIni + 1}) di dropdown`
+  );
   cek(dropdown.length > 0, 'dropdown tidak kosong');
   cek(
     tahunDropdown.includes(tahunIni),

@@ -33,6 +33,12 @@ export default async function HalamanPeriode({
   // ===== buat periode otomatis =====
   // Periode dihitung mesin periode (src/lib/sip/periode.ts), tidak lagi
   // dibuat manual. Yang sudah ada tidak diganggu.
+  //
+  // **Hanya tahun berjalan.** Sebelumnya fungsi ini juga membuat periode
+  // untuk tahun berikutnya, sehingga halaman ini selalu memuat satu kelompok
+  // tahun yang masih kosong ("2027 — 0 periode") dan user membacanya sebagai
+  // data yang hilang. Periode tahun depan tidak dibutuhkan siapa pun sampai
+  // tahunnya tiba — dan akan otomatis dibuat saat halaman ini dibuka tahun depan.
   const tahunIni = new Date().getFullYear();
   const hasilTahun = await pastikanPeriodeTahun(tahunIni);
   const hasilBulan = await pastikanPeriodeBulan(new Date());

@@ -41,19 +41,13 @@ async function main() {
     },
   });
 
-  // Periode uji ber-`aktif: false` di tahun 2099: dipakai untuk menguji
-  // pembatasan periode, tidak pernah muncul di dropdown pemilih user.
-  const periode = await prisma.periode.upsert({
-    where: { kode: 'TST-2099-01' },
-    update: {},
-    create: {
-      kode: 'TST-2099-01', nama: 'Minggu ke-1 Januari 2099',
-      tanggalMulai: new Date(2099, 0, 1), tanggalSelesai: new Date(2099, 0, 7), aktif: false,
-    },
-  });
-
+  // SENGAJA tidak membuat periode uji tahun 2099 lagi.
+  // Periode di luar masa berlaku pernah dibuat untuk menguji batas dropdown,
+  // tetapi ia muncul di /parameter/periode sebagai kelompok tahun kosong
+  // ("2099 — 1 periode") dan membingungkan user. Batas dropdown sekarang
+  // diuji langsung terhadap data nyata (lihat test-grafik-batang/test-periode-aktif).
   console.log(JSON.stringify({
-    adminId: admin.id, mgrId: mgr.id, periodeId: periode.id, cabang244: kc.id,
+    adminId: admin.id, mgrId: mgr.id, cabang244: kc.id,
   }, null, 1));
 
   // token sesi untuk kedua akun uji

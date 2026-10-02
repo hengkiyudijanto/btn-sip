@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/db';
 import type { Periode } from '@prisma/client';
-
 /**
  * Memilih periode yang paling relevan untuk "sekarang".
  *
@@ -53,17 +52,20 @@ export async function pilihPeriodeRelevan(tanggal: Date = new Date()): Promise<P
  * Ambil daftar periode untuk pemilih (dropdown), diurutkan dari yang
  * terbaru sampai terlama.
  *
- * Hanya **tahun berjalan** yang ditampilkan, sama seperti halaman
- * `/periode`. Sebelumnya jendela "3 bulan ke belakang s/d 6 bulan ke
- * depan" dipakai, dan itu membuat dropdown memuat periode tahun depan
- * (mis. Desember 2027) yang tidak pernah terlihat di `/periode` —
- * user bisa memilih periode masa depan tanpa sadar. Aturan periode
- * menentukan periode dibuat otomatis beberapa tahun ke depan, jadi
- * dropdown TIDAK boleh mengambil semuanya.
+ * **Batas atas: periode berjalan.** Periode yang belum dimulai TIDAK boleh
+ * muncul di dropdown mana pun — user memilihnya karena tidak sadar, lalu
+ * menilai/melihat data periode yang belum terjadi dan laporannya jadi tidak
+ * nyata. Menyembunyikannya di sini (satu fungsi, dipakai semua halaman)
+ * lebih aman daripada menyaring di tiap halaman.
  *
- * Desember tahun lalu dan Januari tahun depan tetap disertakan supaya
- * penilaian di batas tahun (periode yang menyeberang tahun) masih bisa
- * dipilih. Duplikat dibuang oleh `id`.
+ * Pengecualiannya **halaman `/parameter/periode`**, yang memang harus
+ * memuat seluruh periode untuk pengelolaan — halaman itu memakai
+ * `daftarPeriodePerTahun()`, bukan fungsi ini.
+ *
+ * Batas bawah tetap: Desember tahun lalu dan seluruh tahun berjalan, supaya
+ * laporan periode lama masih bisa dibuka. Periode yang belum dimulai dibuang
+ * SETELAH dibaca dari database (bukan lewat filter kueri) supaya hari ini
+ * tetap dihitung sebagai batas — `< now` akan membuang periode berjalan.
  */
 export async function daftarPeriodeUntukPemilih(tanggal: Date = new Date()) {
   const pilih = {
@@ -71,32 +73,38 @@ export async function daftarPeriodeUntukPemilih(tanggal: Date = new Date()) {
   } as const;
 
   const tahun = tanggal.getFullYear();
+  const hariIni = new Date(tanggal.getFullYear(), tanggal.getMonth(), tanggal.getDate());
 
   const daftar = await prisma.periode.findMany({
     where: {
-      // tahun berjalan + Desember tahun lalu + Januari tahun depan
+      // Desember tahun lalu + seluruh tahun berjalan
       OR: [
         { tanggalMulai: { gte: new Date(tahun, 0, 1), lte: new Date(tahun, 11, 31, 23, 59, 59) } },
         { tanggalSelesai: { gte: new Date(tahun - 1, 11, 1), lte: new Date(tahun - 1, 11, 31, 23, 59, 59) } },
-        { tanggalMulai: { gte: new Date(tahun + 1, 0, 1), lte: new Date(tahun + 1, 0, 31, 23, 59, 59) } },
       ],
     },
     orderBy: { tanggalMulai: 'desc' },
     select: pilih,
   });
 
-  // buang duplikat (periode Des 2025 dan Jan 2026 bisa tertangkap dua syarat)
+  // buang duplikat (periode Des 2025 dan Jan 2026 bisa tertangkap dua syarat),
+  // lalu buang periode yang belum dimulai.
   const unik = new Map<string, (typeof daftar)[number]>();
   for (const p of daftar) unik.set(p.id, p);
-  return [...unik.values()].sort(
-    (a, b) => b.tanggalMulai.getTime() - a.tanggalMulai.getTime()
-  );
+  return [...unik.values()]
+    .filter((p) => p.tanggalMulai.getTime() <= hariIni.getTime())
+    .sort((a, b) => b.tanggalMulai.getTime() - a.tanggalMulai.getTime());
 }
 
 /**
- * Daftar periode dikelompokkan per tahun, untuk halaman `/periode` supaya
- * periode tahun lain bisa dilihat tanpa mengubah halaman jadi lintas tahun
- * dalam satu tabel panjang.
+ * Daftar periode dikelompokkan per tahun, untuk halaman `/parameter/periode`
+ * supaya periode tahun lain bisa dilihat tanpa mengubah halaman jadi lintas
+ * tahun dalam satu tabel panjang.
+ *
+ * **Tahun tanpa periode tidak dikembalikan.** Sebelumnya tahun depan selalu
+ * muncul sebagai kelompok kosong karena periode dibuat otomatis untuk tahun
+ * berikutnya — user melihat "2027 — 0 periode" dan itu terlihat seperti data
+ * yang hilang. Kalau tidak ada isinya, tidak ada gunanya ditampilkan.
  */
 export async function daftarPeriodePerTahun() {
   const semua = await prisma.periode.findMany({
@@ -111,8 +119,10 @@ export async function daftarPeriodePerTahun() {
     perTahun.get(t)!.push(p);
   }
 
-  // tahun terbaru lebih dulu
+  // tahun terbaru lebih dulu; tahun tanpa isi sudah otomatis tidak ada
+  // karena hanya tahun yang punya periode yang masuk ke peta
   return [...perTahun.entries()]
+    .filter(([, daftar]) => daftar.length > 0)
     .sort((a, b) => b[0] - a[0])
     .map(([tahun, daftar]) => ({ tahun, daftar }));
 }
