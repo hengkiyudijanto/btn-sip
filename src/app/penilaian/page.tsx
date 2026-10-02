@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db';
 import { BadgeRating } from '@/components/badge-rating';
 import { Kerangka } from '@/components/kerangka';
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
+import { ambilPengingat } from '@/lib/sip/pengingat';
+import { PanelPengingat } from '@/components/panel-pengingat';
 import { PemilihPeriode } from '@/components/pemilih-periode';
 import Link from 'next/link';
 
@@ -86,6 +88,10 @@ export default async function HalamanPenilaian({
 
   const sudahDinilai = daftarPegawai.filter((p) => p.penilaianku.length > 0).length;
 
+  // Pengingat hanya tentang periode yang sedang dibuka — kalau atasan sedang
+  // melihat periode arsip, jangan munculkan peringatan tentang periode lain.
+  const pengingat = await ambilPengingat(saya);
+
   return (
     <Kerangka pegawai={saya}>
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
@@ -97,6 +103,9 @@ export default async function HalamanPenilaian({
             : `${periode.nama} · Anda dapat melihat hasil penilaian`
         }
       />
+
+      {/* ===== pengingat periode ===== */}
+      {pengingat.periode?.id === periode.id && <PanelPengingat ringkasan={pengingat} />}
 
       {/* ===== pemilih periode ===== */}
       {bolehMenilai && daftarPeriode.length > 0 && (

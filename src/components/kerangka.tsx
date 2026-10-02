@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { LogoBTN } from '@/components/logo-btn';
 import { MenuMobile, NavigasiMenu } from '@/components/navigasi-menu';
+import { LoncengNotifikasi } from '@/components/lonceng-notifikasi';
 import { saringMenu } from '@/components/menu';
 import { keluar } from '@/app/actions/auth';
+import { ambilPengingat } from '@/lib/sip/pengingat';
 import type { PegawaiSesi } from '@/lib/auth';
 
 const LABEL_ROLE: Record<string, string> = {
@@ -12,8 +14,13 @@ const LABEL_ROLE: Record<string, string> = {
   ADMIN: 'Administrator',
 };
 
-export function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; children: React.ReactNode }) {
+export async function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; children: React.ReactNode }) {
   const menu = saringMenu(pegawai.role);
+
+  // Lonceng menampilkan hal yang perlu ditindak (petugas belum dinilai,
+  // penilaian menunggu diketahui, periode hampir ditutup). Kalau tidak ada
+  // apa-apa, komponennya tidak merender apa pun.
+  const pengingat = await ambilPengingat(pegawai);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -38,6 +45,7 @@ export function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; children
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
+            <LoncengNotifikasi daftar={pengingat.daftar} jumlah={pengingat.jumlahButir} />
             <div className="hidden sm:block text-right">
               <div className="text-sm font-semibold leading-tight truncate max-w-[180px]">
                 {pegawai.nama}

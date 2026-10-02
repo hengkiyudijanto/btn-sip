@@ -5,6 +5,9 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { BadgeRating } from '@/components/badge-rating';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
+import { ambilTren } from '@/lib/sip/tren-data';
+import { GrafikTren } from '@/components/grafik-tren';
+import { arahTren } from '@/lib/sip/tren';
 
 const LABEL_ROLE: Record<string, string> = {
   PEGAWAI: 'Pegawai',
@@ -45,6 +48,10 @@ export default async function Dasbor() {
         })
       : Promise.resolve(0),
   ]);
+
+  // Tren nilai per periode — hanya untuk yang berwenang menilai/melihat
+  // kinerja unit. Pegawai biasa cukup melihat riwayat nilainya sendiri.
+  const tren = BOLEH_MENILAI ? await ambilTren(pegawai) : [];
 
   return (
     <Kerangka pegawai={pegawai}>
@@ -158,6 +165,79 @@ export default async function Dasbor() {
             </Link>
           )}
         </div>
+
+        {/* ===== Tren nilai per periode ===== */}
+        {tren.length > 0 && (
+          <div className="mt-8 space-y-6">
+            <div className="animasi-naik">
+              <h2 className="text-lg font-bold text-abu-900">Tren Nilai</h2>
+              <p className="mt-1 text-sm text-abu-500">
+                Rata-rata nilai akhir per periode penilaian. Skala penuh 0–5, dan
+                periode tanpa penilaian ditandai &ldquo;tidak ada data&rdquo; — bukan
+                dihitung nol.
+              </p>
+            </div>
+
+            {tren.map((s) => {
+              const arah = arahTren(s.selisih);
+              const warnArah =
+                arah === 'naik'
+                  ? 'text-sukses'
+                  : arah === 'turun'
+                    ? 'text-bahaya'
+                    : 'text-abu-500';
+              const tandaArah = arah === 'naik' ? '▲' : arah === 'turun' ? '▼' : '■';
+              return (
+                <div key={s.judul} className="kartu overflow-hidden">
+                  <div className="px-6 py-4 border-b border-abu-200 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-abu-800">{s.judul}</h3>
+                      <p className="mt-0.5 text-xs text-abu-400">{s.keterangan}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-abu-900 tabular-nums">
+                        {s.rataRata != null ? s.rataRata.toFixed(2).replace('.', ',') : '—'}
+                      </div>
+                      <div className="text-xs text-abu-400">
+                        rata-rata {s.titik.reduce((n, t) => n + t.jumlah, 0)} penilaian
+                      </div>
+                      <div className={`mt-0.5 text-xs font-medium ${warnArah}`}>
+                        {s.selisih != null ? (
+                          <>
+                            {tandaArah} {s.selisih > 0 ? '+' : ''}
+                            {s.selisih.toFixed(2).replace('.', ',')} dari periode sebelumnya
+                          </>
+                        ) : (
+                          'Belum ada pembanding'
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-5 sm:px-6">
+                    <GrafikTren titik={s.titik} judul={s.judul} />
+                  </div>
+
+                  {/* ringkasan per kategori — hanya untuk seri utama */}
+                  {s.kategori && (
+                    <div className="px-6 pb-5 grid gap-3 sm:grid-cols-3">
+                      {s.kategori.map((k) => (
+                        <div key={k.kode} className="rounded-lg border border-abu-200 p-3">
+                          <div className="label-kolom">
+                            {k.kode}. {k.nama}
+                          </div>
+                          <div className="mt-1 text-lg font-bold text-abu-900 tabular-nums">
+                            {k.nilai.toFixed(2).replace('.', ',')}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* ===== Riwayat penilaian (untuk pegawai biasa) ===== */}
         {!BOLEH_MENILAI && penilaianSaya.length > 0 && (

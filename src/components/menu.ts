@@ -60,6 +60,7 @@ export const MENU: ItemMenuPohon[] = [
       { href: '/parameter/jabatan', label: 'Jabatan', role: ['ADMIN'] },
       { href: '/parameter/peran', label: 'Peran', role: ['ADMIN'] },
       { href: '/parameter/periode', label: 'Periode', role: ['ADMIN'] },
+      { href: '/parameter/audit', label: 'Audit Log', role: ['ADMIN'] },
     ],
   },
 ];
