@@ -94,9 +94,8 @@ async function main() {
     data: { tokenHash: h(token), pegawaiId: admin.id, expiresAt: new Date(Date.now() + 900000) },
   });
 
-  await potret(`${BASE}/parameter/audit`, '/home/ubuntu/projects/btn-sip/cek-audit.png', token, 1500);
-  await potret(`${BASE}/penilaian`, '/home/ubuntu/projects/btn-sip/cek-pengingat.png', token, 1200);
-  await potret(`${BASE}/dasbor`, '/home/ubuntu/projects/btn-sip/cek-tren.png', token, 2200);
+  await potret(`${BASE}/dasbor`, '/home/ubuntu/projects/btn-sip/cek-dasbor-batang.png', token, 2400);
+  await potret(`${BASE}/dasbor?unit=244`, '/home/ubuntu/projects/btn-sip/cek-batang-kc.png', token, 2400);
 
   await prisma.sesi.deleteMany({ where: { pegawaiId: admin.id, tokenHash: h(token) } });
 }

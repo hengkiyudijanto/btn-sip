@@ -8,6 +8,10 @@ import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { ambilTren } from '@/lib/sip/tren-data';
 import { GrafikTren } from '@/components/grafik-tren';
 import { arahTren } from '@/lib/sip/tren';
+import { ambilDataGrafikBatang } from '@/lib/sip/grafik-batang-data';
+import { GrafikBatang } from '@/components/grafik-batang';
+import { FilterGrafikBatang } from '@/components/filter-grafik-batang';
+import { daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 
 const LABEL_ROLE: Record<string, string> = {
   PEGAWAI: 'Pegawai',
@@ -18,10 +22,16 @@ const LABEL_ROLE: Record<string, string> = {
 
 export const metadata = { title: 'Dasbor' };
 
-export default async function Dasbor() {
+export default async function Dasbor({
+  searchParams,
+}: {
+  searchParams: Promise<{ periode?: string; unit?: string; jabatan?: string }>;
+}) {
   const pegawai = await pegawaiDariSesi();
   if (!pegawai) redirect('/masuk');
   if (pegawai.harusGantiPassword) redirect('/ubah-password');
+
+  const sp = await searchParams;
 
   const BOLEH_MENILAI = ['SUPERVISOR', 'MANAGER', 'ADMIN'].includes(pegawai.role);
 
@@ -49,9 +59,42 @@ export default async function Dasbor() {
       : Promise.resolve(0),
   ]);
 
+  // Cakupan admin = semua cabang, jadi angka "sudah dinilai" di kartu statistik
+  // harus dihitung dengan cakupan yang sama seperti grafik — kalau memakai
+  // penilaiId, angkanya berbeda dari grafik dan terlihat seperti salah hitung.
+  const [sudahDinilaiCakupan, totalPetugasCakupan] = periode
+    ? await Promise.all([
+        prisma.penilaian.count({
+          where: {
+            periodeId: periode.id,
+            nilaiAkhir: { not: null },
+            pegawai: pegawai.role === 'ADMIN' ? {} : { cabangId: pegawai.cabang.id },
+          },
+        }),
+        prisma.pegawai.count({
+          where: {
+            aktif: true,
+            role: 'PEGAWAI',
+            ...(pegawai.role === 'ADMIN' ? {} : { cabangId: pegawai.cabang.id }),
+          },
+        }),
+      ])
+    : [0, 0];
+
   // Tren nilai per periode — hanya untuk yang berwenang menilai/melihat
   // kinerja unit. Pegawai biasa cukup melihat riwayat nilainya sendiri.
   const tren = BOLEH_MENILAI ? await ambilTren(pegawai) : [];
+
+  // Grafik batang: nilai per unit / jabatan / petugas, dengan filter kantor.
+  // Cakupan peran sudah dijaga di dalam `ambilDataGrafikBatang`.
+  const grafik = BOLEH_MENILAI
+    ? await ambilDataGrafikBatang(pegawai, {
+        periodeId: sp.periode,
+        unit: sp.unit,
+        jabatan: sp.jabatan,
+      })
+    : null;
+  const opsiPeriode = BOLEH_MENILAI ? await daftarPeriodeUntukPemilih() : [];
 
   return (
     <Kerangka pegawai={pegawai}>
@@ -72,15 +115,15 @@ export default async function Dasbor() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {BOLEH_MENILAI ? (
             <>
-              <StatKartu label="Petugas" nilai={String(totalPetugas)} keterangan="Yang dapat dinilai" />
+              <StatKartu label="Petugas" nilai={String(totalPetugasCakupan)} keterangan="Yang dapat dinilai" />
               <StatKartu
                 label="Sudah dinilai"
-                nilai={String(penilaianPeriodeIni)}
-                keterangan={periode ? periode.nama : 'Belum ada periode'}
+                nilai={String(sudahDinilaiCakupan)}
+                keterangan={periode ? `${periode.nama} · nilai terisi` : 'Belum ada periode'}
               />
               <StatKartu
                 label="Belum dinilai"
-                nilai={String(Math.max(0, totalPetugas - penilaianPeriodeIni))}
+                nilai={String(Math.max(0, totalPetugasCakupan - sudahDinilaiCakupan))}
                 keterangan="Perlu diselesaikan"
                 sorot
               />
@@ -165,6 +208,34 @@ export default async function Dasbor() {
             </Link>
           )}
         </div>
+
+        {/* ===== Grafik batang: per unit / jabatan / petugas ===== */}
+        {grafik && (
+          <div className="mt-8 space-y-4">
+            <div className="animasi-naik">
+              <h2 className="text-lg font-bold text-abu-900">Rekap Nilai</h2>
+              <div className="mt-2 h-0.5 w-10 bg-btn-merah-500 rounded-full" />
+              <p className="mt-3 text-sm text-abu-500">
+                Nilai rata-rata per kantor, per jabatan, dan per petugas. Pilih kantor
+                untuk melihat unit di bawahnya; daftar petugas bisa disembunyikan.
+              </p>
+            </div>
+
+            {opsiPeriode.length > 0 && (
+              <FilterGrafikBatang
+                opsiPeriode={opsiPeriode.map((p) => ({ id: p.id, nama: p.nama }))}
+                periodeTerpilih={grafik.periode?.id ?? ''}
+                opsiUnit={grafik.opsiUnit}
+                unitTerpilih={grafik.unitTerpilih}
+                opsiJabatan={grafik.opsiJabatan}
+                jabatanTerpilih={grafik.jabatanTerpilih}
+                bolehPilihUnit={pegawai.role === 'ADMIN' || pegawai.role === 'MANAGER'}
+              />
+            )}
+
+            <GrafikBatang data={grafik} />
+          </div>
+        )}
 
         {/* ===== Tren nilai per periode ===== */}
         {tren.length > 0 && (
