@@ -6,6 +6,7 @@ import {
   FormTambahJabatan,
   TabelJabatan,
 } from '@/components/kelola-jabatan';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Jabatan' };
 
@@ -13,7 +14,7 @@ export default async function HalamanJabatan() {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
-  if (saya.role !== 'ADMIN') redirect('/dasbor');
+  if (!boleh(saya.role, 'kelola_induk')) redirect('/dasbor');
 
   const daftar = await prisma.jabatan.findMany({
     orderBy: [{ aktif: 'desc' }, { nama: 'asc' }],

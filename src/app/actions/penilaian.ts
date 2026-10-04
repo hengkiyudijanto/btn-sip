@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
+import { boleh, wajibKemampuan } from '@/lib/sip/akses';
 import { KATEGORI, hitungPenilaian, nilaiKeSkala, type InputAspek } from '@/lib/sip/penilaian';
 
 const skemaSimpan = z.object({
@@ -29,8 +30,6 @@ export type HasilSimpan = {
   diubah?: boolean;
 };
 
-/** Role yang boleh menilai petugas. */
-const BOLEH_MENILAI = new Set(['SUPERVISOR', 'MANAGER', 'ADMIN']);
 
 export async function simpanPenilaian(
   _sebelumnya: HasilSimpan,
@@ -38,9 +37,8 @@ export async function simpanPenilaian(
 ): Promise<HasilSimpan> {
   const penilai = await pegawaiDariSesi();
   if (!penilai) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (!BOLEH_MENILAI.has(penilai.role)) {
-    return { error: 'Anda tidak berwenang melakukan penilaian.' };
-  }
+  const tolakMenilai = wajibKemampuan(penilai, 'menilai');
+  if (tolakMenilai) return { error: tolakMenilai };
 
   let mentah: unknown;
   try {
@@ -259,7 +257,7 @@ export type HasilPindah = {
 /** Daftar periode yang bisa dipilih sebagai tujuan pindah. */
 export async function daftarPeriodeTujuan(penilaianId: string) {
   const admin = await pegawaiDariSesi();
-  if (!admin || admin.role !== 'ADMIN') return [];
+  if (!admin || !boleh(admin.role, 'kelola_penilaian')) return [];
 
   const penilaian = await prisma.penilaian.findUnique({
     where: { id: penilaianId },
@@ -287,9 +285,8 @@ export async function pindahPenilaian(
 ): Promise<HasilPindah> {
   const admin = await pegawaiDariSesi();
   if (!admin) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (admin.role !== 'ADMIN') {
-    return { error: 'Hanya admin yang boleh memindahkan penilaian.' };
-  }
+  const tolakPindah = wajibKemampuan(admin, 'kelola_penilaian');
+  if (tolakPindah) return { error: tolakPindah };
 
   const penilaianId = String(formData.get('penilaianId') ?? '');
   const periodeTujuanId = String(formData.get('periodeTujuanId') ?? '');
@@ -371,9 +368,8 @@ export async function hapusPenilaian(
 ): Promise<HasilHapus> {
   const admin = await pegawaiDariSesi();
   if (!admin) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (admin.role !== 'ADMIN') {
-    return { error: 'Hanya admin yang boleh menghapus penilaian.' };
-  }
+  const tolakHapus = wajibKemampuan(admin, 'kelola_penilaian');
+  if (tolakHapus) return { error: tolakHapus };
 
   const penilaianId = String(formData.get('penilaianId') ?? '');
   const konfirmasi = String(formData.get('konfirmasi') ?? '').trim();

@@ -8,6 +8,7 @@ import { ambilPengingat } from '@/lib/sip/pengingat';
 import { PanelPengingat } from '@/components/panel-pengingat';
 import { PemilihPeriode } from '@/components/pemilih-periode';
 import Link from 'next/link';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Daftar Penilaian' };
 
@@ -28,6 +29,7 @@ export default async function HalamanPenilaian({
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
+  if (!boleh(saya.role, 'menilai')) redirect('/dasbor');
 
   const bolehMenilai = BOLEH_MENILAI.has(saya.role);
 

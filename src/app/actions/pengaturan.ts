@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { pegawaiDariSesi } from '@/lib/auth';
 import { ubahHariPenilaian, pastikanPeriodeBulan, ambilPengaturan } from '@/lib/sip/pengaturan';
 import { NAMA_HARI } from '@/lib/sip/periode';
+import { boleh } from '@/lib/sip/akses';
 
 export type HasilPengaturan = {
   error?: string;
@@ -23,7 +24,7 @@ export async function ubahHariPenilaianAksi(
 ): Promise<HasilPengaturan> {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi berakhir. Silakan masuk kembali.' };
-  if (saya.role !== 'ADMIN') return { error: 'Hanya admin yang dapat mengubah pengaturan ini.' };
+  if (!boleh(saya.role, 'kelola_induk')) return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' };
 
   const nilai = Number(formData.get('hariPenilaian'));
   if (!Number.isInteger(nilai) || nilai < 0 || nilai > 6) {

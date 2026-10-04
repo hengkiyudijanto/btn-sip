@@ -2,25 +2,18 @@ import { redirect } from 'next/navigation';
 import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
+import { SEMUA_PERAN, KETERANGAN_PERAN, type Peran } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Peran' };
 
 /**
- * Keterangan tiap peran — apa yang boleh dilakukannya di aplikasi.
+ * Urutan tampil: dari hak akses terluas ke tersempit.
  *
- * Teksnya ditaruh di sini (bukan di database) karena ini penjelasan hak
- * akses yang ditentukan KODE, bukan data yang bisa diubah dari layar.
- * Kalau nanti peran dipindah jadi tabel, keterangan ini ikut pindah.
+ * Daftar peran dan keterangannya diambil dari `@/lib/sip/akses` — SATU sumber.
+ * Jangan tulis ulang daftarnya di sini: waktu peran `PENGAMAT` ditambahkan,
+ * halaman ini sempat tidak menampilkannya karena daftarnya disalin terpisah.
  */
-const KETERANGAN: Record<string, string> = {
-  PEGAWAI: 'Melihat hasil penilaian dirinya sendiri.',
-  SUPERVISOR: 'Menilai petugas di bawahnya dan mengusulkan pegawai baru.',
-  MANAGER: 'Mengetahui/mengakui penilaian, serta melihat data pegawai.',
-  ADMIN: 'Kelola data induk (cabang, periode, jabatan, peran) dan akun.',
-};
-
-/** Urutan tampil: dari hak akses terluas ke tersempit. */
-const URUTAN = ['ADMIN', 'MANAGER', 'SUPERVISOR', 'PEGAWAI'];
+const URUTAN: Peran[] = [...SEMUA_PERAN].reverse();
 
 export default async function HalamanPeran() {
   const saya = await pegawaiDariSesi();
@@ -36,7 +29,7 @@ export default async function HalamanPeran() {
 
   const daftar = URUTAN.map((kode) => ({
     kode,
-    keterangan: KETERANGAN[kode] ?? '',
+    keterangan: KETERANGAN_PERAN[kode] ?? '',
     jumlah: jumlah.get(kode as never) ?? 0,
   }));
 

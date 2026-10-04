@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
 import { akanMembuatSiklus } from '@/lib/sip/hierarki';
+import { boleh } from '@/lib/sip/akses';
 
 export type HasilCabang = {
   error?: string;
@@ -15,7 +16,7 @@ export type HasilCabang = {
 async function pastikanAdmin() {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' as const };
-  if (saya.role !== 'ADMIN') return { error: 'Hanya admin yang dapat mengelola cabang.' as const };
+  if (!boleh(saya.role, 'kelola_induk')) return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' };
   return { saya };
 }
 

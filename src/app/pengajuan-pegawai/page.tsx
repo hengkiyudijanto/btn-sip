@@ -11,6 +11,7 @@ import {
 import { cabangYangBoleh } from '@/lib/sip/pengajuan';
 import { BOLEH_MENGAJUKAN } from '@/lib/sip/pengajuan-konstanta';
 import { LABEL_JENIS, WARNA_JENIS } from '@/lib/sip/hierarki';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Pengajuan Pegawai' };
 
@@ -18,7 +19,7 @@ export default async function HalamanPengajuanPegawai() {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
-  if (!BOLEH_MENGAJUKAN.has(saya.role)) redirect('/dasbor');
+  if (!boleh(saya.role, 'usul_pegawai')) redirect('/dasbor');
 
   const isAdmin = saya.role === 'ADMIN';
 

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db';
+import type { Peran } from '@/lib/sip/akses';
 
 const NAMA_COOKIE = 'sip_sesi';
 const UMUR_SESI_HARI = 7;
@@ -74,7 +75,7 @@ export type PegawaiSesi = {
   id: string;
   nip: string;
   nama: string;
-  role: 'PEGAWAI' | 'SUPERVISOR' | 'MANAGER' | 'ADMIN';
+  role: Peran;
   fotoUrl: string | null;
   harusGantiPassword: boolean;
   cabang: { id: string; kode: string; nama: string };

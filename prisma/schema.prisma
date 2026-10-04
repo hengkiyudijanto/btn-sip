@@ -69,6 +69,7 @@ model Jabatan {
 
 enum Role {
   PEGAWAI    // melihat hasil penilaian sendiri
+  PENGAMAT   // HANYA MELIHAT: dasbor, laporan, ranking. Tidak boleh mengubah apa pun.
   SUPERVISOR // menilai petugas
   MANAGER    // mengetahui/mengakui penilaian
   ADMIN      // kelola master data, periode, akun

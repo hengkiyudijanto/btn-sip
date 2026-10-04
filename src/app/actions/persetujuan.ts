@@ -3,10 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
+import { boleh } from '@/lib/sip/akses';
 
 export type HasilAksi = { error?: string; sukses?: boolean; pesan?: string };
 
-const BOLEH_MENGETAHUI = new Set(['MANAGER', 'ADMIN']);
 
 /**
  * Atasan/manager menyatakan mengetahui penilaian yang sudah dikirim.
@@ -18,7 +18,7 @@ export async function tandaiDiketahui(
 ): Promise<HasilAksi> {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (!BOLEH_MENGETAHUI.has(saya.role)) {
+  if (!boleh(saya.role, 'mengetahui')) {
     return { error: 'Hanya manager atau admin yang dapat menyatakan mengetahui.' };
   }
 
@@ -83,7 +83,7 @@ export async function kunciPenilaian(
 ): Promise<HasilAksi> {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (saya.role !== 'ADMIN') return { error: 'Hanya admin yang dapat mengunci penilaian.' };
+  if (!boleh(saya.role, 'kelola_penilaian')) return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' };
 
   const penilaianId = String(formData.get('penilaianId') ?? '');
   const p = await prisma.penilaian.findUnique({ where: { id: penilaianId } });
@@ -120,7 +120,7 @@ export async function kembalikanUntukRevisi(
 ): Promise<HasilAksi> {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (!BOLEH_MENGETAHUI.has(saya.role)) {
+  if (!boleh(saya.role, 'mengetahui')) {
     return { error: 'Anda tidak berwenang mengembalikan penilaian.' };
   }
 

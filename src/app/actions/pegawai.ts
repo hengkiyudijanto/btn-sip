@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit, hashPassword } from '@/lib/auth';
 import crypto from 'node:crypto';
+import { boleh } from '@/lib/sip/akses';
 
 export type HasilImpor = {
   error?: string;
@@ -20,7 +21,7 @@ export type HasilImpor = {
 async function pastikanAdmin() {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' as const };
-  if (saya.role !== 'ADMIN') return { error: 'Hanya admin yang dapat melakukan aksi ini.' as const };
+  if (!boleh(saya.role, 'kelola_pegawai')) return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' };
   return { saya };
 }
 

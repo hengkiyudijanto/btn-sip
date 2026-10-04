@@ -12,6 +12,7 @@ import { ambilDataGrafikBatang } from '@/lib/sip/grafik-batang-data';
 import { GrafikBatang } from '@/components/grafik-batang';
 import { FilterGrafikBatang } from '@/components/filter-grafik-batang';
 import { daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
+import { boleh } from '@/lib/sip/akses';
 
 const LABEL_ROLE: Record<string, string> = {
   PEGAWAI: 'Pegawai',
@@ -33,7 +34,13 @@ export default async function Dasbor({
 
   const sp = await searchParams;
 
-  const BOLEH_MENILAI = ['SUPERVISOR', 'MANAGER', 'ADMIN'].includes(pegawai.role);
+  // Tiga hal berbeda, jangan disatukan:
+  //   BOLEH_MENILAI  = boleh mengisi/mengirim penilaian
+  //   MELIHAT_KINERJA = boleh melihat tren & grafik nilai unit (pengamat termasuk)
+  //   CAKUPAN_SEMUA  = melihat lintas cabang (admin & pengamat), bukan cabangnya saja
+  const BOLEH_MENILAI = boleh(pegawai.role, 'menilai');
+  const MELIHAT_KINERJA = BOLEH_MENILAI || pegawai.role === 'PENGAMAT';
+  const CAKUPAN_SEMUA = pegawai.role === 'ADMIN' || pegawai.role === 'PENGAMAT';
 
   // Statistik ringkas
   const periode = await pilihPeriodeRelevan();
@@ -43,7 +50,7 @@ export default async function Dasbor({
       where: {
         aktif: true,
         role: 'PEGAWAI',
-        ...(pegawai.role === 'ADMIN' ? {} : { cabangId: pegawai.cabang.id }),
+        ...(CAKUPAN_SEMUA ? {} : { cabangId: pegawai.cabang.id }),
       },
     }),
     prisma.penilaian.findMany({
@@ -68,7 +75,7 @@ export default async function Dasbor({
           where: {
             periodeId: periode.id,
             nilaiAkhir: { not: null },
-            pegawai: pegawai.role === 'ADMIN' ? {} : { cabangId: pegawai.cabang.id },
+            pegawai: CAKUPAN_SEMUA ? {} : { cabangId: pegawai.cabang.id },
           },
         }),
         prisma.pegawai.count({
@@ -83,18 +90,18 @@ export default async function Dasbor({
 
   // Tren nilai per periode — hanya untuk yang berwenang menilai/melihat
   // kinerja unit. Pegawai biasa cukup melihat riwayat nilainya sendiri.
-  const tren = BOLEH_MENILAI ? await ambilTren(pegawai) : [];
+  const tren = MELIHAT_KINERJA ? await ambilTren(pegawai) : [];
 
   // Grafik batang: nilai per unit / jabatan / petugas, dengan filter kantor.
   // Cakupan peran sudah dijaga di dalam `ambilDataGrafikBatang`.
-  const grafik = BOLEH_MENILAI
+  const grafik = MELIHAT_KINERJA
     ? await ambilDataGrafikBatang(pegawai, {
         periodeId: sp.periode,
         unit: sp.unit,
         jabatan: sp.jabatan,
       })
     : null;
-  const opsiPeriode = BOLEH_MENILAI ? await daftarPeriodeUntukPemilih() : [];
+  const opsiPeriode = MELIHAT_KINERJA ? await daftarPeriodeUntukPemilih() : [];
 
   return (
     <Kerangka pegawai={pegawai}>
@@ -229,7 +236,7 @@ export default async function Dasbor({
                 unitTerpilih={grafik.unitTerpilih}
                 opsiJabatan={grafik.opsiJabatan}
                 jabatanTerpilih={grafik.jabatanTerpilih}
-                bolehPilihUnit={pegawai.role === 'ADMIN' || pegawai.role === 'MANAGER'}
+                bolehPilihUnit={CAKUPAN_SEMUA || pegawai.role === 'MANAGER'}
               />
             )}
 

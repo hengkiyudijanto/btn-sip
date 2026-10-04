@@ -218,6 +218,7 @@ export function PanelTambah({
           <label className="block text-xs font-medium text-abu-600 mb-1.5">Peran</label>
           <select name="role" defaultValue="PEGAWAI" className={kelasInput}>
             <option value="PEGAWAI">Pegawai</option>
+            <option value="PENGAMAT">Pengamat (hanya melihat)</option>
             <option value="SUPERVISOR">Supervisor (penilai)</option>
             <option value="MANAGER">Manager (mengetahui)</option>
             <option value="ADMIN">Administrator</option>
@@ -360,6 +361,7 @@ export function AksiBaris({
             <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Peran</label>
             <select name="role" defaultValue={data.role} className={kelasKecil}>
               <option value="PEGAWAI">Pegawai</option>
+              <option value="PENGAMAT">Pengamat (hanya melihat)</option>
               <option value="SUPERVISOR">Supervisor (penilai)</option>
               <option value="MANAGER">Manager (mengetahui)</option>
               <option value="ADMIN">Administrator</option>

@@ -12,6 +12,7 @@ import {
 import { NAMA_HARI, AMBANG_BUANG_SISA } from '@/lib/sip/periode';
 import { daftarPeriodePerTahun } from '@/lib/sip/periode-aktif';
 import { PanelHariPenilaian } from '@/components/panel-hari-penilaian';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Periode' };
 
@@ -23,7 +24,7 @@ export default async function HalamanPeriode({
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
-  if (saya.role !== 'ADMIN') redirect('/dasbor');
+  if (!boleh(saya.role, 'kelola_induk')) redirect('/dasbor');
 
   // Tahun yang dibuka lewat ?tahun=2025 — supaya halaman tetap bisa
   // menampilkan tahun mana pun tanpa merender 148 baris sekaligus.

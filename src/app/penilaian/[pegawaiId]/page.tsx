@@ -9,6 +9,7 @@ import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { FotoPenilaian } from '@/components/foto-penilaian';
 import { alamatFoto } from '@/lib/sip/alamat-foto';
 import { KelolaPenilaian } from '@/components/kelola-penilaian';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Isi Penilaian' };
 
@@ -24,6 +25,7 @@ export default async function HalamanIsiPenilaian({
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
+  if (!boleh(saya.role, 'menilai')) redirect('/dasbor');
   if (!BOLEH_MENILAI.has(saya.role)) redirect('/dasbor');
 
   const { pegawaiId } = await params;

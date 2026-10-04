@@ -5,6 +5,7 @@ import { pegawaiDariSesi } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { catatAudit } from '@/lib/auth';
 import { validasiFotoPenilaian, simpanFotoPenilaian } from '@/lib/sip/foto-penilaian';
+import { boleh } from '@/lib/sip/akses';
 
 export type HasilFotoPenilaian = {
   error?: string;
@@ -43,7 +44,7 @@ export async function simpanFotoPenilaianAksi(
   if (!p) return { error: 'Penilaian tidak ditemukan.' };
 
   // hanya penilai bersangkutan atau admin
-  if (p.penilaiId !== saya.id && saya.role !== 'ADMIN') {
+  if (p.penilaiId !== saya.id && !boleh(saya.role, 'kelola_penilaian')) {
     return { error: 'Hanya penilai yang bersangkutan atau admin yang dapat mengunggah foto.' };
   }
   if (p.periode.dikunci) {
@@ -100,7 +101,7 @@ export async function hapusFotoPenilaianAksi(
     include: { periode: { select: { dikunci: true, nama: true } } },
   });
   if (!p) return { error: 'Penilaian tidak ditemukan.' };
-  if (p.penilaiId !== saya.id && saya.role !== 'ADMIN') {
+  if (p.penilaiId !== saya.id && !boleh(saya.role, 'kelola_penilaian')) {
     return { error: 'Hanya penilai yang bersangkutan atau admin yang dapat menghapus foto.' };
   }
   if (p.periode.dikunci) {

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
+import { boleh } from '@/lib/sip/akses';
 
 export type HasilFoto = {
   error?: string;
@@ -29,7 +30,7 @@ export async function simpanFoto(
 ): Promise<HasilFoto> {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (saya.role !== 'ADMIN') return { error: 'Hanya admin yang dapat mengubah foto pegawai.' };
+  if (!boleh(saya.role, 'kelola_pegawai')) return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' };
 
   const pegawaiId = String(formData.get('pegawaiId') ?? '');
   const dataUrl = String(formData.get('dataUrl') ?? '');
@@ -93,7 +94,7 @@ export async function hapusFoto(
 ): Promise<HasilFoto> {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (saya.role !== 'ADMIN') return { error: 'Hanya admin yang dapat mengubah foto pegawai.' };
+  if (!boleh(saya.role, 'kelola_pegawai')) return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' };
 
   const pegawaiId = String(formData.get('pegawaiId') ?? '');
   if (!pegawaiId) return { error: 'Pegawai tidak ditemukan.' };
@@ -139,7 +140,7 @@ export async function simpanFotoDariUrl(
 ): Promise<HasilFoto> {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' };
-  if (saya.role !== 'ADMIN') return { error: 'Hanya admin yang dapat mengubah foto pegawai.' };
+  if (!boleh(saya.role, 'kelola_pegawai')) return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' };
 
   const pegawaiId = String(formData.get('pegawaiId') ?? '');
   const url = String(formData.get('fotoUrl') ?? '').trim();

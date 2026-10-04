@@ -11,6 +11,7 @@ import {
   INFO_AKSI,
   type KelompokAudit,
 } from '@/lib/sip/audit';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Audit Log' };
 
@@ -39,7 +40,7 @@ export default async function HalamanAudit({
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
   // Audit log memuat IP, jejak login, dan riwayat perubahan nilai — admin saja.
-  if (saya.role !== 'ADMIN') redirect('/dasbor');
+  if (!boleh(saya.role, 'lihat_audit')) redirect('/dasbor');
 
   const sp = await searchParams;
   const aksiFilter = sp.aksi?.trim() || '';

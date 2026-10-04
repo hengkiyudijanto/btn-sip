@@ -11,6 +11,7 @@ import {
   TombolKunci,
   FormKembalikan,
 } from '@/components/aksi-persetujuan';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Persetujuan' };
 
@@ -20,7 +21,7 @@ export default async function HalamanPersetujuan() {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
-  if (!BOLEH_MENGETAHUI.has(saya.role)) redirect('/dasbor');
+  if (!boleh(saya.role, 'mengetahui')) redirect('/dasbor');
 
   const periode = await pilihPeriodeRelevan();
 

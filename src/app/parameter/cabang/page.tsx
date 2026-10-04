@@ -4,6 +4,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { FormTambahCabang, AksiCabang } from '@/components/kelola-cabang';
 import { susunPohon, LABEL_JENIS, WARNA_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Cabang' };
 
@@ -11,7 +12,7 @@ export default async function HalamanCabang() {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
-  if (saya.role !== 'ADMIN') redirect('/dasbor');
+  if (!boleh(saya.role, 'kelola_induk')) redirect('/dasbor');
 
   const semua = await prisma.cabang.findMany({
     orderBy: { kode: 'asc' },

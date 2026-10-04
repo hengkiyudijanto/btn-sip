@@ -9,6 +9,7 @@ import type { PegawaiSesi } from '@/lib/auth';
 
 const LABEL_ROLE: Record<string, string> = {
   PEGAWAI: 'Pegawai',
+  PENGAMAT: 'Pengamat',
   SUPERVISOR: 'Supervisor',
   MANAGER: 'Manager',
   ADMIN: 'Administrator',

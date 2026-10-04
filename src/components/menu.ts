@@ -30,7 +30,7 @@ export type ItemMenuPohon = {
  */
 export const MENU: ItemMenuPohon[] = [
   { href: '/dasbor', label: 'Dasbor' },
-  { href: '/penilaian', label: 'Penilaian' },
+  { href: '/penilaian', label: 'Penilaian', role: ['SUPERVISOR', 'MANAGER', 'ADMIN'] },
   { href: '/persetujuan', label: 'Persetujuan', role: ['MANAGER', 'ADMIN'] },
   {
     // Induk tanpa href sendiri: halaman /laporan sudah jadi submenu

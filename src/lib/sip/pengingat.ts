@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import type { PegawaiSesi } from '@/lib/auth';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
+import { boleh } from '@/lib/sip/akses';
 
 /**
  * Pengingat periode: apa yang belum selesai sebelum periode berjalan ditutup.
@@ -70,11 +71,11 @@ export async function ambilPengingat(
 
   const sisaHari = selisihHari(hariIni, periode.tanggalSelesai);
   const daftar: Pengingat[] = [];
-  const bolehMenilai = saya.role === 'SUPERVISOR' || saya.role === 'MANAGER' || saya.role === 'ADMIN';
+  const bolehMenilai = boleh(saya.role, 'menilai');
 
   // Cakupan petugas mengikuti aturan yang sama dengan halaman /penilaian:
   // admin melihat semua cabang, peran lain hanya cabangnya sendiri.
-  const diCabangku = saya.role === 'ADMIN' ? {} : { cabangId: saya.cabang.id };
+  const diCabangku = saya.role === 'ADMIN' || saya.role === 'PENGAMAT' ? {} : { cabangId: saya.cabang.id };
 
   // ===== 1. yang jadi tugas SAYA: petugas belum dinilai =====
   // Hanya dihitung untuk periode yang belum dikunci dan belum lewat — bukan

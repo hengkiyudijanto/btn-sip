@@ -4,6 +4,7 @@ import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { PanelImpor, PanelTambah, AksiBaris } from '@/components/kelola-pegawai';
+import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Pegawai' };
 
@@ -11,7 +12,7 @@ export default async function HalamanPegawai() {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
-  if (!['ADMIN', 'MANAGER'].includes(saya.role)) redirect('/dasbor');
+  if (!boleh(saya.role, 'lihat_pegawai')) redirect('/dasbor');
 
   const admin = saya.role === 'ADMIN';
 

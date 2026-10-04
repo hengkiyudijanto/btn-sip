@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
+import { boleh } from '@/lib/sip/akses';
 
 export type HasilJabatan = {
   error?: string;
@@ -14,8 +15,8 @@ export type HasilJabatan = {
 async function pastikanAdmin() {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' as const };
-  if (saya.role !== 'ADMIN') {
-    return { error: 'Hanya admin yang dapat mengelola jabatan.' as const };
+  if (!boleh(saya.role, 'kelola_induk')) {
+    return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' as const };
   }
   return { saya };
 }
