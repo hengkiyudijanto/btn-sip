@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit, hashPassword } from '@/lib/auth';
 import crypto from 'node:crypto';
-import { boleh } from '@/lib/sip/akses';
+import { boleh, SEMUA_PERAN } from '@/lib/sip/akses';
 
 export type HasilImpor = {
   error?: string;
@@ -91,7 +91,7 @@ export async function imporPegawai(
   let berhasil = 0;
   let gagal = 0;
 
-  const roleSah = new Set(['PEGAWAI', 'SUPERVISOR', 'MANAGER', 'ADMIN']);
+  const roleSah = new Set<string>(SEMUA_PERAN);
 
   for (let i = 1; i < baris.length; i++) {
     const sel = baris[i].split(pemisah).map((s) => s.trim());
@@ -277,8 +277,9 @@ export async function tambahPegawai(
   const cabangId = String(formData.get('cabangId') ?? '');
   const jabatanId = String(formData.get('jabatanId') ?? '') || null;
   const roleRaw = String(formData.get('role') ?? 'PEGAWAI').toUpperCase();
-  const roleSah = ['PEGAWAI', 'SUPERVISOR', 'MANAGER', 'ADMIN'];
-  const role = roleSah.includes(roleRaw) ? (roleRaw as 'PEGAWAI' | 'SUPERVISOR' | 'MANAGER' | 'ADMIN') : 'PEGAWAI';
+  const role = (SEMUA_PERAN as readonly string[]).includes(roleRaw)
+    ? (roleRaw as (typeof SEMUA_PERAN)[number])
+    : 'PEGAWAI';
 
   if (!nip || !nama) return { error: 'NIP dan Nama wajib diisi.' };
   if (!cabangId) return { error: 'Cabang wajib dipilih.' };
@@ -315,7 +316,11 @@ export async function tambahPegawai(
 // UBAH PEGAWAI
 // ===========================================================================
 
-const ROLE_SAH = ['PEGAWAI', 'SUPERVISOR', 'MANAGER', 'ADMIN'] as const;
+// Daftar peran sah diambil dari modul akses (SEMUA_PERAN) — SATU sumber.
+// Dulu daftarnya disalin di tiga tempat dan tidak ikut diperbarui saat peran
+// PENGAMAT ditambahkan, sehingga 'ubah peran ke Pengamat' ditolak dengan
+// pesan 'Peran tidak valid' padahal pilihannya ada di form.
+const ROLE_SAH = SEMUA_PERAN;
 
 /**
  * Ubah data pegawai (nama, NIP, cabang, jabatan, peran, email).
