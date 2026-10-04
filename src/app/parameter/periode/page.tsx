@@ -9,7 +9,7 @@ import {
   pastikanPeriodeTahun,
   pastikanPeriodeBulan,
 } from '@/lib/sip/pengaturan';
-import { NAMA_HARI, MIN_HARI_PERIODE } from '@/lib/sip/periode';
+import { NAMA_HARI, AMBANG_BUANG_SISA } from '@/lib/sip/periode';
 import { daftarPeriodePerTahun } from '@/lib/sip/periode-aktif';
 import { PanelHariPenilaian } from '@/components/panel-hari-penilaian';
 
@@ -244,18 +244,20 @@ export default async function HalamanPeriode({
               pengisian — bukan penentu batas periode.
             </li>
             <li>
-              &middot; Periode selalu <strong>mulai tanggal 1</strong> tiap bulan dan
-              <strong> berakhir hari Minggu</strong>. Tidak menyeberang bulan.
+              &middot; Satu pekan = <strong>Minggu sampai Sabtu</strong>, dan
+              periode <strong>tidak menyeberang bulan</strong>.
             </li>
             <li>
-              &middot; Kalau tanggal 1 jatuh <em>setelah</em> hari penilaian, periode
-              pertama jadi lebih panjang (sampai Minggu minggu depan). Contoh: Minggu
-              ke-1 Oktober 2026 = 1&ndash;11 Okt.
+              &middot; Sisa <strong>{AMBANG_BUANG_SISA - 1} hari atau kurang</strong> di ujung bulan
+              {' '}dibuang ke pekan sebelumnya, sehingga bulan ditutup tepat di Sabtu.
+              Sisa yang lebih panjang menjadi pekan tersendiri.
             </li>
             <li>
-              &middot; Periode yang kurang dari <strong>{MIN_HARI_PERIODE} hari</strong>
-              {' '}digabung: yang di awal bulan ke periode berikutnya, yang di akhir
-              bulan ke periode sebelumnya.
+              &middot; Kalau tanggal 1 jatuh <em>setelah</em> hari penilaian
+              ({NAMA_HARI[pengaturan.hariPenilaian]}), bagian awal bulan itu
+              digabung ke pekan berikutnya — pekan berikutnya punya hari penilaian
+              sendiri. Contoh: 1&ndash;2 Mei 2026 (Jumat&ndash;Sabtu) digabung ke
+              pekan 3&ndash;9 Mei.
             </li>
             <li>
               &middot; <strong>Aktif</strong> &mdash; periode muncul di daftar penilaian

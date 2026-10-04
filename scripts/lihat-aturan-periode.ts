@@ -13,7 +13,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { periodeTahun, periodeBulan, NAMA_HARI, MIN_HARI_PERIODE } from '../src/lib/sip/periode';
+import { periodeTahun, periodeBulan, NAMA_HARI, AMBANG_BUANG_SISA } from '../src/lib/sip/periode';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
@@ -54,16 +54,17 @@ async function main() {
   console.log('A. ATURAN PERHITUNGAN');
   console.log('----------------------------------------------------------');
   console.log(`  1. Hari penilaian = ${hari} (dari Pengaturan, bisa diubah admin).`);
-  console.log('     Ini JADWAL PENGISIAN, bukan batas periode. Ia hanya');
-  console.log('     menentukan panjang periode PERTAMA tiap bulan.');
+  console.log('     Ini JADWAL PENGISIAN; ia menentukan perlakuan bagian awal bulan.');
   console.log('  2. Penamaan: "Minggu ke-N <Bulan> <Tahun>", N = nomor urut');
   console.log('     dalam bulan itu. Penomoran minggu ISO (Minggu ke-39) SALAH.');
-  console.log('  3. Mulai tanggal 1, berakhir hari Minggu, tidak menyeberang bulan.');
-  console.log('  4. Tanggal 1 jatuh SETELAH hari penilaian -> periode pertama');
-  console.log('     diperpanjang sampai Minggu minggu depan.');
-  console.log(`  5. Periode kurang dari ${MIN_HARI_PERIODE} hari DIGABUNG ke periode`);
-  console.log('     sebelahnya (awal bulan ke berikutnya, akhir bulan ke sebelumnya).');
-  console.log('  6. Jumlah periode per bulan 4-5, setahun 49 (bukan 52). Itu BENAR.');
+  console.log('  3. Satu pekan = MINGGU sampai SABTU, tidak menyeberang bulan.');
+  console.log(`  4. Tanggal 1 jatuh SESUDAH hari penilaian (${hari}): bagian awal itu`);
+  console.log('     digabung ke pekan BERIKUTNYA. Tanggal 1 tepat hari penilaian:');
+  console.log('     menjadi pekan tersendiri. Tanggal 1 sebelum hari penilaian:');
+  console.log('     pekan-1 = tgl 1 sampai Sabtu.');
+  console.log(`  5. Sisa ${AMBANG_BUANG_SISA - 1} hari atau kurang di ujung bulan DIBUANG ke pekan`);
+  console.log('     sebelumnya (bulan tutup di Sabtu). Sisa lebih panjang jadi pekan sendiri.');
+  console.log('  6. Jumlah pekan per bulan 4-5, setahun sekitar 52. Panjang pekan 4-7 hari.');
   console.log('  7. Mengubah hari penilaian hanya berlaku KE DEPAN: periode yang');
   console.log('     sudah ada tidak diubah supaya laporan yang sudah jadi tidak rusak.');
 
@@ -149,13 +150,13 @@ async function main() {
   console.log(`  ${'TOTAL'.padEnd(10)} ${daftar.length} periode`);
 
   const pendek = daftar.filter(
-    (p) => Math.round((p.selesai.getTime() - p.mulai.getTime()) / 86_400_000) + 1 < MIN_HARI_PERIODE
+    (p) => Math.round((p.selesai.getTime() - p.mulai.getTime()) / 86_400_000) + 1 < AMBANG_BUANG_SISA
   );
   console.log('');
   console.log(
     pendek.length === 0
-      ? `  ✓ Tidak ada periode di bawah ${MIN_HARI_PERIODE} hari (aturan penggabungan bekerja).`
-      : `  ✗ Ada ${pendek.length} periode di bawah ${MIN_HARI_PERIODE} hari: ${pendek.map((p) => p.nama).join(', ')}`
+      ? `  ✓ Tidak ada periode di bawah ${AMBANG_BUANG_SISA} hari.`
+      : `  · Ada ${pendek.length} periode di bawah ${AMBANG_BUANG_SISA} hari (wajar menurut aturan Rabu/sisa): ${pendek.map((p) => p.nama).join(', ')}`
   );
 
   // periksa tidak ada periode yang menyeberang bulan

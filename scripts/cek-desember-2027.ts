@@ -2,7 +2,7 @@
  * Periksa kenapa "Minggu ke-5 Desember 2027" ada.
  * Jalankan: pnpm exec tsx scripts/cek-desember-2027.ts
  */
-import { periodeBulan, MIN_HARI_PERIODE, NAMA_HARI } from '../src/lib/sip/periode';
+import { periodeBulan, AMBANG_BUANG_SISA, NAMA_HARI } from '../src/lib/sip/periode';
 
 const HARI = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
@@ -19,12 +19,12 @@ for (const p of daftar) {
   );
 }
 
-console.log(`\nAmbang penggabungan: < ${MIN_HARI_PERIODE} hari`);
+console.log(`\nBuang sisa ujung bulan: < ${AMBANG_BUANG_SISA} hari`);
 console.log('\nMengapa Minggu ke-5 tidak digabung?');
 const terakhir = daftar[daftar.length - 1];
 console.log(`  periode terakhir: ${terakhir.jumlahHari} hari`);
 console.log(
-  `  ${terakhir.jumlahHari} >= ${MIN_HARI_PERIODE} → TIDAK digabung (sesuai aturan)\n`
+  `  ${terakhir.jumlahHari} hari (sisa ujung bulan)\n`
 );
 
 console.log('Kalau digabung, Minggu ke-4 akan jadi:');

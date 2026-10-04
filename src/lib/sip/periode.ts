@@ -1,36 +1,32 @@
 /**
  * Mesin perhitungan periode penilaian SIP.
  *
- * ATURAN RESMI (dikonfirmasi pemilik aplikasi):
+ * ATURAN RESMI v3 (dikonfirmasi pemilik aplikasi, 3 Okt 2026) —
+ * MENGGANTIKAN aturan "tanggal 1 selalu awal pekan":
  *
- * 1. Penilaian dilakukan setiap minggu, pada HARI PENILAIAN yang bisa
- *    diubah (sekarang: Rabu). Hari penilaian TIDAK menentukan batas
- *    periode — ia hanya jadwal kapan atasan mengisi.
+ *   A. Satu pekan = MINGGU sampai SABTU (7 hari).
+ *   B. Sisa 1-3 hari di ujung bulan (berakhir Minggu/Senin/Selasa) DIBUANG ke
+ *      pekan sebelumnya, sehingga bulan berakhir tepat di Sabtu.
+ *      Sisa 4-6 hari menjadi pekan TERSENDIRI.
+ *   C. Bagian awal bulan, menurut hari tanggal 1:
+ *        - KAMIS/JUMAT/SABTU (hari setelah hari penilaian Rabu)
+ *          → digabung ke pekan BERIKUTNYA, karena pekan berikutnya punya
+ *            hari penilaian Rabu sendiri
+ *        - RABU → pekan TERSENDIRI (Rabu-Sabtu), alasan sama
+ *        - SENIN/SELASA → pekan-1 = tgl 1 sampai Sabtu
+ *        - MINGGU → pekan-1 tepat 7 hari
  *
- * 2. Penamaan periode: "Minggu ke-N <Bulan> <Tahun>" — nomor urut di
- *    dalam bulan itu. BUKAN nomor minggu ISO (39, 40, ...).
+ * Konsekuensi yang harus dipahami (dan disebut ke user kalau ia bertanya):
+ *   - Periode TIDAK selalu mulai tanggal 1; beberapa bulan mulai tanggal 2
+ *     atau 3 karena bagian awalnya digabung ke pekan berikutnya.
+ *   - Panjang pekan bervariasi 4-7 hari; pekan 4 hari hanya pada kasus Rabu
+ *     di awal bulan dan sisa ujung bulan.
+ *   - Beberapa hari di ujung/bulan sebelumnya tidak masuk pekan mana pun
+ *     (sisa 1-3 hari yang dibuang, dan bagian awal yang digabung ke depan).
+ *     Itu disengaja, bukan salah hitung.
  *
- * 3. Periode selalu mulai tanggal 1 pada awal bulan, dan berakhir pada
- *    hari MINGGU.
- *
- * 4. Panjang periode pertama bergantung posisi tanggal 1 terhadap hari
- *    penilaian:
- *      - tanggal 1 jatuh SEBELUM atau TEPAT hari penilaian
- *          → periode berakhir pada Minggu di minggu itu (bisa < 7 hari)
- *      - tanggal 1 jatuh SETELAH hari penilaian
- *          → periode berakhir pada Minggu minggu DEPAN (bisa > 7 hari)
- *
- *    Contoh (hari penilaian Rabu, 1 Oktober 2026 = Kamis):
- *      tanggal 1 (Kamis) setelah hari penilaian (Rabu)
- *      → Minggu ke-1 Oktober 2026 = 1 Okt – 11 Okt (11 hari)
- *
- * 5. Periode TIDAK menyeberang bulan: akhir bulan selalu menutup periode
- *    terakhir bulan itu.
- *
- * 6. Periode sisa yang terlalu pendek digabung ke periode sebelumnya.
- *    Ambangnya: MIN_HARI_PERIODE. Kasus nyata — 30 November 2026 jatuh
- *    hari Senin, sisa 1 hari → digabung ke Minggu ke-4 November
- *    (23 Nov – 30 Nov, 8 hari).
+ * Penamaan: "Minggu ke-N <Bulan> <Tahun>", N = nomor urut dalam bulan itu.
+ * BUKAN nomor minggu ISO.
  */
 
 export const NAMA_HARI = [
@@ -47,11 +43,15 @@ export const NAMA_HARI = [
 export const HARI_PENILAIAN_DEFAULT = 3; // Rabu
 
 /**
- * Periode sisa yang kurang dari ini akan digabung ke periode sebelumnya.
- * Dipilih 5 hari: agar tidak ada periode yang terlalu pendek untuk dinilai
- * secara wajar, tapi masih mengizinkan periode 6 hari di akhir bulan.
+ * Sisa hari di ujung bulan yang lebih pendek dari ini akan DIBUANG ke pekan
+ * sebelumnya (bulan ditutup tepat di Sabtu). Sisa yang sama atau lebih besar
+ * menjadi pekan tersendiri.
+ *
+ * Nilai 4 berarti: sisa 1-3 hari dibuang; sisa 4-6 hari jadi pekan sendiri.
+ * Dipilih pemilik aplikasi: sisa yang berakhir Minggu/Senin/Selasa dianggap
+ * terlalu pendek untuk dinilai secara wajar.
  */
-export const MIN_HARI_PERIODE = 5;
+export const AMBANG_BUANG_SISA = 4;
 
 export type HariPeriode = {
   /** nomor urut dalam bulan, mulai 1 */
@@ -86,16 +86,15 @@ export function jumlahHariBulan(tahun: number, bulan: number): number {
 }
 
 /**
- * Hari Minggu pada minggu yang memuat tanggal tersebut.
+ * Sabtu pada minggu yang memuat tanggal tersebut (Minggu=0 … Sabtu=6).
  *
- * Catatan penting: Date.getDay() menomori Minggu = 0, Senin = 1, ... Sabtu = 6.
- * Jadi jarak ke Minggu adalah (7 - getDay()) % 7, BUKAN (6 - getDay()).
- * Rumus yang salah membuat periode berakhir hari Sabtu, bukan Minggu.
+ * Aturan B: pekan berjalan Minggu–Sabtu, jadi akhir pekan adalah SABTU,
+ * bukan Minggu seperti aturan lama. Jarak ke Sabtu adalah (6 − getDay() + 7) % 7.
  */
-function mingguDiMingguItu(tgl: Date): Date {
+function sabtuDiMingguItu(tgl: Date): Date {
   const salinan = new Date(tgl);
-  const jarakKeMinggu = (7 - salinan.getDay()) % 7;
-  salinan.setDate(salinan.getDate() + jarakKeMinggu);
+  const jarakKeSabtu = (6 - salinan.getDay() + 7) % 7;
+  salinan.setDate(salinan.getDate() + jarakKeSabtu);
   return salinan;
 }
 
@@ -126,72 +125,94 @@ export function periodeBulan(
   const namaBulan = NAMA_BULAN[bulan - 1];
   const akhirBulan = new Date(tahun, bulan - 1, jumlahHariBulan(tahun, bulan));
   const awal = tanggalSatu(tahun, bulan);
+  const posisi = awal.getDay(); // 0=Minggu, 1=Senin, ... 6=Sabtu
 
-  // ===== tentukan akhir periode pertama =====
-  const mingguIni = mingguDiMingguItu(awal);
-  // Date.getDay(): 0=Minggu, 1=Senin, ..., 6=Sabtu
-  const posisi = awal.getDay();
+  // ===== B: sisa di ujung bulan =====
+  // Sabtu terakhir yang masih di dalam bulan ini. Sisa = hari sesudahnya (0-6).
+  //
+  // Aturan buang sisa:
+  //   - sisa 1-3 hari (berakhir Minggu/Senin/Selasa) → DIBUANG ke pekan sebelumnya
+  //   - **KECUALI kalau di dalam sisa itu ada hari penilaian (Rabu)** → sisa itu
+  //     TETAP menjadi pekan tersendiri, karena hari penilaian harus punya pekan
+  //     (keputusan pemilik aplikasi, 3 Okt 2026)
+  //   - sisa 4-6 hari → pekan tersendiri sampai akhir bulan
+  const geserKeSabtu = akhirBulan.getDay() === 6 ? 0 : (akhirBulan.getDay() + 1) % 7;
+  const sabtuTerakhir = new Date(akhirBulan);
+  sabtuTerakhir.setDate(sabtuTerakhir.getDate() - geserKeSabtu);
+  const sisaUjung = selisihHari(sabtuTerakhir, akhirBulan); // 0..6
 
-  let akhirPeriodePertama: Date;
-  if (posisi === 0 || posisi <= hariPenilaian) {
-    // tanggal 1 tepat hari Minggu, atau sebelum/tepat hari penilaian
-    // → berakhir pada Minggu di minggu itu
-    akhirPeriodePertama = mingguIni;
-  } else {
-    // tanggal 1 setelah hari penilaian → berakhir Minggu minggu depan
-    akhirPeriodePertama = new Date(mingguIni);
-    akhirPeriodePertama.setDate(akhirPeriodePertama.getDate() + 7);
+  // apakah ada hari penilaian di dalam sisa itu?
+  let adaHariPenilaianDiSisa = false;
+  for (let i = 1; i <= sisaUjung; i++) {
+    const t = new Date(sabtuTerakhir);
+    t.setDate(t.getDate() + i);
+    if (t.getDay() === hariPenilaian) adaHariPenilaianDiSisa = true;
   }
 
-  // jangan melewati akhir bulan
-  if (akhirPeriodePertama > akhirBulan) akhirPeriodePertama = new Date(akhirBulan);
+  const buangSisa =
+    sisaUjung >= 1 && sisaUjung < AMBANG_BUANG_SISA && !adaHariPenilaianDiSisa;
+  const akhirEfektif = buangSisa ? sabtuTerakhir : new Date(akhirBulan);
 
-  // ===== susun periode =====
+  // ===== C: bagian awal bulan =====
+  // "Hari setelah hari penilaian" dihitung dari HARI PENILAIAN yang berlaku,
+  // bukan selalu Rabu — kalau admin mengganti hari penilaian, aturannya ikut.
   const potongan: { mulai: Date; selesai: Date }[] = [];
-  let mulai = new Date(awal);
-  let akhir = new Date(akhirPeriodePertama);
+  const hariSetelahPenilaian = new Set([0, 1, 2, 4, 5, 6].filter((h) => h > hariPenilaian));
+  const awalMasukPekanBerikutnya = hariSetelahPenilaian.has(posisi);
+  const awalJadiPekanSendiri = posisi === hariPenilaian;
 
-  while (mulai <= akhirBulan) {
-    const selesai = akhir > akhirBulan ? new Date(akhirBulan) : new Date(akhir);
+  if (awalMasukPekanBerikutnya) {
+    // KAMIS/JUMAT/SABTU (hari setelah hari penilaian): digabung ke pekan
+    // berikutnya, karena pekan berikutnya punya hari penilaian sendiri.
+    const sabtuPertama = new Date(awal);
+    sabtuPertama.setDate(sabtuPertama.getDate() + (6 - posisi));
+    // mulai dari Minggu berikutnya; kalau sudah melewati akhir bulan,
+    // tidak ada pekan sama sekali (bulan sangat pendek) — dijaga di bawah
+    if (sabtuPertama < akhirEfektif) {
+      const mingguDepan = new Date(sabtuPertama);
+      mingguDepan.setDate(mingguDepan.getDate() + 1);
+      potongan.push({ mulai: mingguDepan, selesai: sabtuDiMingguItu(mingguDepan) });
+    }
+  } else if (awalJadiPekanSendiri) {
+    // RABU (hari penilaian): pekan tersendiri Rabu-Sabtu.
+    const sabtuPertama = new Date(awal);
+    sabtuPertama.setDate(sabtuPertama.getDate() + (6 - posisi));
+    potongan.push({ mulai: new Date(awal), selesai: sabtuPertama });
+  } else {
+    // Minggu/Senin/Selasa: pekan-1 = tgl 1 sampai Sabtu.
+    const sabtuPertama = new Date(awal);
+    sabtuPertama.setDate(sabtuPertama.getDate() + (6 - posisi));
+    potongan.push({ mulai: new Date(awal), selesai: sabtuPertama });
+  }
 
+  // ===== pekan lanjutan (Minggu–Sabtu penuh) =====
+  let mulai = potongan.length
+    ? new Date(potongan[potongan.length - 1].selesai)
+    : new Date(awal);
+  if (potongan.length) mulai.setDate(mulai.getDate() + 1);
+
+  let penjaga = 0;
+  while (mulai <= akhirEfektif && penjaga++ < 10) {
+    const sabtu = sabtuDiMingguItu(mulai);
+    let selesai: Date;
+    if (sabtu <= akhirBulan) {
+      // pekan normal Minggu–Sabtu (boleh melewati `akhirEfektif`, karena
+      // akhirEfektif hanya menandai sampai mana pekan dihitung)
+      selesai = sabtu;
+    } else {
+      // Pekan ini akan melewati akhir bulan.
+      // Baca `akhirEfektif`, JANGAN hitung ulang dari keAkhirBulan: keputusan
+      // buang/tidak-buang sisa sudah dibuat di langkah B, dan menghitung ulang
+      // di sini membatalkannya (bug: September 2026 punya Rabu di sisanya
+      // tetapi tetap dibuang).
+      selesai = new Date(akhirEfektif);
+    }
+    if (selisihHari(mulai, selesai) < 0) break; // pekan kosong, jangan dibuat
     potongan.push({ mulai: new Date(mulai), selesai });
-
     const berikutnya = new Date(selesai);
     berikutnya.setDate(berikutnya.getDate() + 1);
-    if (berikutnya > akhirBulan) break;
-
+    if (berikutnya > akhirEfektif) break;
     mulai = berikutnya;
-    akhir = mingguDiMingguItu(mulai);
-  }
-
-  // ===== penggabungan periode pendek =====
-  //
-  // Aturan yang dikonfirmasi pemilik aplikasi:
-  //   - periode pendek di AWAL bulan  → digabung ke periode BERIKUTNYA
-  //     (mis. 1 November 2026 jatuh Minggu sehingga periodenya 1 hari saja
-  //      → digabung jadi 1 Nov – 8 Nov, 8 hari)
-  //   - periode pendek di AKHIR bulan → digabung ke periode SEBELUMNYA
-  //     (mis. 30 November 2026 jatuh Senin, sisa 1 hari
-  //      → digabung jadi 23 Nov – 30 Nov, 8 hari)
-  //
-  // Tujuannya: atasan tidak pernah menilai periode yang terlalu pendek
-  // untuk dinilai secara wajar.
-  if (potongan.length >= 2) {
-    // --- periode pertama pendek: gabung ke berikutnya ---
-    const pertama = potongan[0];
-    if (selisihHari(pertama.mulai, pertama.selesai) + 1 < MIN_HARI_PERIODE) {
-      potongan[1].mulai = new Date(pertama.mulai);
-      potongan.shift();
-    }
-  }
-
-  if (potongan.length >= 2) {
-    // --- periode terakhir pendek: gabung ke sebelumnya ---
-    const terakhir = potongan[potongan.length - 1];
-    if (selisihHari(terakhir.mulai, terakhir.selesai) + 1 < MIN_HARI_PERIODE) {
-      potongan[potongan.length - 2].selesai = new Date(terakhir.selesai);
-      potongan.pop();
-    }
   }
 
   // ===== beri nama =====

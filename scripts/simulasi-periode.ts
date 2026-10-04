@@ -6,7 +6,7 @@
  *   pnpm exec tsx scripts/simulasi-periode.ts 2026 3       # 2026, hari penilaian Rabu
  *   pnpm exec tsx scripts/simulasi-periode.ts 2027 1       # 2027, hari penilaian Senin
  */
-import { periodeBulan, NAMA_HARI, MIN_HARI_PERIODE } from '../src/lib/sip/periode';
+import { periodeBulan, NAMA_HARI, AMBANG_BUANG_SISA } from '../src/lib/sip/periode';
 
 const arg = process.argv.slice(2);
 const tahun = Number(arg[0]) || new Date().getFullYear();
@@ -21,7 +21,7 @@ const SINGKAT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 console.log('='.repeat(72));
 console.log(`SIMULASI PERIODE PENILAIAN ${tahun}`);
 console.log(`Hari penilaian: ${NAMA_HARI[hariPenilaian]}`);
-console.log(`Ambang penggabungan: periode < ${MIN_HARI_PERIODE} hari digabung`);
+console.log(`Buang sisa ujung bulan: < ${AMBANG_BUANG_SISA} hari`);
 console.log('='.repeat(72));
 console.log();
 
