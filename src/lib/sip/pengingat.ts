@@ -75,7 +75,7 @@ export async function ambilPengingat(
 
   // Cakupan petugas mengikuti aturan yang sama dengan halaman /penilaian:
   // admin melihat semua cabang, peran lain hanya cabangnya sendiri.
-  const diCabangku = saya.role === 'ADMIN' || saya.role === 'PENGAMAT' ? {} : { cabangId: saya.cabang.id };
+  const diCabangku = boleh(saya.role, 'lihat_semua_cabang') ? {} : { cabangId: saya.cabang.id };
 
   // ===== 1. yang jadi tugas SAYA: petugas belum dinilai =====
   // Hanya dihitung untuk periode yang belum dikunci dan belum lewat — bukan
@@ -110,7 +110,7 @@ export async function ambilPengingat(
   }
 
   // ===== 2. yang menunggu tindakan saya: DIKIRIM =====
-  if (saya.role === 'MANAGER' || saya.role === 'ADMIN') {
+  if (boleh(saya.role, 'mengetahui') || boleh(saya.role, 'menilai')) {
     const menunggu = await prisma.penilaian.count({
       where: { periodeId: periode.id, status: 'DIKIRIM', pegawai: diCabangku },
     });

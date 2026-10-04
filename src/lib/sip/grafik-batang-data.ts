@@ -18,6 +18,7 @@
 import { prisma } from '@/lib/db';
 import type { PegawaiSesi } from '@/lib/auth';
 import { kumpulkanTurunan } from '@/lib/sip/hierarki';
+import { boleh } from '@/lib/sip/akses';
 
 export type BatangNilai = {
   /** kunci stabil untuk React */
@@ -101,10 +102,12 @@ export async function ambilDataGrafikBatang(
 
   // ===== 2. cakupan kantor =====
   // Peran selain admin terkunci di cabangnya sendiri — sama seperti halaman lain.
-  const bolehPilihUnit = saya.role === 'ADMIN' || saya.role === 'MANAGER';
-  const cabangAkar = bolehPilihUnit
-    ? (saya.role === 'ADMIN' ? null : saya.cabang.kode)
-    : saya.cabang.kode;
+  const cakupanSemua = boleh(saya.role, 'lihat_semua_cabang');
+  const bolehPilihUnit = cakupanSemua;
+  // Cabang akar: null = tidak dibatasi (semua unit), selain itu dikunci ke
+  // kode cabangnya. Sebelumnya `bolehPilihUnit` dipakai untuk dua hal
+  // sekaligus sehingga peran tanpa hak pilih unit ikut terlihat bisa memilih.
+  const cabangAkar = cakupanSemua ? null : saya.cabang.kode;
 
   // Admin boleh memilih unit mana pun; manager/supervisor hanya di bawah cabangnya.
   let kodeTerpilih = (opts.unit ?? '').trim();

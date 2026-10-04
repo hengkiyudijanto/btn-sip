@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import type { PegawaiSesi } from '@/lib/auth';
 import { susunTitik, selisihTerakhir, rataRata, type SeriTren } from '@/lib/sip/tren';
+import { boleh } from '@/lib/sip/akses';
 
 /**
  * Ambil data tren penilaian untuk dasbor.
@@ -23,7 +24,8 @@ const KATEGORI_RINGKAS = [
 ];
 
 export async function ambilTren(saya: PegawaiSesi): Promise<SeriTren[]> {
-  const diCabangku = saya.role === 'ADMIN' ? {} : { cabangId: saya.cabang.id };
+  const semuaCabang = boleh(saya.role, 'lihat_semua_cabang');
+  const diCabangku = semuaCabang ? {} : { cabangId: saya.cabang.id };
 
   // periode yang benar-benar punya penilaian, terbaru dulu lalu dibalik
   // supaya sumbu X memburuk ke kanan (waktu berjalan ke kanan).
@@ -62,7 +64,7 @@ export async function ambilTren(saya: PegawaiSesi): Promise<SeriTren[]> {
   // waktu, bukan membandingkan antar cabang — dan itu pernah terbaca salah.
   const titikUnit = susunTitik(periodeUrut, perPeriode);
   const seriUnit: SeriTren = {
-    judul: (saya.role === 'ADMIN' ? 'Rata-rata semua cabang' : `Rata-rata ${saya.cabang.nama}`) + ' per periode',
+    judul: (semuaCabang ? 'Rata-rata semua cabang' : `Rata-rata ${saya.cabang.nama}`) + ' per periode',
     keterangan: 'Rata-rata nilai akhir tiap periode penilaian',
     titik: titikUnit,
     rataRata: rataRata(penilaian),
@@ -79,9 +81,9 @@ export async function ambilTren(saya: PegawaiSesi): Promise<SeriTren[]> {
 
   const seri: SeriTren[] = [seriUnit];
 
-  // ===== seri 2 (hanya admin): lima cabang dengan penilaian terbanyak =====
-  // Manager tidak perlu membandingkan antar cabang — cakupannya satu cabang.
-  if (saya.role === 'ADMIN') {
+  // ===== seri 2 (cakupan semua): lima cabang dengan penilaian terbanyak =====
+  // Peran yang cakupannya satu cabang tidak perlu membandingkan antar cabang.
+  if (semuaCabang) {
     const perCabang = new Map<string, typeof penilaian>();
     // perlu peta pegawai → cabang untuk memecah seri per cabang
     const idsPegawai = [...new Set(penilaian.map((p) => p.pegawaiId))];

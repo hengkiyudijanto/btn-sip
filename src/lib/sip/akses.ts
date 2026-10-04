@@ -53,7 +53,16 @@ export type Kemampuan =
   /** Data induk: cabang, jabatan, periode. */
   | 'kelola_induk'
   /** Melihat audit log. */
-  | 'lihat_audit';
+  | 'lihat_audit'
+  /**
+   * Melihat data LINTAS CABANG (semua unit), bukan hanya cabangnya sendiri.
+   *
+   * PENTING: ini kemampuan, bukan `role === 'ADMIN'`. Cakupan data dulu
+   * ditulis ulang sebagai `role === 'ADMIN'` di ~6 berkas, sehingga peran baru
+   * yang juga seharusnya melihat semua (PENGAMAT) malah terjebak melihat satu
+   * cabang — akibatnya tren nilainya KOSONG dan grafiknya tidak muncul.
+   */
+  | 'lihat_semua_cabang';
 
 /**
  * Peta kemampuan per peran.
@@ -66,14 +75,25 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
   PEGAWAI: [],
 
   // ==== HANYA MELIHAT ====
-  // Sengaja kosong: akses bacanya (dasbor/laporan/ranking) diberikan lewat
-  // daftar putih halaman, bukan lewat kemampuan. Menambahkan kemampuan di
-  // sini berarti memberi HAK UBAH, jadi jangan lakukan tanpa diminta.
-  PENGAMAT: [],
+  // Tidak punya satu pun kemampuan yang mengubah data. Yang ada hanya
+  // `lihat_semua_cabang` (akses BACA lintas unit) — tanpa itu, tren nilainya
+  // kosong karena ia terjebak melihat satu cabang saja.
+  // Menambahkan kemampuan lain di sini berarti memberi HAK UBAH: jangan
+  // lakukan tanpa diminta pemilik aplikasi.
+  PENGAMAT: ['lihat_semua_cabang'],
 
   SUPERVISOR: ['menilai', 'usul_pegawai'],
 
-  MANAGER: ['menilai', 'mengetahui', 'lihat_pegawai', 'usul_pegawai', 'setujui_pegawai'],
+  MANAGER: [
+    'menilai',
+    'mengetahui',
+    'lihat_pegawai',
+    'usul_pegawai',
+    'setujui_pegawai',
+    // manager boleh memilih unit di grafik (perilaku lama) tetapi datanya
+    // tetap dibatasi cakupan cabangnya di halaman laporan
+    'lihat_semua_cabang',
+  ],
 
   ADMIN: [
     'menilai',
@@ -85,6 +105,7 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
     'kelola_pegawai',
     'kelola_induk',
     'lihat_audit',
+    'lihat_semua_cabang',
   ],
 };
 

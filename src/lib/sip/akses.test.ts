@@ -28,13 +28,24 @@ const SEMUA_KEMAMPUAN: Kemampuan[] = [
   'kelola_pegawai',
   'kelola_induk',
   'lihat_audit',
+  'lihat_semua_cabang',
 ];
 
 describe('PENGAMAT — hanya melihat', () => {
   it('TIDAK punya satu pun kemampuan mengubah data', () => {
-    for (const k of SEMUA_KEMAMPUAN) {
+    // lihat_semua_cabang adalah akses BACA, bukan hak ubah — dikecualikan.
+    const hakUbah = SEMUA_KEMAMPUAN.filter((k) => k !== 'lihat_semua_cabang');
+    for (const k of hakUbah) {
       expect(boleh('PENGAMAT', k), `PENGAMAT tidak boleh punya '${k}'`).toBe(false);
     }
+    expect(hakUbah.length).toBeGreaterThan(0);
+  });
+
+  it('PUNYA lihat_semua_cabang (kalau tidak, tren & grafiknya kosong)', () => {
+    // Bug nyata 4 Okt 2026: cakupan data ditulis sebagai `role === 'ADMIN'` di
+    // tren-data.ts & grafik-batang-data.ts, sehingga pengamat terjebak melihat
+    // satu cabang — penilaiannya tidak ada di sana, jadi grafiknya hilang.
+    expect(boleh('PENGAMAT', 'lihat_semua_cabang')).toBe(true);
   });
 
   it('BISA membuka dasbor, laporan, dan ranking', () => {
@@ -110,6 +121,24 @@ describe('peran lama tidak berubah perilakunya', () => {
     for (const jalur of Object.keys({ a: 1 })) void jalur;
     expect(bolehBukaHalaman('ADMIN', '/parameter/audit')).toBe(true);
     expect(bolehBukaHalaman('ADMIN', '/laporan/ekspor')).toBe(true);
+  });
+});
+
+describe('cakupan lintas cabang (lihat_semua_cabang)', () => {
+  it('diberikan ke ADMIN, MANAGER, dan PENGAMAT', () => {
+    expect(boleh('ADMIN', 'lihat_semua_cabang')).toBe(true);
+    expect(boleh('MANAGER', 'lihat_semua_cabang')).toBe(true);
+    expect(boleh('PENGAMAT', 'lihat_semua_cabang')).toBe(true);
+  });
+
+  it('TIDAK diberikan ke PEGAWAI dan SUPERVISOR (tetap cabangnya sendiri)', () => {
+    expect(boleh('PEGAWAI', 'lihat_semua_cabang')).toBe(false);
+    expect(boleh('SUPERVISOR', 'lihat_semua_cabang')).toBe(false);
+  });
+
+  it('tidak ada peran yang mendapatkannya tanpa niat (cek menyeluruh)', () => {
+    const punya = SEMUA_PERAN.filter((r) => boleh(r, 'lihat_semua_cabang'));
+    expect(punya.sort()).toEqual(['ADMIN', 'MANAGER', 'PENGAMAT']);
   });
 });
 
