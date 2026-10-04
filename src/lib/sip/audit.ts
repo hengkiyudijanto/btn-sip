@@ -68,6 +68,8 @@ export const INFO_AKSI: Record<string, InfoAksi> = {
 
   // ---- periode ----
   BUAT_PERIODE: { label: 'Buat periode', kelompok: 'periode' },
+  PINDAH_PENILAIAN: { label: 'Pindah penilaian', kelompok: 'penilaian' },
+  HAPUS_PENILAIAN: { label: 'Hapus penilaian', kelompok: 'penilaian' },
   BUAT_PERIODE_MASSAL: { label: 'Buat periode massal', kelompok: 'periode' },
   KUNCI_PERIODE: { label: 'Kunci periode', kelompok: 'periode' },
   BUKA_KUNCI_PERIODE: { label: 'Buka kunci periode', kelompok: 'periode' },
@@ -208,6 +210,32 @@ export function ringkasAudit(
   }
 
   if (aksi === 'KUNCI_PENILAIAN') return 'Penilaian ditetapkan FINAL';
+
+  // Pindah penilaian: tampilkan dari periode mana ke periode mana — inilah
+  // informasi yang dicari saat menelusuri "kenapa penilaian ini pindah bulan".
+  if (aksi === 'PINDAH_PENILAIAN') {
+    const dari = teks(field(dataLama, 'namaPeriode'));
+    const ke = teks(field(dataBaru, 'namaPeriode'));
+    const siapa = teks(field(dataBaru, 'pegawai'));
+    const bagian: string[] = [];
+    if (siapa) bagian.push(siapa);
+    if (dari && ke) bagian.push(`${dari} → ${ke}`);
+    else if (ke) bagian.push(`→ ${ke}`);
+    return bagian.length ? bagian.join(' · ') : null;
+  }
+
+  if (aksi === 'HAPUS_PENILAIAN') {
+    const siapa = teks(field(dataLama, 'pegawai'));
+    const periode = teks(field(dataLama, 'namaPeriode'));
+    const status = teks(field(dataLama, 'status'));
+    const nilai = teks(field(dataLama, 'nilaiAkhir'));
+    const bagian: string[] = [];
+    if (siapa) bagian.push(siapa);
+    if (periode) bagian.push(periode);
+    if (status) bagian.push(status);
+    if (nilai) bagian.push(`nilai ${nilai}`);
+    return bagian.length ? `${bagian.join(' · ')} (dihapus)` : null;
+  }
 
   if (aksi === 'UBAH_HARI_PENILAIAN') {
     // field hariPenilaian adalah angka 0-6: diterjemahkan jadi nama hari,

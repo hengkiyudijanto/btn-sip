@@ -8,6 +8,7 @@ import { Kerangka } from '@/components/kerangka';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { FotoPenilaian } from '@/components/foto-penilaian';
 import { alamatFoto } from '@/lib/sip/alamat-foto';
+import { KelolaPenilaian } from '@/components/kelola-penilaian';
 
 export const metadata = { title: 'Isi Penilaian' };
 
@@ -74,6 +75,20 @@ export default async function HalamanIsiPenilaian({
       nilai: d.nilaiMentah,
       catatan: d.catatan ?? '',
     };
+  }
+
+  // Periode tujuan pindah (admin) — hanya kalau ada penilaian yang bisa dikelola
+  let periodeTujuan: { id: string; nama: string; tanggalMulai: Date; tanggalSelesai: Date }[] = [];
+  if (saya.role === 'ADMIN' && tersimpan) {
+    const terpakai = await prisma.penilaian.findMany({
+      where: { pegawaiId },
+      select: { periodeId: true },
+    });
+    periodeTujuan = await prisma.periode.findMany({
+      where: { id: { notIn: terpakai.map((p) => p.periodeId) } },
+      select: { id: true, nama: true, tanggalMulai: true, tanggalSelesai: true },
+      orderBy: { tanggalMulai: 'desc' },
+    });
   }
 
   const terkunci = periode.dikunci || tersimpan?.status === 'DIKETAHUI' || tersimpan?.status === 'FINAL';
@@ -191,6 +206,18 @@ export default async function HalamanIsiPenilaian({
               <dd className="mt-0.5 font-medium text-abu-700">{tersimpan.status}</dd>
             </div>
           </dl>
+        </div>
+      )}
+
+      {/* Kelola penilaian (admin saja): pindah periode / hapus */}
+      {tersimpan && saya.role === 'ADMIN' && (
+        <div className="mt-6">
+          <KelolaPenilaian
+            penilaianId={tersimpan.id}
+            namaPegawai={target.nama}
+            namaPeriode={periode.nama}
+            periodeTujuan={periodeTujuan}
+          />
         </div>
       )}
     </div>

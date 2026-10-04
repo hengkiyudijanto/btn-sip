@@ -239,3 +239,196 @@ export async function simpanPenilaian(
     return { error: 'Gagal menyimpan penilaian. Coba lagi.' };
   }
 }
+
+// ============================================================================
+// PINDAH & HAPUS PENILAIAN (admin)
+// ============================================================================
+// Sebelumnya periode penilaian terkunci setelah dibuat: tidak ada cara
+// memperbaiki penilaian yang salah periode atau salah petugas dari aplikasi.
+// Dua aksi di bawah membuka itu untuk ADMIN, dengan pengaman:
+//   - pindah  : ditolak kalau periode tujuan sudah punya penilaian petugas yang sama
+//   - hapus   : wajib menyebut nama petugas sebagai konfirmasi
+//   - keduanya: dicatat ke audit log (siapa, dari mana, ke mana)
+
+export type HasilPindah = {
+  error?: string;
+  sukses?: boolean;
+  pesan?: string;
+};
+
+/** Daftar periode yang bisa dipilih sebagai tujuan pindah. */
+export async function daftarPeriodeTujuan(penilaianId: string) {
+  const admin = await pegawaiDariSesi();
+  if (!admin || admin.role !== 'ADMIN') return [];
+
+  const penilaian = await prisma.penilaian.findUnique({
+    where: { id: penilaianId },
+    select: { pegawaiId: true, periodeId: true },
+  });
+  if (!penilaian) return [];
+
+  // periode yang sudah punya penilaian untuk petugas ini tidak boleh jadi tujuan
+  const terpakai = await prisma.penilaian.findMany({
+    where: { pegawaiId: penilaian.pegawaiId },
+    select: { periodeId: true },
+  });
+  const dipakai = new Set(terpakai.map((p) => p.periodeId));
+
+  return prisma.periode.findMany({
+    where: { id: { notIn: [...dipakai] } },
+    select: { id: true, nama: true, tanggalMulai: true, tanggalSelesai: true },
+    orderBy: { tanggalMulai: 'desc' },
+  });
+}
+
+export async function pindahPenilaian(
+  _sebelumnya: HasilPindah,
+  formData: FormData
+): Promise<HasilPindah> {
+  const admin = await pegawaiDariSesi();
+  if (!admin) return { error: 'Sesi habis. Silakan masuk kembali.' };
+  if (admin.role !== 'ADMIN') {
+    return { error: 'Hanya admin yang boleh memindahkan penilaian.' };
+  }
+
+  const penilaianId = String(formData.get('penilaianId') ?? '');
+  const periodeTujuanId = String(formData.get('periodeTujuanId') ?? '');
+  if (!penilaianId || !periodeTujuanId) {
+    return { error: 'Penilaian dan periode tujuan harus dipilih.' };
+  }
+
+  try {
+    const penilaian = await prisma.penilaian.findUnique({
+      where: { id: penilaianId },
+      include: {
+        periode: { select: { id: true, nama: true, kode: true } },
+        pegawai: { select: { nama: true } },
+      },
+    });
+    if (!penilaian) return { error: 'Penilaian tidak ditemukan.' };
+
+    const tujuan = await prisma.periode.findUnique({
+      where: { id: periodeTujuanId },
+      select: { id: true, nama: true, kode: true },
+    });
+    if (!tujuan) return { error: 'Periode tujuan tidak ditemukan.' };
+
+    if (penilaian.periodeId === tujuan.id) {
+      return { error: 'Penilaian sudah ada di periode itu.' };
+    }
+
+    // pengaman: periode tujuan tidak boleh sudah punya penilaian petugas yang sama
+    const bentrok = await prisma.penilaian.findUnique({
+      where: {
+        pegawaiId_periodeId: { pegawaiId: penilaian.pegawaiId, periodeId: tujuan.id },
+      },
+      select: { id: true },
+    });
+    if (bentrok) {
+      return {
+        error: `${penilaian.pegawai.nama} sudah punya penilaian di ${tujuan.nama}. Hapus dulu yang di sana.`,
+      };
+    }
+
+    await prisma.penilaian.update({
+      where: { id: penilaianId },
+      data: { periodeId: tujuan.id },
+    });
+
+    await catatAudit({
+      pegawaiId: admin.id,
+      aksi: 'PINDAH_PENILAIAN',
+      entitas: 'Penilaian',
+      entitasId: penilaianId,
+      dataLama: { periode: penilaian.periode.kode, namaPeriode: penilaian.periode.nama },
+      dataBaru: { periode: tujuan.kode, namaPeriode: tujuan.nama, pegawai: penilaian.pegawai.nama },
+    });
+
+    revalidatePath('/penilaian');
+    revalidatePath('/dasbor');
+    revalidatePath('/laporan');
+    revalidatePath('/parameter/audit');
+
+    return {
+      sukses: true,
+      pesan: `${penilaian.pegawai.nama} dipindahkan ke ${tujuan.nama}.`,
+    };
+  } catch (e) {
+    console.error('[pindahPenilaian]', e);
+    return { error: 'Gagal memindahkan penilaian. Coba lagi.' };
+  }
+}
+
+export type HasilHapus = {
+  error?: string;
+  sukses?: boolean;
+  pesan?: string;
+};
+
+export async function hapusPenilaian(
+  _sebelumnya: HasilHapus,
+  formData: FormData
+): Promise<HasilHapus> {
+  const admin = await pegawaiDariSesi();
+  if (!admin) return { error: 'Sesi habis. Silakan masuk kembali.' };
+  if (admin.role !== 'ADMIN') {
+    return { error: 'Hanya admin yang boleh menghapus penilaian.' };
+  }
+
+  const penilaianId = String(formData.get('penilaianId') ?? '');
+  const konfirmasi = String(formData.get('konfirmasi') ?? '').trim();
+  if (!penilaianId) return { error: 'Penilaian tidak dipilih.' };
+
+  try {
+    const penilaian = await prisma.penilaian.findUnique({
+      where: { id: penilaianId },
+      include: {
+        periode: { select: { kode: true, nama: true } },
+        pegawai: { select: { nama: true } },
+        detail: true,
+      },
+    });
+    if (!penilaian) return { error: 'Penilaian tidak ditemukan.' };
+
+    // konfirmasi: nama petugas harus diketik persis (tanpa peduli besar-kecil huruf)
+    if (konfirmasi.toUpperCase() !== penilaian.pegawai.nama.trim().toUpperCase()) {
+      return {
+        error: `Konfirmasi tidak cocok. Ketik nama petugas persis: ${penilaian.pegawai.nama}`,
+      };
+    }
+
+    // hapus detail dulu (FK), lalu penilaiannya
+    await prisma.$transaction([
+      prisma.penilaianDetail.deleteMany({ where: { penilaianId } }),
+      prisma.penilaian.delete({ where: { id: penilaianId } }),
+    ]);
+
+    await catatAudit({
+      pegawaiId: admin.id,
+      aksi: 'HAPUS_PENILAIAN',
+      entitas: 'Penilaian',
+      entitasId: penilaianId,
+      dataLama: {
+        pegawai: penilaian.pegawai.nama,
+        periode: penilaian.periode.kode,
+        namaPeriode: penilaian.periode.nama,
+        status: penilaian.status,
+        nilaiAkhir: penilaian.nilaiAkhir,
+        jumlahAspek: penilaian.detail.length,
+      },
+    });
+
+    revalidatePath('/penilaian');
+    revalidatePath('/dasbor');
+    revalidatePath('/laporan');
+    revalidatePath('/parameter/audit');
+
+    return {
+      sukses: true,
+      pesan: `Penilaian ${penilaian.pegawai.nama} (${penilaian.periode.nama}) dihapus.`,
+    };
+  } catch (e) {
+    console.error('[hapusPenilaian]', e);
+    return { error: 'Gagal menghapus penilaian. Coba lagi.' };
+  }
+}
