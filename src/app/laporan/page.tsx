@@ -7,6 +7,7 @@ import { BadgeRating } from '@/components/badge-rating';
 import { angkaID } from '@/lib/sip/laporan';
 import { kumpulkanTurunan, susunPohon, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
+import { boleh, bolehBukaHalaman } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Laporan' };
 
@@ -18,6 +19,8 @@ export default async function HalamanLaporan({
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
+  // Laporan memuat nilai SEMUA petugas dalam cakupan — bukan halaman pegawai.
+  if (!bolehBukaHalaman(saya.role, '/laporan')) redirect('/dasbor');
 
   const { periode: periodeId, cabang: cabangId } = await searchParams;
 
@@ -32,7 +35,7 @@ export default async function HalamanLaporan({
     ? (daftarPeriode.find((p) => p.id === periodeId) ?? (await pilihPeriodeRelevan()))
     : await pilihPeriodeRelevan();
 
-  const bolehLihatSemua = saya.role === 'ADMIN';
+  const bolehLihatSemua = boleh(saya.role, 'lihat_semua_cabang');
   const semuaCabang = await prisma.cabang.findMany({ orderBy: { kode: 'asc' } });
   const daftarCabang = bolehLihatSemua ? semuaCabang.filter((c) => c.aktif) : [];
 

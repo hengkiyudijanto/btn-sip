@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { kumpulkanTurunan, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { susunCsvRekap, namaBerkasRekap, type BarisRekap } from '@/lib/sip/ekspor';
+import { bolehBukaHalaman } from '@/lib/sip/akses';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,12 @@ export async function GET(request: Request) {
   }
   if (saya.harusGantiPassword) {
     return NextResponse.json({ error: 'Ganti password dulu.' }, { status: 403 });
+  }
+  // Route ini tidak lewat gerbang halaman, jadi perannya diperiksa di sini.
+  // Berkasnya memuat NIP, nama, jabatan, dan nilai seluruh petugas dalam
+  // cakupan — pegawai biasa tidak boleh mengunduhnya.
+  if (!bolehBukaHalaman(saya.role, '/laporan/ekspor')) {
+    return NextResponse.json({ error: 'Anda tidak berwenang mengunduh rekap.' }, { status: 403 });
   }
 
   const url = new URL(request.url);

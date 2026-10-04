@@ -9,6 +9,7 @@ import {
   susunRanking,
 } from '@/lib/sip/ranking';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
+import { bolehBukaHalaman } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Laporan Ranking' };
 
@@ -27,6 +28,8 @@ export default async function HalamanRanking({
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
+  // Ranking menampilkan peringkat & nilai semua petugas — bukan halaman pegawai.
+  if (!bolehBukaHalaman(saya.role, '/laporan/ranking')) redirect('/dasbor');
 
   const sp = await searchParams;
 

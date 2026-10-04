@@ -36,7 +36,13 @@ export const MENU: ItemMenuPohon[] = [
     // Induk tanpa href sendiri: halaman /laporan sudah jadi submenu
     // "Laporan & Rekap". Kalau induknya juga menunjuk ke /laporan, ada dua
     // pintu ke halaman yang sama.
+    //
+    // PEGAWAI sengaja tidak diberi role apa pun di sini... justru sebaliknya:
+    // grup ini dibatasi ke peran pengawas. Halaman ini menampilkan nilai
+    // SEMUA petugas dalam cakupan, dan pegawai biasa hanya boleh melihat
+    // nilainya sendiri (ada di dasbornya).
     label: 'Laporan',
+    role: ['PENGAMAT', 'SUPERVISOR', 'MANAGER', 'ADMIN'],
     anak: [
       { href: '/laporan', label: 'Laporan & Rekap' },
       { href: '/laporan/ranking', label: 'Ranking PPTX' },

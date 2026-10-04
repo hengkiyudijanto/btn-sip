@@ -54,6 +54,12 @@ describe('PENGAMAT — hanya melihat', () => {
     expect(bolehBukaHalaman('PENGAMAT', '/laporan/ranking')).toBe(true);
   });
 
+  it('PENGAMAT tetap boleh laporan walau PEGAWAI tidak', () => {
+    // Pengamat sengaja diberi akses lintas unit; pegawai tidak.
+    expect(bolehBukaHalaman('PENGAMAT', '/laporan')).toBe(true);
+    expect(bolehBukaHalaman('PEGAWAI', '/laporan')).toBe(false);
+  });
+
   it('TIDAK bisa membuka halaman kerja & data sensitif', () => {
     for (const jalur of [
       '/penilaian',
@@ -86,13 +92,30 @@ describe('PENGAMAT — hanya melihat', () => {
 });
 
 describe('peran lama tidak berubah perilakunya', () => {
-  it('PEGAWAI: tanpa kemampuan, hanya halaman umum', () => {
+  it('PEGAWAI: tanpa kemampuan, dan TIDAK boleh melihat nilai rekan kerja', () => {
     for (const k of SEMUA_KEMAMPUAN) {
       expect(boleh('PEGAWAI', k), `PEGAWAI tidak boleh punya '${k}'`).toBe(false);
     }
     expect(bolehBukaHalaman('PEGAWAI', '/dasbor')).toBe(true);
-    expect(bolehBukaHalaman('PEGAWAI', '/laporan')).toBe(true);
+
+    // Bug nyata 4 Okt 2026: /laporan & /laporan/ranking dulu terbuka untuk
+    // pegawai. Karena cakupannya cabang sendiri, pegawai bisa melihat nama,
+    // NIP, jabatan, dan NILAI seluruh rekan sekantornya. Halaman itu kini
+    // khusus peran pengawas.
+    expect(bolehBukaHalaman('PEGAWAI', '/laporan')).toBe(false);
+    expect(bolehBukaHalaman('PEGAWAI', '/laporan/ranking')).toBe(false);
     expect(bolehBukaHalaman('PEGAWAI', '/penilaian')).toBe(false);
+  });
+
+  it('hanya PEGAWAI yang tidak boleh membuka laporan (peran lain boleh)', () => {
+    for (const r of SEMUA_PERAN) {
+      const bolehLaporan = bolehBukaHalaman(r, '/laporan');
+      if (r === 'PEGAWAI') {
+        expect(bolehLaporan, 'PEGAWAI tidak boleh buka laporan').toBe(false);
+      } else {
+        expect(bolehLaporan, `${r} seharusnya boleh buka laporan`).toBe(true);
+      }
+    }
   });
 
   it('SUPERVISOR: boleh menilai & mengusulkan, tidak boleh mengesahkan', () => {
@@ -144,16 +167,19 @@ describe('cakupan lintas cabang (lihat_semua_cabang)', () => {
 
 describe('bolehBukaHalaman — pencocokan jalur', () => {
   it('aturan terpanjang yang menang (/laporan/ranking bukan /laporan)', () => {
-    // /laporan untuk semua, tapi /laporan/ekspor dibatasi
-    expect(bolehBukaHalaman('PEGAWAI', '/laporan')).toBe(true);
-    expect(bolehBukaHalaman('PEGAWAI', '/laporan/ekspor')).toBe(false);
+    // /laporan untuk peran pengawas, /laporan/ekspor lebih sempit lagi
+    expect(bolehBukaHalaman('SUPERVISOR', '/laporan')).toBe(true);
     expect(bolehBukaHalaman('SUPERVISOR', '/laporan/ekspor')).toBe(true);
+    expect(bolehBukaHalaman('PENGAMAT', '/laporan')).toBe(true);
+    expect(bolehBukaHalaman('PENGAMAT', '/laporan/ekspor')).toBe(false);
+    expect(bolehBukaHalaman('PEGAWAI', '/laporan')).toBe(false);
   });
 
   it('mengabaikan query string dan garis miring di ujung', () => {
     expect(bolehBukaHalaman('PENGAMAT', '/dasbor?periode=abc')).toBe(true);
     expect(bolehBukaHalaman('PENGAMAT', '/laporan/')).toBe(true);
     expect(bolehBukaHalaman('PENGAMAT', '/penilaian?periode=x')).toBe(false);
+    expect(bolehBukaHalaman('PEGAWAI', '/laporan/?periode=x')).toBe(false);
   });
 
   it('jalur tak terdaftar: hanya yang boleh menilai (halaman penilaian per petugas)', () => {

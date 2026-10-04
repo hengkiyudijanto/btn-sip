@@ -123,8 +123,12 @@ export function boleh(role: string, kemampuan: Kemampuan): boolean {
  */
 const HALAMAN: Record<string, Peran[] | null> = {
   '/dasbor': null,
-  '/laporan': null,
-  '/laporan/ranking': null,
+  // Laporan & Ranking HANYA untuk peran pengawas. PEGAWAI sengaja TIDAK
+  // termasuk: halaman ini menampilkan nilai SEMUA petugas dalam cakupan
+  // (nama, NIP, jabatan, nilai akhir) — pegawai biasa hanya boleh melihat
+  // nilainya sendiri, dan itu ada di dasbornya.
+  '/laporan': ['PENGAMAT', 'SUPERVISOR', 'MANAGER', 'ADMIN'],
+  '/laporan/ranking': ['PENGAMAT', 'SUPERVISOR', 'MANAGER', 'ADMIN'],
   '/laporan/ekspor': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
 
   '/penilaian': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
