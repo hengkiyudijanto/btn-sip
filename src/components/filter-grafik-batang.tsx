@@ -54,12 +54,23 @@ export function FilterGrafikBatang({
 
   return (
     <div className="kartu p-5">
-      <div className="flex flex-wrap items-end gap-4">
-        <label className="block min-w-[200px] flex-1">
+      {/*
+        Sejajar memakai GRID dengan SATU kolom = satu wadah vertikal
+        (label + field + bantuan di dalamnya), bukan menaruh label/field/bantuan
+        sebagai baris-baris terpisah.
+        Kalau dipisah per baris, sel yang kosong (mis. `sr-only`, atau kolom
+        tanpa teks bantuan) TETAP memakan satu slot grid sehingga kolom
+        berikutnya bergeser turun satu baris — itu bug nyata yang pernah
+        membuat dropdown "Periode" turun 41px dibanding "Kantor"/"Jabatan".
+        Dengan wadah per kolom + `items-start`, semua baris atas kolom rata.
+      */}
+      <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4 items-start">
+        <div>
           <span className="label-kolom">Periode</span>
           <select
             value={periodeTerpilih}
             onChange={(e) => terapkan({ periode: e.target.value })}
+            aria-label="Periode"
             className="mt-1.5 w-full rounded-md border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800"
           >
             {opsiPeriode.map((p) => (
@@ -68,14 +79,15 @@ export function FilterGrafikBatang({
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
-        <label className="block min-w-[220px] flex-1">
+        <div>
           <span className="label-kolom">Kantor</span>
           <select
             value={unitTerpilih}
             disabled={!bolehPilihUnit}
             onChange={(e) => terapkan({ unit: e.target.value })}
+            aria-label="Kantor"
             className="mt-1.5 w-full rounded-md border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800 disabled:bg-abu-50 disabled:text-abu-500"
           >
             {bolehPilihUnit && <option value="">Semua unit</option>}
@@ -87,17 +99,18 @@ export function FilterGrafikBatang({
             ))}
           </select>
           {bolehPilihUnit && (
-            <span className="mt-1 block text-[10px] text-abu-400">
+            <span className="mt-1 block text-[10px] leading-tight text-abu-400">
               Memilih satu unit otomatis mencakup seluruh kantor di bawahnya.
             </span>
           )}
-        </label>
+        </div>
 
-        <label className="block min-w-[180px] flex-1">
+        <div>
           <span className="label-kolom">Jabatan</span>
           <select
             value={jabatanTerpilih}
             onChange={(e) => terapkan({ jabatan: e.target.value })}
+            aria-label="Jabatan"
             className="mt-1.5 w-full rounded-md border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800"
           >
             <option value="">Semua jabatan</option>
@@ -107,29 +120,36 @@ export function FilterGrafikBatang({
               </option>
             ))}
           </select>
-          <span className="mt-1 block text-[10px] text-abu-400">
+          <span className="mt-1 block text-[10px] leading-tight text-abu-400">
             Menyaring daftar petugas, tidak menyembunyikan unit & jabatan lain.
           </span>
-        </label>
+        </div>
 
-        <div className="pb-1">
-          {tertunda ? (
-            <span className="inline-flex items-center gap-2 text-xs text-abu-500">
-              <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Memuat…
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => router.push('/dasbor')}
-              className="rounded-md border border-abu-300 px-3 py-2 text-xs font-medium text-abu-700 hover:bg-abu-50 transition-colors"
-            >
-              Atur ulang
-            </button>
-          )}
+        {/* tombol: label tak terlihat supaya baris field-nya rata dengan
+            dropdown di kolom lain */}
+        <div>
+          <span className="label-kolom invisible" aria-hidden="true">
+            Aksi
+          </span>
+          <div className="mt-1.5">
+            {tertunda ? (
+              <span className="inline-flex items-center gap-2 py-2 text-xs text-abu-500">
+                <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Memuat…
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => router.push('/dasbor')}
+                className="rounded-md border border-abu-300 px-3 py-2 text-xs font-medium text-abu-700 hover:bg-abu-50 transition-colors"
+              >
+                Atur ulang
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

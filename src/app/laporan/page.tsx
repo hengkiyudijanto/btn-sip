@@ -170,16 +170,27 @@ export default async function HalamanLaporan({
 
         {/* ===== Filter ===== */}
         <form className="mt-6 kartu p-5" method="get">
-          <div className="flex flex-wrap items-end gap-4">
+          {/*
+            Sejajar memakai GRID dengan SATU kolom = satu wadah vertikal
+            (label + field + bantuan). Jangan menaruh label/field/bantuan
+            sebagai baris-baris grid terpisah: sel kosong (`<span />`, atau
+            label `invisible`) TETAP memakan satu slot sehingga kolom
+            berikutnya bergeser turun satu baris.
+          */}
+          <div
+            className={`grid grid-cols-1 gap-x-4 gap-y-3 items-start ${
+              bolehLihatSemua && daftarCabang.length > 0 ? 'sm:grid-cols-2' : ''
+            }`}
+          >
             <div>
-              <label htmlFor="periode" className="block text-xs font-medium text-abu-600 mb-1.5">
+              <label htmlFor="periode" className="label-kolom block">
                 Periode
               </label>
               <select
                 id="periode"
                 name="periode"
                 defaultValue={periodeTerpilih?.id ?? ''}
-                className="rounded-lg border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800 focus:border-btn-biru-500 focus:ring-2 focus:ring-btn-biru-500/20 focus:outline-none min-w-[240px]"
+                className="mt-1.5 w-full rounded-lg border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800 focus:border-btn-biru-500 focus:ring-2 focus:ring-btn-biru-500/20 focus:outline-none"
               >
                 {daftarPeriode.length === 0 && <option value="">Belum ada periode</option>}
                 {daftarPeriode.map((p) => (
@@ -188,29 +199,31 @@ export default async function HalamanLaporan({
                   </option>
                 ))}
               </select>
-              {periodeTerpilih && (
-                <p className="mt-1.5 text-[11px] text-abu-400 tabular-nums">
-                  {periodeTerpilih.tanggalMulai.toLocaleDateString('id-ID', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                  })}
-                  {' – '}
-                  {periodeTerpilih.tanggalSelesai.toLocaleDateString('id-ID', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                  })}
-                </p>
-              )}
+              <p className="mt-1 text-[11px] text-abu-400 tabular-nums">
+                {periodeTerpilih
+                  ? `${periodeTerpilih.tanggalMulai.toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })} – ${periodeTerpilih.tanggalSelesai.toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}`
+                  : '\u00a0'}
+              </p>
             </div>
 
             {bolehLihatSemua && daftarCabang.length > 0 && (
               <div>
-                <label htmlFor="cabang" className="block text-xs font-medium text-abu-600 mb-1.5">
+                <label htmlFor="cabang" className="label-kolom block">
                   Unit kerja
                 </label>
                 <select
                   id="cabang"
                   name="cabang"
                   defaultValue={unitTerpilih?.id ?? ''}
-                  className="rounded-lg border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800 focus:border-btn-biru-500 focus:ring-2 focus:ring-btn-biru-500/20 focus:outline-none min-w-[240px]"
+                  className="mt-1.5 w-full rounded-lg border border-abu-300 bg-white px-3 py-2 text-sm text-abu-800 focus:border-btn-biru-500 focus:ring-2 focus:ring-btn-biru-500/20 focus:outline-none"
                 >
                   <option value="">Semua unit</option>
                   {susunPohon(
@@ -229,31 +242,38 @@ export default async function HalamanLaporan({
                     </option>
                   ))}
                 </select>
+                <p className="mt-1 text-[11px] text-abu-400">&nbsp;</p>
               </div>
             )}
 
-            <button
-              type="submit"
-              className="rounded-lg bg-btn-biru-600 px-4 py-2 text-sm font-semibold text-white hover:bg-btn-biru-700 transition-colors"
+            <div
+              className={`mt-1 flex flex-wrap items-center gap-3 ${
+                bolehLihatSemua && daftarCabang.length > 0 ? 'sm:col-span-2' : ''
+              }`}
             >
-              Tampilkan
-            </button>
+              <button
+                type="submit"
+                className="rounded-lg bg-btn-biru-600 px-4 py-2 text-sm font-semibold text-white hover:bg-btn-biru-700 transition-colors"
+              >
+                Tampilkan
+              </button>
 
-            {/* unduh rekap memakai filter yang sedang aktif */}
-            <a
-              href={`/laporan/ekspor?${new URLSearchParams({
-                ...(periodeTerpilih ? { periode: periodeTerpilih.id } : {}),
-                ...(unitTerpilih ? { cabang: unitTerpilih.id } : {}),
-              }).toString()}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-abu-300 bg-white px-4 py-2 text-sm font-medium text-abu-700 hover:bg-abu-50 transition-colors"
-              title="Unduh rekap periode dan cakupan ini sebagai berkas Excel/CSV"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" />
-                <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
-              </svg>
-              Unduh Excel
-            </a>
+              {/* unduh rekap memakai filter yang sedang aktif */}
+              <a
+                href={`/laporan/ekspor?${new URLSearchParams({
+                  ...(periodeTerpilih ? { periode: periodeTerpilih.id } : {}),
+                  ...(unitTerpilih ? { cabang: unitTerpilih.id } : {}),
+                }).toString()}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-abu-300 bg-white px-4 py-2 text-sm font-medium text-abu-700 hover:bg-abu-50 transition-colors"
+                title="Unduh rekap periode dan cakupan ini sebagai berkas Excel/CSV"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" />
+                  <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+                </svg>
+                Unduh Excel
+              </a>
+            </div>
           </div>
         </form>
 
