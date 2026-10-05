@@ -49,3 +49,11 @@ preview-*.png
 
 # Hasil backup data mentah (memuat data pribadi + hash password)
 /backups/
+
+# === Kredensial platform sosial (TikTok/Instagram) ===
+# Berisi access token. JANGAN pernah commit — kalau bocor, akun bank bisa
+# dipakai pihak lain memposting atas nama institusi.
+/config/sosmed.json
+
+# Simulasi jam (kalau dipakai saat menguji penjadwalan)
+/config/jam-simulasi.json
