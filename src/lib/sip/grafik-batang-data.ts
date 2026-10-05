@@ -19,6 +19,8 @@ import { prisma } from '@/lib/db';
 import type { PegawaiSesi } from '@/lib/auth';
 import { kumpulkanTurunan } from '@/lib/sip/hierarki';
 import { boleh } from '@/lib/sip/akses';
+import { daftarPeriodeUntukPemilih, pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
+import { denganJabatanTerpilih } from '@/lib/sip/batang-jabatan';
 
 export type BatangNilai = {
   /** kunci stabil untuk React */
@@ -86,17 +88,42 @@ export async function ambilDataGrafikBatang(
   };
 
   // ===== 1. periode =====
-  // Pakai periode yang diminta; kalau tidak ada, periode yang punya penilaian
-  // bernilai paling akhir — supaya grafik tidak terbuka dalam keadaan kosong
-  // hanya karena periode berjalan belum diisi.
+  // Aturan pemilihan (pernah terbalik dan membuat grafik selalu kosong):
+  //   1. periode yang diminta di URL (dari dropdown filter)
+  //   2. periode yang SUDAH ADA PENILAIANNYA, terbaru — bukan periode berjalan
+  //   3. pilihan terakhir `pilihPeriodeRelevan()` (periode berjalan / terdekat),
+  //      supaya halaman tetap masuk akal saat database masih benar-benar kosong
+  //
+  // Urutan 2 sebelum 3 itu intinya: periode berjalan (mis. pekan ini) biasanya
+  // sudah dibuat tapi belum ada yang menilai, sehingga memilihnya lebih dulu
+  // membuat seluruh grafik — termasuk baris per jabatan — tampil kosong
+  // walaupun periode sebelumnya penuh nilai.
+  //
+  // Hasilnya HARUS ada di daftar dropdown (`daftarPeriodeUntukPemilih`) supaya
+  // pemilih periode tidak menampilkan nilai yang tidak ada di opsinya. Fungsi
+  // itu membatasi sampai periode berjalan, jadi kandidat di atasnya disaring
+  // dulu; kalau tidak ada yang lolos (mis. nilai terakhir ada di periode
+  // mendatang), baru pilihan itu diterima apa adanya.
+  const idBolehDipilih = new Set(
+    (await daftarPeriodeUntukPemilih()).map((p) => p.id)
+  );
+
+  const permintaan = opts.periodeId
+    ? await prisma.periode.findUnique({ where: { id: opts.periodeId } })
+    : null;
+
+  const denganNilai = await prisma.periode.findFirst({
+    where: { penilaian: { some: { nilaiAkhir: { not: null } } } },
+    orderBy: { tanggalMulai: 'desc' },
+  });
+
+  const relevan = await pilihPeriodeRelevan();
+
   const periode =
-    (opts.periodeId
-      ? await prisma.periode.findUnique({ where: { id: opts.periodeId } })
-      : null) ??
-    (await prisma.periode.findFirst({
-      where: { penilaian: { some: { nilaiAkhir: { not: null } } } },
-      orderBy: { tanggalMulai: 'desc' },
-    })) ??
+    permintaan ??
+    (denganNilai && idBolehDipilih.has(denganNilai.id) ? denganNilai : null) ??
+    (relevan && idBolehDipilih.has(relevan.id) ? relevan : null) ??
+    relevan ??
     (await prisma.periode.findFirst({ orderBy: { tanggalMulai: 'desc' } }));
   if (!periode) return kosong;
 
@@ -245,7 +272,7 @@ export async function ambilDataGrafikBatang(
     ada.nilai.push(p.nilaiAkhir!);
     petaJab.set(kode, ada);
   }
-  const perJabatan: BatangNilai[] = [...petaJab.entries()]
+  const perJabatanDasar: BatangNilai[] = [...petaJab.entries()]
     .map(([kode, v]) => ({
       kunci: `jab-${kode}`,
       label: v.nama,
@@ -262,6 +289,11 @@ export async function ambilDataGrafikBatang(
       if ((b.jumlah > 0 ? 1 : 0) !== (a.jumlah > 0 ? 1 : 0)) return (b.jumlah > 0 ? 1 : 0) - (a.jumlah > 0 ? 1 : 0);
       return b.nilai - a.nilai;
     });
+
+  // Kalau filter jabatan menunjuk jabatan yang belum punya penilaian sama
+  // sekali (mis. Security pada periode yang belum diisi), batangnya tetap
+  // ditampilkan sebagai "belum ada nilai" — bukan daftar kosong.
+  const perJabatan = denganJabatanTerpilih(perJabatanDasar, kodeJabatan, opsiJabatan);
 
   // ===== 7. batang per petugas =====
   const perPetugas: BatangNilai[] = bernilai
