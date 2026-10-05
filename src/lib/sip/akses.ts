@@ -26,7 +26,7 @@ export const KETERANGAN_PERAN: Record<Peran, string> = {
   PENGAMAT: 'Hanya melihat dasbor, laporan, dan ranking. Tidak bisa mengubah apa pun.',
   SUPERVISOR: 'Menilai petugas di bawahnya dan mengusulkan pegawai baru.',
   MANAGER: 'Mengetahui/mengakui penilaian, serta melihat data pegawai.',
-  ADMIN: 'Kelola data induk (cabang, periode, jabatan, peran) dan akun, serta pengaturan modul sosmed.',
+  ADMIN: 'Kelola data induk (cabang, periode, jabatan, peran) dan akun.',
 };
 
 /**
@@ -62,18 +62,7 @@ export type Kemampuan =
    * yang juga seharusnya melihat semua (PENGAMAT) malah terjebak melihat satu
    * cabang — akibatnya tren nilainya KOSONG dan grafiknya tidak muncul.
    */
-  | 'lihat_semua_cabang'
-  /**
-   * ==== MODUL KONTEN SOSMED ====
-   * Membuat/mengubah/mengajukan/mengirim konten TikTok & Instagram.
-   */
-  | 'kelola_konten'
-  /** Menyetujui atau meminta revisi konten orang lain. */
-  | 'setujui_konten'
-  /** Melihat SELURUH konten (semua kreator), bukan hanya miliknya sendiri. */
-  | 'lihat_semua_konten'
-  /** Pengaturan modus pengiriman (mock/nyata) & kredensial platform. */
-  | 'kelola_sosmed';
+  | 'lihat_semua_cabang';
 
 /**
  * Peta kemampuan per peran.
@@ -91,9 +80,9 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
   // kosong karena ia terjebak melihat satu cabang saja.
   // Menambahkan kemampuan lain di sini berarti memberi HAK UBAH: jangan
   // lakukan tanpa diminta pemilik aplikasi.
-  PENGAMAT: ['lihat_semua_cabang', 'lihat_semua_konten'],
+  PENGAMAT: ['lihat_semua_cabang'],
 
-  SUPERVISOR: ['menilai', 'usul_pegawai', 'kelola_konten'],
+  SUPERVISOR: ['menilai', 'usul_pegawai'],
 
   MANAGER: [
     'menilai',
@@ -104,10 +93,6 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
     // manager boleh memilih unit di grafik (perilaku lama) tetapi datanya
     // tetap dibatasi cakupan cabangnya di halaman laporan
     'lihat_semua_cabang',
-    // ==== sosmed ====
-    'kelola_konten', // manager juga membuat konten
-    'setujui_konten', // sekaligus jadi penyetuju konten bawahannya
-    'lihat_semua_konten',
   ],
 
   ADMIN: [
@@ -121,11 +106,6 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
     'kelola_induk',
     'lihat_audit',
     'lihat_semua_cabang',
-    // ==== sosmed ====
-    'kelola_konten',
-    'setujui_konten',
-    'lihat_semua_konten',
-    'kelola_sosmed',
   ],
 };
 
@@ -160,11 +140,6 @@ const HALAMAN: Record<string, Peran[] | null> = {
   '/parameter/peran': ['ADMIN'],
   '/parameter/periode': ['ADMIN'],
   '/parameter/audit': ['ADMIN'],
-
-  // ==== MODUL KONTEN SOSMED ====
-  // Kreator & penyetuju daftar di sini; administrator lewat /sosmed/pengaturan.
-  '/sosmed': ['SUPERVISOR', 'MANAGER', 'ADMIN', 'PENGAMAT'],
-  '/sosmed/pengaturan': ['ADMIN'],
 };
 
 /**

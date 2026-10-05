@@ -5,7 +5,6 @@ import { LoncengNotifikasi } from '@/components/lonceng-notifikasi';
 import { saringMenu } from '@/components/menu';
 import { keluar } from '@/app/actions/auth';
 import { ambilPengingat } from '@/lib/sip/pengingat';
-import { ambilPengingatSosmed } from '@/lib/sosmed/pengingat';
 import type { PegawaiSesi } from '@/lib/auth';
 
 const LABEL_ROLE: Record<string, string> = {
@@ -20,17 +19,9 @@ export async function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; ch
   const menu = saringMenu(pegawai.role);
 
   // Lonceng menampilkan hal yang perlu ditindak (petugas belum dinilai,
-  // penilaian menunggu diketahui, periode hampir ditutup, konten sosmed yang
-  // menunggu persetujuan/revisi). Kalau tidak ada apa-apa, komponennya tidak
-  // merender apa pun.
-  const [pengingat, pengingatSosmed] = await Promise.all([
-    ambilPengingat(pegawai),
-    ambilPengingatSosmed(pegawai),
-  ]);
-
-  // Gabung & urutkan: pengingat penilaian dulu (terikat periode, ada tenggat),
-  // lalu pengingat konten. Urutan dalam kelompok tetap seperti aslinya.
-  const daftarPengingat = [...pengingat.daftar, ...pengingatSosmed];
+  // penilaian menunggu diketahui, periode hampir ditutup). Kalau tidak ada
+  // apa-apa, komponennya tidak merender apa pun.
+  const pengingat = await ambilPengingat(pegawai);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -55,7 +46,7 @@ export async function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; ch
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <LoncengNotifikasi daftar={daftarPengingat} jumlah={daftarPengingat.length} />
+            <LoncengNotifikasi daftar={pengingat.daftar} jumlah={pengingat.jumlahButir} />
             <div className="hidden sm:block text-right">
               <div className="text-sm font-semibold leading-tight truncate max-w-[180px]">
                 {pegawai.nama}

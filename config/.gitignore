@@ -1,5 +1,0 @@
-# Daftar berkas kerja yang boleh hidup di config/ tapi TIDAK masuk repo.
-# Kredensial (token) ditulis pemilik aplikasi langsung di server.
-
-# config/sosmed.json — berisi access token TikTok/Instagram
-sosmed.json

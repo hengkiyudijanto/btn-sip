@@ -60,24 +60,6 @@ export const MENU: ItemMenuPohon[] = [
     ],
   },
   {
-    // ==== MODUL KONTEN SOSMED ====
-    // Grup ini punya pintu sendiri (/sosmed = daftar konten) PLUS submenu.
-    // Penilaian & persetujuan konten sengaja dipisah karena pelakunya berbeda:
-    // kreator bekerja di /sosmed, penyetuju di /sosmed/persetujuan.
-    label: 'Konten Sosmed',
-    role: ['PENGAMAT', 'SUPERVISOR', 'MANAGER', 'ADMIN'],
-    anak: [
-      { href: '/sosmed', label: 'Daftar Konten' },
-      { href: '/sosmed/baru', label: 'Buat Konten', role: ['SUPERVISOR', 'MANAGER', 'ADMIN'] },
-      {
-        href: '/sosmed/persetujuan',
-        label: 'Persetujuan Konten',
-        role: ['MANAGER', 'ADMIN'],
-      },
-      { href: '/sosmed/pengaturan', label: 'Pengaturan Platform', role: ['ADMIN'] },
-    ],
-  },
-  {
     label: 'Parameter',
     anak: [
       { href: '/parameter/cabang', label: 'Cabang', role: ['ADMIN'] },
