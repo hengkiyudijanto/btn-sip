@@ -20,13 +20,17 @@ import type { BatangNilai, DataGrafikBatang } from '@/lib/sip/grafik-batang-data
 
 const SKALA_MAKS = 5;
 
-/** Warna batang mengikuti pita rating supaya konsisten dengan badge di seluruh aplikasi. */
+/**
+ * Warna batang mengikuti pita rating supaya konsisten dengan badge di seluruh
+ * aplikasi. Dipakai gradasi (bukan warna rata) supaya batangnya terlihat
+ * punya dimensi dan tidak kaku.
+ */
 function warnaBatang(nilai: number): string {
-  if (nilai >= 4.8) return 'bg-rating-istimewa';
-  if (nilai >= 4.6) return 'bg-rating-sangat-baik';
-  if (nilai >= 4.0) return 'bg-btn-biru-500';
-  if (nilai >= 3.6) return 'bg-peringatan';
-  return 'bg-bahaya';
+  if (nilai >= 4.8) return 'batang-istimewa';
+  if (nilai >= 4.6) return 'batang-sangat-baik';
+  if (nilai >= 4.0) return 'batang-baik';
+  if (nilai >= 3.6) return 'batang-cukup';
+  return 'batang-kurang';
 }
 
 function labelRating(nilai: number): string {
@@ -41,7 +45,7 @@ function labelRating(nilai: number): string {
 const WARNA_TEKS_RATING: Record<string, string> = {
   Istimewa: 'text-rating-istimewa',
   'Sangat Baik': 'text-rating-sangat-baik',
-  Baik: 'text-btn-biru-600',
+  Baik: 'text-rating-baik',
   Cukup: 'text-peringatan',
   Kurang: 'text-bahaya',
 };
@@ -324,7 +328,7 @@ function Legenda() {
       {[
         ['Istimewa', 'bg-rating-istimewa', '4,80 – 5,00'],
         ['Sangat Baik', 'bg-rating-sangat-baik', '4,60 – 4,79'],
-        ['Baik', 'bg-btn-biru-500', '4,00 – 4,59'],
+        ['Baik', 'bg-rating-baik', '4,00 – 4,59'],
         ['Cukup', 'bg-peringatan', '3,60 – 3,99'],
         ['Kurang', 'bg-bahaya', '0,00 – 3,59'],
       ].map(([teks, warna, rentang]) => (

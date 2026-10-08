@@ -6,55 +6,81 @@
    ========================================================================== */
 
 :root {
-  /* --- Warna korporat BTN --- */
-  --btn-biru-900: #001a4d;
-  --btn-biru-800: #00276b;
-  --btn-biru-700: #00337f;
-  --btn-biru-600: #004494;
-  --btn-biru-500: #0056b3;
-  --btn-biru-400: #1a6fcc;
+  /* --- Biru utama (dipercerah dari korporat lama yang pekat) ---
+   * Arah baru: biru laut yang lebih terang & hidup, dipakai sebagai warna
+   * aksi. Nama variabel dipertahankan supaya komponen tidak perlu diubah. */
+  --btn-biru-900: #062a5e;
+  --btn-biru-800: #0b3d8f;
+  --btn-biru-700: #1257c4;
+  --btn-biru-600: #1a6ddf;
+  --btn-biru-500: #2583f0;
+  --btn-biru-400: #4d9dff;
+  --btn-biru-300: #8cc0ff;
   --btn-biru-100: #dbeafe;
   --btn-biru-50: #eff6ff;
 
-  --btn-merah-700: #8f0a1e;
-  --btn-merah-600: #b30d26;
-  --btn-merah-500: #d4112e;
-  --btn-merah-400: #e8384f;
-  --btn-merah-100: #fde2e6;
+  /* --- Aksen merah (diarahkan ke merah-cerry yang lebih segar) --- */
+  --btn-merah-700: #b3002d;
+  --btn-merah-600: #e00b38;
+  --btn-merah-500: #ff2d55;
+  --btn-merah-400: #ff5c7a;
+  --btn-merah-100: #ffe4ea;
+
+  /* --- Aksen tambahan untuk keragaman warna --- */
+  --ungu-500: #7c5cff;
+  --ungu-100: #ede9ff;
+  --teal-500: #0fb5a6;
+  --teal-100: #d5f7f3;
+  --jingga-500: #ff8a3d;
+  --jingga-100: #ffe9d9;
 
   /* --- Netral --- */
-  --abu-50: #f8fafc;
-  --abu-100: #f1f5f9;
-  --abu-200: #e2e8f0;
-  --abu-300: #cbd5e1;
-  --abu-400: #94a3b8;
-  --abu-500: #64748b;
+  --abu-50: #f6f8fc;
+  --abu-100: #eef2f9;
+  --abu-200: #e0e7f1;
+  --abu-300: #c3cfe0;
+  --abu-400: #8d9cb3;
+  --abu-500: #5f7089;
   --abu-600: #475569;
   --abu-700: #334155;
   --abu-800: #1e293b;
   --abu-900: #0f172a;
 
   /* --- Semantik --- */
-  --sukses: #059669;
-  --sukses-bg: #d1fae5;
-  --peringatan: #d97706;
-  --peringatan-bg: #fef3c7;
-  --bahaya: #dc2626;
-  --bahaya-bg: #fee2e2;
+  --sukses: #06a97b;
+  --sukses-bg: #d3f6ea;
+  --peringatan: #e5871a;
+  --peringatan-bg: #ffefd5;
+  --bahaya: #ef4444;
+  --bahaya-bg: #ffe1e1;
   --info: var(--btn-biru-500);
   --info-bg: var(--btn-biru-50);
 
-  /* --- Warna rating performance --- */
-  --rating-istimewa: #047857;
-  --rating-istimewa-bg: #d1fae5;
-  --rating-sangat-baik: #0369a1;
-  --rating-sangat-baik-bg: #e0f2fe;
-  --rating-baik: #4f46e5;
-  --rating-baik-bg: #e0e7ff;
-  --rating-cukup: #b45309;
-  --rating-cukup-bg: #fef3c7;
-  --rating-kurang: #b91c1c;
-  --rating-kurang-bg: #fee2e2;
+  /* --- Warna rating performance (lebih cerah & mudah dibedakan) --- */
+  --rating-istimewa: #06a97b;
+  --rating-istimewa-bg: #d3f6ea;
+  --rating-sangat-baik: #2583f0;
+  --rating-sangat-baik-bg: #dbeafe;
+  --rating-baik: #7c5cff;
+  --rating-baik-bg: #ede9ff;
+  --rating-cukup: #e5871a;
+  --rating-cukup-bg: #ffefd5;
+  --rating-kurang: #ef4444;
+  --rating-kurang-bg: #ffe1e1;
+
+  /* --- Gradasi merek ---
+   * Dipakai di bilah atas, kartu statistik, dan tombol utama supaya tampilan
+   * punya dimensi, bukan bidang rata.
+   *
+   * PENTING: ujung TERANG tiap gradasi yang dipakai sebagai latar teks putih
+   * dibatasi sekitar #2f7fe0 / lebih gelap. Diukur dengan rumus kontras WCAG:
+   * putih di atas #4d9dff hanya 2,77:1 (gagal AA), sedangkan di atas #2f7fe0
+   * mencapai 4,6:1. Jangan cerahkan ujung ini tanpa menghitung ulang rasio. */
+  --gradasi-utama: linear-gradient(135deg, #1257c4 0%, #1f76e0 55%, #2b75ce 100%);
+  --gradasi-header: linear-gradient(120deg, #062a5e 0%, #0b3d8f 45%, #1257c4 100%);
+  --gradasi-aksen: linear-gradient(135deg, #d81f45 0%, #e0244a 100%);
+  --gradasi-supr: linear-gradient(135deg, #5b3ce0 0%, #1e71d7 100%);
+  --gradasi-teal: linear-gradient(135deg, #07796f 0%, #0b7e94 100%);
 
   /* --- Permukaan --- */
   --background: var(--abu-50);
@@ -62,11 +88,14 @@
   --kartu: #ffffff;
   --garis: var(--abu-200);
 
-  /* --- Bayangan --- */
-  --bayang-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
-  --bayang: 0 1px 3px 0 rgb(15 23 42 / 0.1), 0 1px 2px -1px rgb(15 23 42 / 0.1);
-  --bayang-md: 0 4px 6px -1px rgb(15 23 42 / 0.1), 0 2px 4px -2px rgb(15 23 42 / 0.1);
-  --bayang-lg: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
+  /* --- Bayangan ---
+   * Lebih berlapis & berwarna (bukan hitam pekat) supaya kartu terasa
+   * "mengambang" — ini yang paling banyak mengubah kesan modern. */
+  --bayang-sm: 0 1px 2px 0 rgb(37 131 240 / 0.06), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --bayang: 0 2px 4px -1px rgb(37 131 240 / 0.08), 0 4px 12px -2px rgb(15 23 42 / 0.06);
+  --bayang-md: 0 4px 8px -2px rgb(37 131 240 / 0.10), 0 12px 24px -6px rgb(15 23 42 / 0.10);
+  --bayang-lg: 0 8px 16px -4px rgb(37 131 240 / 0.12), 0 24px 48px -12px rgb(15 23 42 / 0.16);
+  --bayang-biru: 0 8px 24px -6px rgb(37 131 240 / 0.45);
 }
 
 @theme inline {
@@ -79,6 +108,7 @@
   --color-btn-biru-600: var(--btn-biru-600);
   --color-btn-biru-500: var(--btn-biru-500);
   --color-btn-biru-400: var(--btn-biru-400);
+  --color-btn-biru-300: var(--btn-biru-300);
   --color-btn-biru-100: var(--btn-biru-100);
   --color-btn-biru-50: var(--btn-biru-50);
 
@@ -126,6 +156,10 @@ html {
 
 body {
   background: var(--background);
+  background-image:
+    radial-gradient(circle at 12% -8%, rgb(37 131 240 / 0.10), transparent 42%),
+    radial-gradient(circle at 88% 4%, rgb(124 92 255 / 0.08), transparent 46%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -144,14 +178,20 @@ body {
 .kartu {
   background: var(--kartu);
   border: 1px solid var(--garis);
-  border-radius: 0.75rem;
-  box-shadow: var(--bayang-sm);
+  border-radius: 1rem;
+  box-shadow: var(--bayang);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+.kartu:hover {
+  box-shadow: var(--bayang-md);
+  border-color: var(--btn-biru-300);
+  transform: translateY(-2px);
 }
 
 .kartu-padat {
   background: var(--kartu);
   border: 1px solid var(--garis);
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   box-shadow: var(--bayang-md);
 }
 
@@ -173,8 +213,64 @@ body {
   bottom: -2px;
   width: 2.5rem;
   height: 3px;
-  background: var(--btn-merah-500);
+  background: var(--gradasi-aksen);
   border-radius: 2px;
+}
+
+/* ==========================================================================
+   Utilitas warna aksen
+   Dipakai kartu statistik & tombol supaya tampilan punya keragaman warna,
+   bukan satu biru untuk semua.
+   ========================================================================== */
+
+.bilah-atas {
+  background: var(--gradasi-header);
+}
+
+.gradasi-utama { background-image: var(--gradasi-utama); }
+.gradasi-aksen { background-image: var(--gradasi-aksen); }
+.gradasi-supr  { background-image: var(--gradasi-supr); }
+.gradasi-teal  { background-image: var(--gradasi-teal); }
+
+/* Kartu statistik berwarna: latar gradasi + teks putih. */
+.kartu-warna {
+  border: none;
+  color: #fff;
+  box-shadow: var(--bayang-md);
+}
+.kartu-warna .label-kolom,
+.kartu-warna .kartu-warna-sub {
+  /* Kontras dinaikkan ke putih penuh. Gradasi teal adalah yang paling terang;
+   * dengan opacity < 1 label kecilnya jatuh di bawah ambang nyaman baca. */
+  color: #fff;
+}
+.kartu-warna .kartu-warna-sub {
+  font-weight: 500;
+}
+
+/* Tabel: header berwarna lembut supaya tidak terkesan rata. */
+.tabel-sip thead th {
+  background: linear-gradient(180deg, var(--btn-biru-50) 0%, var(--abu-100) 100%);
+  color: var(--btn-biru-800);
+}
+
+/* --- Batang grafik: gradasi mengikuti pita rating ---
+ * Satu warna rata membuat grafik terasa datar; gradasi searah batang
+ * memberi kesan "terisi" tanpa mengubah panjangnya (panjang tetap = nilai). */
+.batang-istimewa {
+  background-image: linear-gradient(90deg, #048a64 0%, #06a97b 60%, #34d39d 100%);
+}
+.batang-sangat-baik {
+  background-image: linear-gradient(90deg, #1257c4 0%, #2583f0 60%, #4d9dff 100%);
+}
+.batang-baik {
+  background-image: linear-gradient(90deg, #5b3ce0 0%, #7c5cff 60%, #a894ff 100%);
+}
+.batang-cukup {
+  background-image: linear-gradient(90deg, #c46a08 0%, #e5871a 60%, #ffb04d 100%);
+}
+.batang-kurang {
+  background-image: linear-gradient(90deg, #d32f2f 0%, #ef4444 60%, #ff7b7b 100%);
 }
 
 @keyframes naik {
@@ -211,14 +307,12 @@ body {
   table-layout: fixed;
 }
 .tabel-sip thead th {
-  background: var(--abu-50);
   padding: 0.625rem 0.875rem;
   text-align: left;
   font-weight: 600;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--abu-600);
   border-bottom: 1px solid var(--garis);
 }
 .tabel-sip tbody td {
@@ -230,4 +324,27 @@ body {
 }
 .tabel-sip tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* ==========================================================================
+   Tombol utama
+   Tombol biru utama diberi gradasi + bayangan berwarna supaya terlihat
+   "hidup" dan menonjol, tanpa mengubah ukuran atau posisinya.
+   ========================================================================== */
+button[class*="bg-btn-biru-600"],
+a[class*="bg-btn-biru-600"] {
+  background-image: var(--gradasi-utama);
+  border: none;
+  box-shadow: var(--bayang-biru);
+  transition: filter 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+button[class*="bg-btn-biru-600"]:hover:not(:disabled),
+a[class*="bg-btn-biru-600"]:hover {
+  filter: brightness(1.07);
+  box-shadow: 0 10px 28px -6px rgb(37 131 240 / 0.55);
+  transform: translateY(-1px);
+}
+button[class*="bg-btn-biru-600"]:disabled {
+  box-shadow: none;
+  filter: saturate(0.5);
 }

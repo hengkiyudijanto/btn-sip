@@ -26,7 +26,7 @@ export async function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; ch
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       {/* ===== Bilah atas ===== */}
-      <header className="bg-btn-biru-800 text-white sticky top-0 z-40">
+      <header className="bilah-atas text-white sticky top-0 z-40 shadow-lg">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-5 min-w-0">
             <Link href="/dasbor" className="flex items-center gap-3 shrink-0">

@@ -111,7 +111,7 @@ export default async function Dasbor({
           <h1 className="text-2xl font-bold text-abu-900">
             Selamat datang, {pegawai.nama.split(' ')[0]}
           </h1>
-          <div className="mt-2 h-0.5 w-10 bg-btn-merah-500 rounded-full" />
+          <div className="mt-2 h-1 w-12 rounded-full gradasi-aksen" />
           <p className="mt-3 text-sm text-abu-500">
             {LABEL_ROLE[pegawai.role]} &middot; {pegawai.cabang.nama}
             {periode && <> &middot; Periode {periode.nama}</>}
@@ -122,17 +122,18 @@ export default async function Dasbor({
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {BOLEH_MENILAI ? (
             <>
-              <StatKartu label="Petugas" nilai={String(totalPetugasCakupan)} keterangan="Yang dapat dinilai" />
+              <StatKartu label="Petugas" nilai={String(totalPetugasCakupan)} keterangan="Yang dapat dinilai" warna="utama" />
               <StatKartu
                 label="Sudah dinilai"
                 nilai={String(sudahDinilaiCakupan)}
                 keterangan={periode ? `${periode.nama} · nilai terisi` : 'Belum ada periode'}
+                warna="teal"
               />
               <StatKartu
                 label="Belum dinilai"
                 nilai={String(Math.max(0, totalPetugasCakupan - sudahDinilaiCakupan))}
                 keterangan="Perlu diselesaikan"
-                sorot
+                warna="aksen"
               />
             </>
           ) : (
@@ -141,11 +142,13 @@ export default async function Dasbor({
                 label="Penilaian saya"
                 nilai={String(penilaianSaya.length)}
                 keterangan="Total penilaian diterima"
+                warna="utama"
               />
               <StatKartu
                 label="Jabatan"
                 nilai={pegawai.jabatan?.nama ?? '—'}
                 keterangan={pegawai.cabang.nama}
+                warna="teal"
               />
             </>
           )}
@@ -221,7 +224,7 @@ export default async function Dasbor({
           <div className="mt-8 space-y-4">
             <div className="animasi-naik">
               <h2 className="text-lg font-bold text-abu-900">Rekap Nilai</h2>
-              <div className="mt-2 h-0.5 w-10 bg-btn-merah-500 rounded-full" />
+              <div className="mt-2 h-1 w-12 rounded-full gradasi-aksen" />
               <p className="mt-3 text-sm text-abu-500">
                 Nilai rata-rata per kantor, per jabatan, dan per petugas. Pilih kantor
                 untuk melihat unit di bawahnya; daftar petugas bisa disembunyikan.
@@ -363,23 +366,35 @@ function StatKartu({
   nilai,
   keterangan,
   sorot,
+  warna,
 }: {
   label: string;
   nilai: string;
   keterangan: string;
   sorot?: boolean;
+  /** Gradasi latar kartu. Kartu berwarna memakai teks putih. */
+  warna?: 'utama' | 'supr' | 'teal' | 'aksen';
 }) {
+  const gradasi =
+    warna === 'supr' ? 'gradasi-supr'
+    : warna === 'teal' ? 'gradasi-teal'
+    : warna === 'aksen' ? 'gradasi-aksen'
+    : warna === 'utama' ? 'gradasi-utama'
+    : '';
+
   return (
-    <div className="kartu p-5">
+    <div className={`kartu p-5 ${gradasi ? `kartu-warna ${gradasi}` : ''}`}>
       <div className="label-kolom">{label}</div>
       <div
         className={`mt-1.5 text-2xl font-bold ${
-          sorot ? 'text-btn-merah-600' : 'text-abu-900'
+          gradasi ? '' : sorot ? 'text-btn-merah-600' : 'text-abu-900'
         }`}
       >
         {nilai}
       </div>
-      <div className="mt-0.5 text-xs text-abu-400 truncate">{keterangan}</div>
+      <div className={`mt-0.5 text-xs truncate ${gradasi ? 'kartu-warna-sub' : 'text-abu-400'}`}>
+        {keterangan}
+      </div>
     </div>
   );
 }
