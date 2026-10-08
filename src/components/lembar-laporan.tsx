@@ -233,12 +233,6 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
             )}
           </div>
         </div>
-
-        {data.catatanUmum && (
-          <div className="sip-catatan" style={{ marginBottom: 0, marginTop: '10px' }}>
-            <strong>Catatan Penilai:</strong> {data.catatanUmum}
-          </div>
-        )}
       </div>
 
       {/* ============ LEMBAR KOMITMEN ============ */}
@@ -249,6 +243,12 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
           penilaian di atas telah dibahas bersama dan disepakati sebagai dasar
           pembinaan serta pengembangan kinerja petugas pada periode berikutnya.
         </p>
+
+        {data.catatanUmum && (
+          <div className="sip-catatan" style={{ marginBottom: 0, marginTop: '8px' }}>
+            <strong>Catatan Penilai:</strong> {data.catatanUmum}
+          </div>
+        )}
 
         <div className="sip-ttd-grid">
           <div className="sip-ttd-box">
