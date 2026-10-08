@@ -238,14 +238,9 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
       {/* ============ LEMBAR KOMITMEN ============ */}
       <div className="sip-komitmen">
         <div className="sip-komitmen-judul">LEMBAR KOMITMEN</div>
-        <p style={{ fontSize: '9.5px', lineHeight: 1.6, color: '#334155', margin: 0 }}>
-          Dengan menandatangani lembar ini, kedua pihak menyatakan bahwa hasil
-          penilaian di atas telah dibahas bersama dan disepakati sebagai dasar
-          pembinaan serta pengembangan kinerja petugas pada periode berikutnya.
-        </p>
 
         {data.catatanUmum && (
-          <div className="sip-catatan" style={{ marginBottom: 0, marginTop: '8px' }}>
+          <div className="sip-catatan" style={{ marginBottom: 0, marginTop: 0 }}>
             {data.catatanUmum}
           </div>
         )}
