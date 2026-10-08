@@ -246,7 +246,7 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
 
         {data.catatanUmum && (
           <div className="sip-catatan" style={{ marginBottom: 0, marginTop: '8px' }}>
-            <strong>Catatan Penilai:</strong> {data.catatanUmum}
+            {data.catatanUmum}
           </div>
         )}
 
