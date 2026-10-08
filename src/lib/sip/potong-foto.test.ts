@@ -41,15 +41,20 @@ describe('hitungPenempatanFoto', () => {
     }
   });
 
-  it('gambar dipusatkan pada kotak', () => {
+  it('gambar dipusatkan HORIZONTAL pada kotak', () => {
     const t = hitungPenempatanFoto(KOTAK, 2.0);
     const pusatGambarX = t.x + t.w / 2;
     const pusatKotakX = KOTAK.x + KOTAK.w / 2;
     expect(pusatGambarX).toBeCloseTo(pusatKotakX, 6);
+  });
 
-    const pusatGambarY = t.y + t.h / 2;
-    const pusatKotakY = KOTAK.y + KOTAK.h / 2;
-    expect(pusatGambarY).toBeCloseTo(pusatKotakY, 6);
+  it('foto potret: kepala TIDAK terpotong (sisi atas pas di tepi kotak)', () => {
+    const t = hitungPenempatanFoto(KOTAK, 0.75);   // potret, lebih tinggi
+    // sisi atas gambar harus tepat di tepi atas kotak -> tidak ada yang hilang
+    expect(t.y).toBeCloseTo(KOTAK.y, 6);
+    expect(t.potongAtas).toBeCloseTo(0, 6);
+    // sisa kelebihannya dibuang ke bawah
+    expect(t.potongBawah).toBeGreaterThan(0);
   });
 
   it('foto dengan rasio sama persis dengan kotak: tanpa potongan', () => {
@@ -66,10 +71,14 @@ describe('hitungPenempatanFoto', () => {
     expect(t.potongKiri).toBeGreaterThan(0);
   });
 
-  it('potongan terbagi rata atas-bawah', () => {
+  it('kelebihan foto potret dibuang ke BAWAH, bukan dibagi rata', () => {
     const t = hitungPenempatanFoto(KOTAK, 0.75);
-    expect(t.potongAtas).toBeCloseTo(t.potongBawah, 6);
-    expect(t.potongAtas).toBeGreaterThan(0);
+    expect(t.potongAtas).toBeCloseTo(0, 6);          // atas utuh
+    expect(t.potongBawah).toBeGreaterThan(t.potongAtas);
+    expect(t.potongAtas + t.potongBawah).toBeCloseTo(
+      (KOTAK.w / 0.75 - KOTAK.h) / (KOTAK.w / 0.75),
+      6
+    );
   });
 
   it('rasio tidak valid: taruh memenuhi kotak apa adanya', () => {

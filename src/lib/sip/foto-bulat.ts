@@ -15,6 +15,8 @@
 
 import sharp from 'sharp';
 
+import { BAGIAN_POTONG_ATAS } from './potong-foto';
+
 /**
  * Ukuran kotak foto di slide (inci).
  *
@@ -97,7 +99,14 @@ export async function siapkanFotoUntukKotak(
     const tinggiSkala = Math.round(tinggiAsli * skala);
 
     const kiri = Math.max(0, Math.round((lebarSkala - lebar) / 2));
-    const atas = Math.max(0, Math.round((tinggiSkala - tinggi) / 2));
+    // Sumbu tegak TIDAK dipotong rata: kelebihan dibuang ke bawah saja supaya
+    // kepala/kepala bagian atas tidak hilang (aturan yang sama dengan
+    // BAGIAN_POTONG_ATAS di potong-foto.ts). Potong-tengah pernah membuat
+    // ubun-ubun petugas terpotong di slide ranking.
+    const atas = Math.max(
+      0,
+      Math.round((tinggiSkala - tinggi) * BAGIAN_POTONG_ATAS)
+    );
 
     const dasar = await sharp(data)
       .resize(lebarSkala, tinggiSkala, { fit: 'fill' })

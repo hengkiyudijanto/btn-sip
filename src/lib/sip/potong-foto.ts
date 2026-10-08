@@ -35,6 +35,14 @@ export type PenempatanFoto = {
 };
 
 /**
+ * Bagian kelebihan foto yang dipotong di sisi ATAS saat foto lebih tinggi
+ * dari kotaknya. Tidak dipotong rata: potret orang hampir selalu menaruh
+ * kepala di bagian atas, dan potong-tengah membuang separuh dahi/kepala.
+ * Nilai 0 = tidak dipotong sama sekali di atas (kepala utuh), 0,5 = tengah.
+ */
+export const BAGIAN_POTONG_ATAS = 0;
+
+/**
  * @param kotak      kotak tujuan di slide
  * @param rasioFoto  lebar/tinggi foto aslinya (mis. 0,75 untuk potret 3:4)
  */
@@ -67,9 +75,12 @@ export function hitungPenempatanFoto(
     gambarH = kotak.w / rasioFoto;
   }
 
-  // gambar dipusatkan pada kotak, jadi kelebihannya terbagi rata dua sisi
+  // Sisi kiri-kanan tetap dipotong rata (wajah ada di tengah).
   const x = kotak.x - (gambarW - kotak.w) / 2;
-  const y = kotak.y - (gambarH - kotak.h) / 2;
+
+  // Sumbu tegak sengaja TIDAK rata: kelebihan dibuang ke BAWAH saja supaya
+  // ubun-ubun dan dahi tidak ikut terpotong (lihat BAGIAN_POTONG_ATAS).
+  const y = kotak.y - (gambarH - kotak.h) * BAGIAN_POTONG_ATAS;
 
   const potongTotalW = gambarW - kotak.w;
   const potongTotalH = gambarH - kotak.h;
@@ -78,8 +89,8 @@ export function hitungPenempatanFoto(
     x, y, w: gambarW, h: gambarH,
     potongKiri: potongTotalW / 2 / gambarW,
     potongKanan: potongTotalW / 2 / gambarW,
-    potongAtas: potongTotalH / 2 / gambarH,
-    potongBawah: potongTotalH / 2 / gambarH,
+    potongAtas: (potongTotalH * BAGIAN_POTONG_ATAS) / gambarH,
+    potongBawah: (potongTotalH * (1 - BAGIAN_POTONG_ATAS)) / gambarH,
   };
 }
 
