@@ -12,7 +12,10 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:status": "prisma migrate status",
-    "db:migrasi": "tsx scripts/migrasi.ts"
+    "db:migrasi": "tsx scripts/migrasi.ts",
+    "pra-push": "tsx scripts/cegah-deploy-gagal.ts",
+    "siap-push": "tsx scripts/cegah-deploy-gagal.ts --siap-push",
+    "pra-push:cepat": "tsx scripts/cegah-deploy-gagal.ts --cepat"
   },
   "dependencies": {
     "@neon/config": "^1.8.2",

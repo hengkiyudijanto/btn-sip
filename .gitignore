@@ -46,6 +46,8 @@ next-env.d.ts
 contoh-laporan-*.pdf
 cek-*.png
 preview-*.png
+laporan-*.pdf
+laporan-*.png
 
 # Hasil backup data mentah (memuat data pribadi + hash password)
 /backups/
