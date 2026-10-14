@@ -138,6 +138,19 @@ periksa('Tidak ada berkas kerja/rahasia ter-commit', () => {
     .filter(Boolean);
   const pelanggar = daftar.filter((f) => berbahaya.test(f));
   if (pelanggar.length) throw new Error(`staged tapi tidak boleh masuk repo: ${pelanggar.join(', ')}`);
+  // Berkas yang sudah TERLANJUR ter-track tetap lolos aturan .gitignore — jadi
+  // periksa juga berkas yang berubah terhadap commit, bukan hanya yang ter-stage.
+  const berubah = execSync('git diff --name-only HEAD', { cwd: AKAR, encoding: 'utf8' })
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const pelanggarLama = berubah.filter((f) => berbahaya.test(f));
+  if (pelanggarLama.length) {
+    throw new Error(
+      `berkas kerja yang sudah ter-track ikut berubah: ${pelanggarLama.join(', ')}\n` +
+        `   kembalikan dulu: git checkout -- ${pelanggarLama.join(' ')}`
+    );
+  }
   return `${daftar.length} berkas ter-stage, tidak ada berkas kerja/rahasia`;
 });
 
