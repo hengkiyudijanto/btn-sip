@@ -40,32 +40,37 @@ Banking Customer Service.
 
 Periode penilaian **dihitung otomatis**, tidak dibuat manual. Aturannya:
 
-1. Penilaian dilakukan setiap minggu pada **hari penilaian** yang bisa diubah
-   (default: Rabu). Hari ini hanya jadwal pengisian — **bukan** penentu batas
-   periode.
+1. Satu pekan = **Minggu sampai Sabtu**, dan **tidak menyeberang bulan**.
 2. Penamaan: `Minggu ke-N <Bulan> <Tahun>` dengan N = nomor urut dalam bulan
    itu, bukan nomor minggu ISO.
-3. Periode selalu **mulai tanggal 1** setiap bulan dan **berakhir hari Minggu**.
-   Tidak menyeberang bulan.
-4. Panjang periode pertama bergantung posisi tanggal 1 terhadap hari penilaian:
-   - tanggal 1 **sebelum/tepat** hari penilaian → berakhir Minggu di minggu itu
-   - tanggal 1 **setelah** hari penilaian → berakhir Minggu minggu depan
-     (contoh: 1 Oktober 2026 hari Kamis, hari penilaian Rabu →
-     Minggu ke-1 Oktober 2026 = **1–11 Okt**, 11 hari)
-5. Periode yang kurang dari **5 hari** digabung: yang di awal bulan ke periode
-   berikutnya, yang di akhir bulan ke periode sebelumnya. Contoh: 1 Nov 2026
-   jatuh Minggu → digabung jadi 1–8 Nov; 30 Nov 2026 jatuh Senin → digabung
-   jadi 23–30 Nov.
+3. **Hari penilaian** (default: Rabu) menentukan perlakuan bagian **awal** bulan:
+   - tanggal 1 **sebelum** hari penilaian (Senin/Selasa) → pekan-1 = tanggal 1
+     sampai Sabtu
+   - tanggal 1 **tepat** hari penilaian (Rabu) → pekan tersendiri, Rabu–Sabtu
+   - tanggal 1 **sesudah** hari penilaian (Kamis/Jumat/Sabtu) → bagian awal
+     **digabung ke pekan berikutnya**
+4. **Sisa ujung bulan 1–3 hari dibuang** ke pekan sebelumnya, sehingga bulan
+   tutup tepat di Sabtu — **kecuali sisa itu memuat hari penilaian**, maka sisa
+   tersebut tetap jadi pekan tersendiri. Sisa 4–6 hari menjadi pekan terakhir
+   yang berhenti di akhir bulan.
+5. Contoh terverifikasi (hari penilaian Rabu): Oktober 2026 → pekan ke-1 =
+   **4–10 Okt** (1–3 Okt, Kamis–Sabtu, digabung ke depan sehingga tidak punya
+   pekan); September 2026 → **5 pekan**, terakhir 27–30 Sep karena memuat
+   Rabu 30 Sep. Total 2026 = **52 pekan**.
 
 Hari penilaian dapat diubah admin di menu **Periode**. Mengubahnya hanya
 mempengaruhi perhitungan periode berikutnya — periode yang sudah dibuat tidak
 diubah, supaya penilaian dan laporan yang sudah jadi tidak rusak.
 
-Logika ada di `src/lib/sip/periode.ts` dengan 89 unit test
-(`src/lib/sip/periode.test.ts`). Untuk melihat simulasi setahun penuh:
+> Jika mesin dan database berbeda, database-nya yang tertinggal. Jalankan
+> `scripts/banding-periode-aturan.ts 2026 2026` sebelum menyebut salah satunya
+> ke user sebagai "periode sekarang".
+
+Logika ada di `src/lib/sip/periode.ts`. Untuk melihat simulasi setahun penuh:
 
 ```bash
 pnpm exec tsx scripts/simulasi-periode.ts 2026 3   # tahun 2026, hari penilaian Rabu (3)
+pnpm exec tsx scripts/lihat-aturan-periode.ts      # aturan + keadaan database nyata
 ```
 
 ## Pengajuan Pegawai
@@ -164,13 +169,66 @@ pnpm exec tsc --noEmit           # pemeriksaan tipe
 Skrip verifikasi lain (butuh `DATABASE_URL` aktif):
 
 ```bash
+# --- gerbang sebelum push (menjalankan build Vercel di lokal) ---
+pnpm pra-push                     # build tanpa DB + tsc + unit test + cek git
+pnpm pra-push:cepat               # hanya cek migrasi + git
+pnpm siap-push                    # gerbang lengkap lalu git push
+
+# --- database & koneksi ---
 pnpm exec tsx scripts/test-db.ts                 # koneksi database
+pnpm exec tsx scripts/cek-batas-db.ts            # batas koneksi, tabel terbesar, jumlah foto
+pnpm exec tsx scripts/cek-lock.ts                # siapa pemegang advisory lock migrasi
+pnpm exec tsx scripts/bebaskan-lock.ts           # putuskan koneksi migrasi yang menggantung (P1002)
+pnpm exec tsx scripts/backup-data.ts             # cadangan data
+pnpm exec tsx scripts/reset-produksi.ts          # bersihkan data demo + buat ulang admin
+
+# --- penilaian & persetujuan ---
 pnpm exec tsx scripts/test-alur-penilaian.ts     # alur penilaian end-to-end
-pnpm exec tsx scripts/test-angka-100.ts          # input angka 0-100
-pnpm exec tsx scripts/test-halaman-laporan.ts    # halaman laporan (HTTP)
-pnpm exec tsx scripts/test-halaman-baru.ts       # halaman persetujuan/pegawai/periode
-pnpm exec tsx scripts/test-fitur-baru.ts         # persetujuan, impor, reset, periode
+pnpm exec tsx scripts/test-angka-100.ts          # input angka 0-100 + konversi
+pnpm exec tsx scripts/test-fitur-baru.ts         # persetujuan, impor CSV, reset, periode
+pnpm exec tsx scripts/test-edit-pegawai.ts       # ubah data pegawai
+pnpm exec tsx scripts/test-kunci-ubah.ts         # periode terkunci menolak perubahan
+pnpm exec tsx scripts/uji-peran-pegawai.ts       # wewenang per peran
+pnpm exec tsx scripts/uji-peran-pengamat.ts      # peran PENGAMAT (hanya melihat)
+pnpm exec tsx scripts/uji-daftar-peran.ts        # daftar peran
+pnpm exec tsx scripts/uji-kelola-jabatan.ts      # kelola jabatan
+
+# --- halaman (lewat HTTP + sesi nyata) ---
+pnpm exec tsx scripts/test-halaman-laporan.ts    # halaman laporan
+pnpm exec tsx scripts/test-halaman-baru.ts       # persetujuan/pegawai/periode
+pnpm exec tsx scripts/test-halaman-periode.ts    # /parameter/periode
+pnpm exec tsx scripts/test-periode-aktif.ts      # pemilihan periode berjalan
+pnpm exec tsx scripts/test-batas-periode-dropdown.ts
+pnpm exec tsx scripts/uji-siapkan.ts             # akun & sesi uji (TSTADMIN/TSTMGR)
+pnpm exec tsx scripts/uji-bersihkan.ts           # cabut semua jejak uji
+pnpm exec tsx scripts/cek-akun.ts                # daftar akun: role, aktif, harusGantiPassword
+
+# --- foto ---
+pnpm exec tsx scripts/test-foto.ts               # kompresi + round-trip database
+pnpm exec tsx scripts/test-halaman-foto.ts       # foto tampil di halaman & laporan
+pnpm exec tsx scripts/test-foto-penilaian.ts     # aturan foto penilaian
+pnpm exec tsx scripts/test-foto-penilaian-http.ts
+pnpm exec tsx scripts/uji-opsi1-foto.ts          # foto lewat route (cache, akses)
+pnpm exec tsx scripts/cek-produksi-foto.ts       # foto hidup di Vercel
+pnpm exec tsx scripts/banding-opsi-foto.ts       # biner vs base64 + proyeksi
+
+# --- laporan cetak & PPTX ranking ---
+pnpm exec tsx scripts/test-versi-laporan.ts      # versi lengkap vs lite
+pnpm exec tsx scripts/cetak-dua-versi.ts         # cetak kedua versi untuk diperiksa
+pnpm exec tsx scripts/ukur-mode-cetak.ts         # ukur kolom DALAM mode cetak
+pnpm exec tsx scripts/test-ranking-pptx.ts       # halaman filter + unduhan PPTX
+pnpm exec tsx scripts/test-ekspor.ts             # ekspor CSV: format, escape, BOM
+pnpm exec tsx scripts/banding-rubrik.ts          # diff rubrik vs dokumen sumber
+
+# --- periode ---
+pnpm exec tsx scripts/test-periode-db.ts         # periode otomatis: idempoten
+pnpm exec tsx scripts/lihat-aturan-periode.ts    # aturan + keadaan nyata (--simulasi = tanpa DB)
+pnpm exec tsx scripts/banding-periode-aturan.ts 2026 2026   # DB vs mesin, nol penulisan
+pnpm exec tsx scripts/ganti-periode-2026.ts [--jalankan]    # ganti periode setahun
 ```
+
+Semua skrip Prisma/runtime butuh env dari `.env.local`:
+`set -a; source .env.local; set +a` sebelum menjalankannya.
 
 ## Data Contoh
 
