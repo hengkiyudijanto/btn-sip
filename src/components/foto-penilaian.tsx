@@ -211,7 +211,15 @@ export function FotoPenilaian({
               <input
                 ref={berkas}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                // HEIC/HEIF ikut dicantumkan BUKAN karena bisa diproses, tapi supaya
+                // berkasnya tetap MUNCUL di pemilih berkas. Kalau tidak dicantumkan,
+                // foto iPhone tersaring keluar oleh sistem dan user hanya melihat
+                // daftar kosong tanpa penjelasan apa pun.
+                //
+                // Begitu dipilih, peramban yang tidak bisa mendekode HEIC (semua
+                // peramban Chromium, termasuk Chrome di Android) akan menampilkan
+                // pesan penyebab + jalan keluarnya dari pesanGagalBaca() di src/lib/foto.ts.
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                 // JANGAN tambahkan capture="environment" di sini.
                 //
                 // Atribut itu membuat HP/tablet LANGSUNG membuka kamera dan tidak

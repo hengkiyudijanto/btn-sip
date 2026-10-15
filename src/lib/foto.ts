@@ -24,7 +24,9 @@ export type HasilKompresi = {
   mime: string;
 };
 
-/** Perkirakan ukuran byte dari data URL base64. */
+/**
+ * Perkirakan ukuran byte dari data URL base64.
+ */
 export function ukuranDataUrl(dataUrl: string): number {
   const i = dataUrl.indexOf(',');
   if (i < 0) return 0;
@@ -46,7 +48,7 @@ export async function kompresFoto(
   const tinggiTarget = opsi.tinggi ?? UKURAN_FOTO.tinggi;
 
   if (!berkas.type.startsWith('image/')) {
-    throw new Error('Berkas harus berupa gambar (JPG atau PNG).');
+    throw new Error('Berkas harus berupa gambar (JPG, PNG, atau WebP).');
   }
 
   const bitmap = await bacaGambar(berkas);
@@ -124,10 +126,39 @@ async function bacaGambar(berkas: File): Promise<ImageBitmap | HTMLImageElement>
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Gambar tidak dapat dibaca.'));
+      reject(new Error(pesanGagalBaca(berkas)));
     };
     img.src = url;
   });
+}
+
+/**
+ * Pesan saat peramban tidak bisa membaca berkas gambar.
+ *
+ * Kasus yang paling sering: foto dari kamera iPhone (HEIC/HEIF). Peramban
+ * berbasis Chromium — termasuk Chrome di iPhone DAN di Android — tidak bisa
+ * mendekode HEIC, sehingga gambarnya gagal dimuat. Pesan lama
+ * ("Berkas harus berupa gambar (JPG atau PNG)") MENYESATKAN di situ: file-nya
+ * memang gambar, hanya formatnya belum didukung peramban ini.
+ *
+ * Tidak ada cara memperbaiki ini di sisi aplikasi tanpa menyertakan decoder
+ * HEVC (berat sekali dan tidak tersedia di runtime Vercel), jadi yang benar
+ * adalah memberi tahu user penyebab DAN jalan keluarnya.
+ */
+function pesanGagalBaca(berkas: File): string {
+  const nama = berkas.name.toLowerCase();
+  const miripHeic = /heic|heif/.test(berkas.type) || /\.(heic|heif)$/.test(nama);
+
+  if (miripHeic) {
+    return (
+      'Foto format HEIC (bawaan kamera iPhone) belum bisa dibaca peramban ini. ' +
+      'Coba salah satu: buka aplikasi ini di Safari, atau ubah pengaturan iPhone — ' +
+      'Pengaturan → Kamera → Format → pilih "Paling Kompatibel". ' +
+      'Setelah itu foto akan tersimpan sebagai JPG dan bisa diunggah.'
+    );
+  }
+
+  return 'Gambar tidak dapat dibaca. Pastikan berkasnya JPG, PNG, atau WebP.';
 }
 
 /** Format ukuran byte jadi teks yang mudah dibaca. */

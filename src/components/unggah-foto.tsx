@@ -152,7 +152,11 @@ export function UnggahFoto({
               <input
                 ref={berkas}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                // HEIC/HEIF dicantumkan supaya berkasnya tetap muncul di pemilih
+                // berkas (kalau tidak, foto iPhone tersaring keluar dan user hanya
+                // melihat daftar kosong). Peramban yang tidak bisa mendekode HEIC
+                // akan menampilkan pesan penyebab + solusinya.
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) void pilihBerkas(f);
