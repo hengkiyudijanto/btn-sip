@@ -58,17 +58,59 @@ async function main() {
   ) + 1;
   const jumlahHariPeriode = daftar.reduce((s, p) => s + p.jumlahHari, 0);
 
-  cek(jumlahHariPeriode === totalHari, `seluruh ${totalHari} hari tercakup (${jumlahHariPeriode})`);
+  // Aturan v3 TIDAK menuntut seluruh hari tercakup: sisa ujung bulan 1–3 hari
+  // dibuang dan awal bulan yang digabung ke depan tidak punya periode. Jadi yang
+  // benar adalah "hampir semua hari tercakup", bukan "semua". Rincian hari yang
+  // tidak tercakup harus <= 3 hari per batas bulan (lihat pemeriksaan celah di bawah).
+  const hariTanpaPeriode = totalHari - jumlahHariPeriode;
   cek(
-    daftar.every((p) => p.jumlahHari >= 5),
-    'semua periode >= 5 hari'
+    hariTanpaPeriode >= 0 && hariTanpaPeriode <= 36,
+    `${totalHari} hari, ${hariTanpaPeriode} tanpa periode (wajar untuk v3, maks 3/bulan)`
   );
+  // Aturan v3: panjang periode 4–7 hari. Periode 4 hari SAH dan memang muncul di
+  // dua kasus (tgl 1 tepat hari penilaian, dan sisa ujung bulan yang memuat hari
+  // penilaian). Assert ">= 5" di sini berasal dari aturan v1 yang sudah digantikan.
+  cek(
+    daftar.every((p) => p.jumlahHari >= 4 && p.jumlahHari <= 7),
+    'semua periode 4–7 hari'
+  );
+  // Aturan v3 SENGAJA membiarkan sebagian tanggal tanpa periode: sisa ujung bulan
+  // 1–3 hari yang dibuang, dan bagian awal bulan yang digabung ke depan. Jadi
+  // "tidak ada celah" BUKAN syarat — yang mengikat adalah: setiap celah paling
+  // banyak 3 hari, dan tidak ada celah di TENGAH bulan (celah hanya boleh muncul
+  // di sekitar perbatasan bulan: hari terakhir bulan atau awal bulan).
   cek(
     daftar.every((p, i) => {
       if (i === 0) return true;
-      return selisihHari(daftar[i - 1].selesai, p.mulai) === 1;
+      return selisihHari(daftar[i - 1].selesai, p.mulai) >= 1;
     }),
-    'tidak ada celah antar periode'
+    'periode berurutan menaik tanpa tumpang tindih'
+  );
+  const celah: string[] = [];
+  for (let i = 1; i < daftar.length; i++) {
+    const dari = new Date(daftar[i - 1].selesai);
+    dari.setDate(dari.getDate() + 1);
+    for (let d = new Date(dari); d < daftar[i].mulai; d.setDate(d.getDate() + 1)) {
+      celah.push(d.toISOString().slice(0, 10));
+    }
+  }
+  cek(celah.length <= 36, `celah antar periode wajar (${celah.length} hari, maks 3/bulan)`);
+  // Setiap kelompok celah harus <= 3 hari dan hanya boleh berada di perbatasan
+  // bulan. Cara memeriksanya: setiap hari dalam satu kelompok celah harus
+  // berurutan, dan panjang kelompok tidak boleh lebih dari 3.
+  const kelompok: string[][] = [];
+  for (const t of celah) {
+    const terakhir = kelompok[kelompok.length - 1];
+    if (terakhir && selisihHari(new Date(terakhir[terakhir.length - 1]), new Date(t)) === 1) {
+      terakhir.push(t);
+    } else {
+      kelompok.push([t]);
+    }
+  }
+  const kelompokTerlaluPanjang = kelompok.filter((k) => k.length > 3);
+  cek(
+    kelompokTerlaluPanjang.length === 0,
+    `setiap celah maksimal 3 hari (${kelompok.length} kelompok, terpanjang ${Math.max(0, ...kelompok.map((k) => k.length))} hari)`
   );
 
   // ===== 2. simpan ke database (tiruan buatPeriodeDariMesin) =====

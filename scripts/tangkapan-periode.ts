@@ -115,7 +115,7 @@ async function main() {
     path: '/',
   });
 
-  await c.kirim('Page.navigate', { url: `${BASE}/periode` });
+  await c.kirim('Page.navigate', { url: `${BASE}/parameter/periode` });
   await new Promise((r) => setTimeout(r, 4000));
 
   const hasil = await c.kirim('Page.captureScreenshot', {

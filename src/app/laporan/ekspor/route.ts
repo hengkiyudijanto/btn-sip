@@ -94,7 +94,11 @@ export async function GET(request: Request) {
         },
       },
     },
-    orderBy: [{ nilaiAkhir: 'desc' }],
+    // Baris yang BELUM bernilai (DRAFT kosong, nilaiAkhir NULL) harus di BELAKANG.
+    // PostgreSQL menaruh NULL di DEPAN untuk ORDER BY ... DESC, sehingga tanpa
+    // `nulls: 'last'` pegawai dengan nilai tertinggi bisa muncul di bawah baris
+    // yang belum dinilai sama sekali — di berkas yang dipakai sebagai rekap resmi.
+    orderBy: [{ nilaiAkhir: { sort: 'desc', nulls: 'last' } }],
   });
 
   // ===== susun baris & statistik =====

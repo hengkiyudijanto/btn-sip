@@ -81,13 +81,13 @@ async function main() {
 
   // ================= /periode =================
   console.log('\n--- /periode ---');
-  const r7 = await get('/periode', sesiAdmin.token);
+  const r7 = await get('/parameter/periode', sesiAdmin.token);
   cek(r7.status === 200, `admin bisa akses (status ${r7.status})`);
   cek(r7.html.includes('Periode Penilaian'), 'judul halaman ada');
   cek(r7.html.includes('Beberapa minggu'), 'opsi buat massal ada');
   cek(r7.html.includes('Kunci'), 'tombol kunci ada');
 
-  const r8 = await get('/periode', sesiMgr.token);
+  const r8 = await get('/parameter/periode', sesiMgr.token);
   cek(r8.status === 307 && r8.lokasi === '/dasbor', `manager dialihkan dari /periode (${r8.status})`);
 
   // ================= menu navigasi =================

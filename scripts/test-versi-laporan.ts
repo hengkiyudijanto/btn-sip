@@ -15,6 +15,7 @@ import crypto from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
+import { kapitalkan } from '../src/lib/sip/teks';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3100';
 const prisma = new PrismaClient({
@@ -152,7 +153,9 @@ async function main() {
     !t1.includes('Atasan Langsung') && !t2.includes('Atasan Langsung'),
     'tulisan "Atasan Langsung" sudah tidak ada'
   );
-  cek(t1.includes('SPV Versi'), 'nama atasan tetap tercetak');
+  // Nama dibandingkan dalam bentuk TAMPILAN: laporan memakai Prisma client yang
+  // sudah di-$extends, jadi "SPV Versi" tercetak sebagai "Spv Versi".
+  cek(t1.includes(kapitalkan('SPV Versi')), `nama atasan tetap tercetak ("${kapitalkan('SPV Versi')}")`);
 
   // ===== 3. data angka identik =====
   console.log('\n--- 3. angka identik di kedua versi ---');

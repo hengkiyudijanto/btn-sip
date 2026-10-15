@@ -41,7 +41,7 @@ async function main() {
     },
   });
 
-  const res = await fetch(`${BASE}/periode`, {
+  const res = await fetch(`${BASE}/parameter/periode`, {
     headers: { cookie: `sip_sesi=${token}` },
     redirect: 'manual',
   });

@@ -27,7 +27,7 @@ const HALAMAN = [
   ['/penilaian', 'Penilaian'],
   ['/laporan', 'Laporan'],
   ['/pegawai', 'Pegawai'],
-  ['/periode', 'Periode'],
+  ['/parameter/periode', 'Periode'],
   ['/persetujuan', 'Persetujuan'],
 ] as const;
 

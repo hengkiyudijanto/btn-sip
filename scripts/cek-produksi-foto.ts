@@ -8,6 +8,7 @@ import 'dotenv/config';
 import crypto from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { kapitalkan } from '../src/lib/sip/teks';
 
 const BASE = process.env.BASE_URL ?? 'https://btn-sip.vercel.app';
 const prisma = new PrismaClient({
@@ -73,7 +74,14 @@ async function main() {
   console.log(`   status: ${r2.status}`);
 
   cek(r2.status === 200, 'halaman detail bisa dibuka');
-  cek(h2.includes(target.nama), 'nama pegawai tampil');
+  // Nama dibandingkan dalam bentuk TAMPILAN, bukan bentuk mentah di database.
+  // Halaman memakai Prisma client yang sudah di-$extends (rapikanHasil), jadi
+  // "FITRIA NUR JAYA" tampil sebagai "Fitria Nur Jaya". Skrip ini memakai client
+  // mentah, sehingga membandingkan `target.nama` apa adanya akan SELALU gagal
+  // walaupun tampilannya benar — kegagalan palsu yang pernah dilaporkan sebagai bug.
+  const namaTampil = kapitalkan(target.nama);
+  cek(h2.includes(namaTampil), `nama pegawai tampil ("${namaTampil}")`);
+  cek(!h2.includes(target.nama) || target.nama === namaTampil, 'nama mentah TIDAK tercetak apa adanya');
   cek(h2.includes('Foto pegawai'), 'panel unggah foto MUNCUL di produksi');
   cek(h2.includes('Pilih file foto'), 'tombol pilih berkas ada');
   cek(h2.includes('dikompres otomatis'), 'keterangan kompresi ada');

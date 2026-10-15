@@ -85,7 +85,10 @@ export default async function HalamanLaporan({
             },
           },
         },
-        orderBy: [{ nilaiAkhir: 'desc' }],
+        // Sama seperti ekspor rekap: NULL (DRAFT kosong) harus di BELAKANG, bukan
+        // di depan. Tanpa `nulls: 'last'`, PostgreSQL menaruh baris belum bernilai
+        // di atas baris yang sudah dinilai, sehingga rekap peringkat menyesatkan.
+        orderBy: [{ nilaiAkhir: { sort: 'desc', nulls: 'last' } }],
       })
     : [];
 

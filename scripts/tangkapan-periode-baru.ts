@@ -80,7 +80,7 @@ async function main() {
   });
 
   const fs = await import('node:fs');
-  for (const [nama, path] of [['periode', '/periode'], ['penilaian', '/penilaian']] as const) {
+  for (const [nama, path] of [['periode', '/parameter/periode'], ['penilaian', '/penilaian']] as const) {
     await c.kirim('Emulation.setDeviceMetricsOverride', {
       width: 1280, height: 1200, deviceScaleFactor: 1, mobile: false,
     });

@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
+import { kapitalkan } from '../src/lib/sip/teks';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3100';
 const prisma = new PrismaClient({
@@ -80,8 +81,21 @@ async function main() {
   await prisma.penilaian.deleteMany({ where: { pegawai: { nip: { in: [NIP_A, NIP_B] } } } });
   await prisma.pegawai.deleteMany({ where: { nip: { in: [NIP_A, NIP_B] } } });
 
-  const cabang = await prisma.cabang.findFirst({ where: { aktif: true } });
-  if (!cabang) throw new Error('tidak ada cabang aktif');
+  // Cabang fixture HARUS cabang yang sama dengan penilainya. Export rekap menyaring
+  // berdasarkan CAKUPAN CABANG penilai (KC Mamuju hanya melihat cabangnya + turunannya),
+  // jadi pegawai uji di cabang lain tidak akan muncul di berkas — dan tes akan
+  // melaporkan 10 kegagalan palsu yang terbaca seperti bug ekspor.
+  const spv = await prisma.pegawai.findFirst({
+    where: { role: { in: ['SUPERVISOR', 'ADMIN'] } },
+  });
+  if (!spv) throw new Error('tidak ada supervisor');
+
+  const cabang =
+    (await prisma.cabang.findUnique({ where: { id: spv.cabangId } })) ??
+    (await prisma.cabang.findFirst({ where: { aktif: true, id: spv.cabangId } }));
+  if (!cabang) throw new Error('cabang penilai tidak ditemukan');
+  console.log(`   (cabang fixture disamakan dengan penilai: ${cabang.kode} ${cabang.nama})`);
+
   const hash = await bcrypt.hash('Eksporpass123', 10);
 
   const a = await prisma.pegawai.create({
@@ -109,11 +123,6 @@ async function main() {
       orderBy: { tanggalMulai: 'asc' },
     }));
   if (!periode) throw new Error('tidak ada periode untuk diuji');
-
-  const spv = await prisma.pegawai.findFirst({
-    where: { role: { in: ['SUPERVISOR', 'ADMIN'] } },
-  });
-  if (!spv) throw new Error('tidak ada supervisor');
 
   await prisma.penilaian.create({
     data: {
@@ -160,23 +169,38 @@ async function main() {
   cek(byte4 === 'ef bb bf', `berkas berawalan BOM UTF-8 (${byte4})`);
   cek(buf[3] === 0x52, 'byte ke-4 adalah huruf R (isi langsung menyusul)');
   cek(csv.includes('REKAP PENILAIAN PETUGAS FRONTLINER'), 'judul ada');
-  cek(csv.includes(periode.nama), 'nama periode tercantum');
-  cek(csv.includes('Andi Ekspor'), 'petugas pertama ada');
+  // Dibandingkan dalam bentuk TAMPILAN: ekspor memakai Prisma client yang sudah
+  // di-$extends, jadi "Minggu Ke-2" (bukan "Minggu ke-2" dari database).
+  cek(csv.includes(kapitalkan(periode.nama)), `nama periode tercantum ("${kapitalkan(periode.nama)}")`);
+  cek(csv.includes(kapitalkan('Andi Ekspor')), 'petugas pertama ada');
   // nama dengan titik-koma dan tanda kutip harus di-escape dengan benar
-  cek(csv.includes('Nama; dengan titik koma') || csv.includes('Andi Ekspor'), 'baris terbaca');
+  cek(
+    csv.includes('Nama; dengan titik koma') || csv.includes(kapitalkan('Andi Ekspor')),
+    'baris terbaca'
+  );
   cek(!csv.includes('NaN'), 'tidak ada NaN');
   cek(!csv.includes('undefined'), 'tidak ada undefined');
   cek(!csv.includes('null'), 'tidak ada null');
 
   // nilai tertinggi harus di baris rank 1
   const barisRank1 = csv.split('\r\n').find((l) => l.startsWith('1;'));
-  cek(Boolean(barisRank1?.includes('Andi Ekspor')), 'rank 1 adalah nilai tertinggi (Andi)');
+  cek(Boolean(barisRank1?.includes(kapitalkan('Andi Ekspor'))), 'rank 1 adalah nilai tertinggi (Andi)');
+  // Baris yang BELUM bernilai tidak boleh menyerobot peringkat teratas.
+  const barisTabelSemua = csv.split('\r\n').filter((l) => /^\d+;/.test(l));
+  const indeksBernilai = barisTabelSemua.findIndex((l) => /;\d,\d\d;/.test(l));
+  const indeksKosong = barisTabelSemua.findIndex((l) => /;;;;;-;/.test(l) || /;\s*;\s*;/.test(l));
+  cek(
+    indeksBernilai === -1 || indeksKosong === -1 || indeksBernilai < indeksKosong,
+    'baris bernilai berada di atas baris yang belum bernilai'
+  );
 
   // ===== 2b. nama dengan karakter khusus (titik-koma & tanda kutip) =====
   console.log('\n--- 2b. karakter khusus dalam nama ---');
-  // "Siti; Ekspor "Uji"" harus jadi: "Siti; Ekspor ""Uji"""
+  // Nama tampilan "Siti; Ekspor "uji"" (huruf u besar dikecilkan oleh aturan
+  // kapitalisasi), di-escape jadi: "Siti; Ekspor ""uji"""
+  const namaSiti = kapitalkan('Siti; Ekspor "Uji"');
   cek(
-    csv.includes('"Siti; Ekspor ""Uji"""'),
+    csv.includes(`"${namaSiti.replace(/"/g, '""')}"`),
     'nama bertitik-koma & ber-kutip di-escape sesuai aturan CSV'
   );
   // baris itu harus tetap 11 kolom saat dibaca ulang sebagai CSV.
@@ -190,7 +214,7 @@ async function main() {
   const kolom = barisSiti ? uraiBarisCsv(barisSiti) : [];
   console.log(`   kolom pada baris tabel nama khusus: ${kolom.length}`);
   cek(kolom.length === 11, 'baris nama khusus tetap 11 kolom');
-  cek(kolom[1] === 'Siti; Ekspor "Uji"', `nama utuh terbaca kembali: "${kolom[1]}"`);
+  cek(kolom[1] === namaSiti, `nama utuh terbaca kembali: "${kolom[1]}"`);
   cek(kolom[2] === NIP_B, `NIP di kolom berikutnya benar (${kolom[2]})`);
   cek(kolom[8] === '3,51', `nilai akhir tetap di kolom 9 (${kolom[8]})`);
 

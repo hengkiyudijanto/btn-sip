@@ -90,7 +90,7 @@ async function main() {
     },
   });
 
-  const halaman = ['/dasbor', '/penilaian', '/persetujuan', '/periode'];
+  const halaman = ['/dasbor', '/penilaian', '/persetujuan', '/parameter/periode'];
   const namaTarget = periode?.nama ?? '';
 
   for (const path of halaman) {
@@ -105,7 +105,7 @@ async function main() {
       continue;
     }
 
-    if (path === '/periode') {
+    if (path === '/parameter/periode') {
       // Halaman /periode menampilkan SEMUA tahun sebagai kelompok, tapi isi
       // tahun yang tidak sedang berjalan tidak dirender (HTML tetap ringan).
       // Yang diperiksa: kelompok tahun muncul sebagai tautan pembuka.
