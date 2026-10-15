@@ -212,7 +212,14 @@ export function FotoPenilaian({
                 ref={berkas}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                capture="environment"
+                // JANGAN tambahkan capture="environment" di sini.
+                //
+                // Atribut itu membuat HP/tablet LANGSUNG membuka kamera dan tidak
+                // menawarkan pilihan lain, sementara di PC tetap muncul pemilih
+                // berkas. Permintaan pemilik aplikasi: perilakunya disamakan —
+                // petugas harus bisa memilih foto dari galeri, bukan hanya memotret.
+                // Tanpa `capture`, browser menampilkan pilihan sendiri (Kamera /
+                // Galeri / File) di HP, dan pemilih berkas biasa di PC.
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) void pilihBerkas(f);
