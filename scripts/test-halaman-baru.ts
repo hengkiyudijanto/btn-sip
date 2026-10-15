@@ -25,7 +25,15 @@ function cek(kondisi: boolean, label: string) {
 
 async function buatSesi(nip: string) {
   const p = await prisma.pegawai.findUnique({ where: { nip } });
-  if (!p) throw new Error(`Pegawai ${nip} tidak ada`);
+  if (!p) {
+    throw new Error(
+      `Pegawai ${nip} tidak ada.\n` +
+        '   Skrip ini butuh DATA DEMO (akun 90000002 & 80000002). Jalankan dulu:\n' +
+        '     pnpm exec tsx scripts/seed-demo.ts\n' +
+        '   Lalu bersihkan setelah selesai:\n' +
+        '     pnpm exec tsx scripts/seed-demo.ts --hapus'
+    );
+  }
   const token = crypto.randomBytes(32).toString('base64url');
   await prisma.sesi.create({
     data: { tokenHash: hashToken(token), pegawaiId: p.id, expiresAt: new Date(Date.now() + 3600_000) },

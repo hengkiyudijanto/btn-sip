@@ -19,6 +19,8 @@ const prisma = new PrismaClient({
 const PASSWORD = 'DemoSIP2026';
 const NIP_SPV = '90000001';
 const NIP_MGR = '90000002';
+/** Kode cabang demo — dipakai saat membuat DAN saat membersihkan (--hapus). */
+const KODE_CABANG_DEMO = '0001';
 
 const PETUGAS = [
   {
@@ -65,6 +67,26 @@ async function hapus() {
     await prisma.pegawai.deleteMany({ where: { id: { in: ids } } });
   }
   await prisma.periode.deleteMany({ where: { kode: 'DEMO-W40' } });
+
+  // Cabang demo juga harus dibersihkan. Sebelumnya cabang '0001' ditinggal, dan itu
+  // masalah nyata: KC tanpa induk MELANGGAR aturan hierarki yang divalidasi server
+  // action, muncul di /parameter/cabang sebagai KC cacat, dan di database produksi
+  // terbaca seperti data asli. Hapus hanya kalau benar-benar sudah kosong.
+  const cabangDemo = await prisma.cabang.findFirst({ where: { kode: KODE_CABANG_DEMO } });
+  if (cabangDemo) {
+    const sisaPegawai = await prisma.pegawai.count({ where: { cabangId: cabangDemo.id } });
+    const sisaTurunan = await prisma.cabang.count({ where: { indukId: cabangDemo.id } });
+    const sisaPenilaian = await prisma.penilaian.count({ where: { pegawai: { cabangId: cabangDemo.id } } });
+    if (sisaPegawai === 0 && sisaTurunan === 0 && sisaPenilaian === 0) {
+      await prisma.cabang.delete({ where: { id: cabangDemo.id } });
+      console.log(`✓ cabang demo ${KODE_CABANG_DEMO} dihapus`);
+    } else {
+      console.warn(
+        `⚠ cabang demo ${KODE_CABANG_DEMO} TIDAK dihapus — masih dipakai: ` +
+          `${sisaPegawai} pegawai, ${sisaTurunan} turunan, ${sisaPenilaian} penilaian.`
+      );
+    }
+  }
   console.log('✓ data demo dihapus');
 }
 

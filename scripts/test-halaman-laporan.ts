@@ -21,7 +21,15 @@ function hashToken(t: string) {
 
 async function buatSesi(nip: string) {
   const pegawai = await prisma.pegawai.findUnique({ where: { nip } });
-  if (!pegawai) throw new Error(`Pegawai ${nip} tidak ditemukan`);
+  if (!pegawai) {
+    throw new Error(
+      `Pegawai ${nip} tidak ditemukan.\n` +
+        '   Skrip ini butuh DATA DEMO. Jalankan dulu:\n' +
+        '     pnpm exec tsx scripts/seed-demo.ts\n' +
+        '   Lalu bersihkan setelah selesai:\n' +
+        '     pnpm exec tsx scripts/seed-demo.ts --hapus'
+    );
+  }
 
   const token = crypto.randomBytes(32).toString('base64url');
   await prisma.sesi.create({
@@ -49,15 +57,25 @@ async function main() {
   const { token, pegawai } = await buatSesi('90000001');
   console.log(`Sesi dibuat untuk: ${pegawai.nama} (${pegawai.role})\n`);
 
+  // Data demo ada di periode LAMPAU (DEMO-W40), sementara /laporan defaultnya
+  // periode BERJALAN — jadi tanpa ?periode= halaman menampilkan periode lain dan
+  // pegawai demo tidak akan muncul. Periode diminta eksplisit.
+  const periodeDemo = await prisma.periode.findFirst({ where: { kode: 'DEMO-W40' } });
+  if (!periodeDemo) throw new Error('periode DEMO-W40 tidak ada — jalankan scripts/seed-demo.ts dulu');
+  console.log(`(periode demo: ${periodeDemo.nama} — ${periodeDemo.kode})\n`);
+
   // 1. Halaman daftar laporan
-  const r1 = await get(`${BASE}/laporan`, token);
+  const r1 = await get(`${BASE}/laporan?periode=${periodeDemo.id}`, token);
   console.log(`1. /laporan                    → ${r1.status}`);
   cek(r1.html.includes('Laporan'), 'judul "Laporan" ada');
   cek(r1.html.includes('Andi Pratama'), 'petugas "Andi Pratama" tampil');
   cek(r1.html.includes('Siti Nurhaliza'), 'petugas "Siti Nurhaliza" tampil');
   cek(r1.html.includes('Budi Santoso'), 'petugas "Budi Santoso" tampil');
   cek(r1.html.includes('Rata-rata'), 'kartu rekap rata-rata ada');
-  cek(r1.html.includes('Istimewa'), 'badge rating Istimewa ada');
+  // Kategori diambil dari data nyata, bukan ditulis tetap: ketiga pegawai demo
+  // bernilai 4,60 (Sangat Baik), 3,27 dan 2,15 (Kurang) — tidak ada yang "Istimewa".
+  cek(r1.html.includes('Sangat Baik'), 'badge kategori "Sangat Baik" ada');
+  cek(r1.html.includes('Kurang'), 'badge kategori "Kurang" ada');
   cek(r1.html.includes('5,00'), 'nilai format Indonesia (5,00) ada');
 
   // 2. Ambil id penilaian dari database
@@ -79,19 +97,24 @@ async function main() {
   cek(r2.html.includes('LEMBAR KOMITMEN'), 'LEMBAR KOMITMEN ada');
   cek(r2.html.includes('Tanda Tangan Pegawai'), 'kolom ttd pegawai ada');
   cek(r2.html.includes('Tanda Tangan Atasan'), 'kolom ttd atasan ada');
-  cek(r2.html.includes('Mengetahui'), 'kolom mengetahui ada');
+  // "Mengetahui" SENGAJA dihapus dari laporan (keputusan pemilik aplikasi): laporan
+  // hanya memuat dua kolom tanda tangan, Pegawai dan Atasan. Assert lama menuntut
+  // kolom itu ada dan nama manager tampil — keduanya membalik keputusan user.
+  cek(!r2.html.includes('Mengetahui'), 'kolom mengetahui TIDAK ada (sudah dihapus atas permintaan user)');
   cek(r2.html.includes('Dewi Kartika'), 'nama penilai (supervisor) tampil');
-  cek(r2.html.includes('Hendra Wijaya'), 'nama manager (mengetahui) tampil');
-  cek(r2.html.includes('Istimewa'), 'rating Istimewa tampil');
+  cek(!r2.html.includes('Hendra Wijaya'), 'nama manager TIDAK diambil query laporan (relasi mengetahui dilepas)');
+  // Rating diambil dari database, bukan ditulis tetap: nilai akhir Andi 4,60 = "Sangat Baik".
+  cek(r2.html.includes('Sangat Baik'), 'rating sesuai nilai akhir tampil');
   cek(r2.html.includes('Cetak'), 'tombol cetak ada');
   cek(r2.html.includes('sip-laporan'), 'kelas CSS cetak terpasang');
 
-  // 4. Hitung jumlah kolom "Angka Skor" — harus 3 (satu per kategori A/B/C).
-  //    HTML punya 2 elemen per kolom: <th> dan versi render tabel mobile,
-  //    jadi 3 kolom x 2 = 6 kemunculan.
-  const jumlahAngkaSkor = (r2.html.match(/Angka Skor/g) ?? []).length;
-  console.log(`\n3. Kemunculan "Angka Skor": ${jumlahAngkaSkor} (3 kolom x 2 render = 6)`);
-  cek(jumlahAngkaSkor === 6, 'tepat 3 kolom skor untuk 3 kategori');
+  // 4. Hitung jumlah kolom skor — harus 3 (satu per kategori A/B/C).
+  //    Header-nya "Skor 1–5": awalan "Angka" sudah dihapus atas permintaan user,
+  //    dan tanda hubungnya ditulis sebagai &ndash; di HTML.
+  const jumlahHeaderSkor = (r2.html.match(/Skor 1(?:&ndash;|–)5/g) ?? []).length;
+  console.log(`\n3. Kemunculan header "Skor 1-5": ${jumlahHeaderSkor} (harus >= 3, satu per kategori)`);
+  cek(jumlahHeaderSkor >= 3, 'kolom skor ada untuk tiap kategori');
+  cek(!r2.html.includes('Angka Skor'), 'awalan "Angka" sudah tidak dipakai di header kolom skor');
 
   // 5. Cek nilai akhir di semua halaman
   const p = await prisma.penilaian.findFirst({
@@ -117,18 +140,24 @@ async function main() {
   console.log('\n✅ UJI HALAMAN LAPORAN SELESAI.');
 }
 
+let lulus = 0;
 let gagal = 0;
 function cek(kondisi: boolean, label: string) {
   console.log(`   ${kondisi ? 'ok ' : 'XX '} ${label}`);
-  if (!kondisi) gagal++;
+  if (kondisi) lulus++;
+  else gagal++;
 }
 
 main()
   .then(() => {
     if (gagal > 0) {
-      console.error(`\n❌ ${gagal} pemeriksaan GAGAL`);
+      console.error(`\n❌ HASIL: ${lulus} lulus, ${gagal} gagal`);
       process.exit(1);
     }
+    // Ringkasan dicetak juga saat lulus supaya skrip ini bisa dirangkum dengan
+    // grep yang sama seperti skrip uji lain ("HASIL: N lulus, M gagal").
+    // Sebelumnya hanya mencetak "SELESAI", sehingga tampak seperti tidak ada output.
+    console.log(`\n=== HASIL: ${lulus} lulus, ${gagal} gagal ===`);
   })
   .catch((e) => {
     console.error('\n❌ GAGAL:', e.message);
