@@ -116,6 +116,7 @@ export const INFO_AKSI: Record<string, InfoAksi> = {
   // ---- unduhan ----
   EKSPOR_REKAP: { label: 'Ekspor rekap (CSV)', kelompok: 'berkas' },
   UNDUH_RANKING_PPTX: { label: 'Unduh ranking (PPTX)', kelompok: 'berkas' },
+  UNDUH_RANKING_SATU_PPTX: { label: 'Unduh ranking 1 halaman (PPTX)', kelompok: 'berkas' },
 };
 
 /** Info aksi; aksi tak dikenal tetap ditampilkan apa adanya, bukan disembunyikan. */

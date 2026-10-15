@@ -171,12 +171,20 @@ export default async function HalamanRanking({
             </Link>
 
             {hasil && hasil.jumlahPeserta > 0 && (
-              <a
-                href={`/laporan/ranking/pptx?${kueri.toString()}`}
-                className="ml-auto inline-flex items-center gap-2 rounded-lg bg-btn-merah-600 px-4 py-2 text-xs font-semibold text-white hover:bg-btn-merah-700 transition-colors"
-              >
-                ⬇ Unduh laporan PPTX
-              </a>
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/laporan/ranking/satu?${kueri.toString()}`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-btn-biru-600 px-4 py-2 text-xs font-semibold text-btn-biru-700 hover:bg-btn-biru-50 transition-colors"
+                >
+                  ▤ Tampilkan 1 halaman
+                </Link>
+                <a
+                  href={`/laporan/ranking/pptx?${kueri.toString()}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-btn-merah-600 px-4 py-2 text-xs font-semibold text-white hover:bg-btn-merah-700 transition-colors"
+                >
+                  ⬇ Unduh laporan PPTX
+                </a>
+              </div>
             )}
           </div>
         </form>
