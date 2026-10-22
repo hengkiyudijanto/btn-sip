@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { LogoBTN } from '@/components/logo-btn';
+import { LogoSIP } from '@/components/logo-sip';
 import { FormMasuk } from '@/components/form-masuk';
 import { masuk } from '@/app/actions/auth';
 import { pegawaiDariSesi } from '@/lib/auth';
@@ -43,7 +43,7 @@ export default async function HalamanMasuk() {
         />
 
         <div className="relative">
-          <LogoBTN tinggi={40} className="brightness-0 invert" />
+          <LogoSIP tinggi={46} className="text-white" />
         </div>
 
         <div className="relative max-w-md">
@@ -93,7 +93,7 @@ export default async function HalamanMasuk() {
         <div className="w-full max-w-sm mx-auto">
           {/* logo tampil di mobile */}
           <div className="lg:hidden mb-8">
-            <LogoBTN tinggi={36} />
+            <LogoSIP tinggi={34} className="text-[#005bfd]" />
           </div>
 
           <div className="mb-8">

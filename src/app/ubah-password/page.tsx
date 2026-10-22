@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { LogoBTN } from '@/components/logo-btn';
+import { LogoSIP } from '@/components/logo-sip';
 import { FormUbahPassword } from '@/components/form-ubah-password';
 import { gantiPasswordSendiri } from '@/app/actions/auth';
 import { pegawaiDariSesi } from '@/lib/auth';
@@ -17,7 +17,7 @@ export default async function HalamanUbahPassword() {
     <div className="flex-1 flex flex-col justify-center px-6 py-12">
       <div className="w-full max-w-md mx-auto">
         <div className="mb-6">
-          <LogoBTN tinggi={32} />
+          <LogoSIP tinggi={32} className="text-[#005bfd]" />
         </div>
 
         <div className="kartu-padat p-7 animasi-naik">

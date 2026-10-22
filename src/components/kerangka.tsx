@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LogoBTN } from '@/components/logo-btn';
+import { LogoSIP } from '@/components/logo-sip';
 import { MenuMobile, NavigasiMenu } from '@/components/navigasi-menu';
 import { LoncengNotifikasi } from '@/components/lonceng-notifikasi';
 import { saringMenu } from '@/components/menu';
@@ -30,10 +30,7 @@ export async function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; ch
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-5 min-w-0">
             <Link href="/dasbor" className="flex items-center gap-3 shrink-0">
-              <LogoBTN tinggi={26} className="brightness-0 invert" />
-              <span className="hidden sm:inline text-sm font-semibold text-white/95">
-                SIP
-              </span>
+              <LogoSIP tinggi={30} className="text-white" aksen="#ff0000" />
             </Link>
 
             <NavigasiMenu
