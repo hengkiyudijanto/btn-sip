@@ -13,7 +13,7 @@ import crypto from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const BASE = process.env.BASE_URL ?? 'https://btn-sip.vercel.app';
+const BASE = process.env.BASE_URL ?? 'https://sip.244.my.id';
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
 });

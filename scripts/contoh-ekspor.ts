@@ -1,6 +1,6 @@
 /**
  * Unduh contoh berkas rekap dari produksi untuk diperiksa manusia.
- * Jalankan: BASE_URL=https://btn-sip.vercel.app pnpm exec tsx scripts/contoh-ekspor.ts
+ * Jalankan: BASE_URL=https://sip.244.my.id pnpm exec tsx scripts/contoh-ekspor.ts
  */
 import 'dotenv/config';
 import crypto from 'node:crypto';

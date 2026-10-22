@@ -2,7 +2,7 @@
  * Cek apakah fitur unggah foto sudah aktif di PRODUKSI (Vercel).
  * Membuat sesi admin, lalu memeriksa halaman detail pegawai di URL produksi.
  *
- * Jalankan: BASE_URL=https://btn-sip.vercel.app pnpm exec tsx scripts/cek-produksi-foto.ts
+ * Jalankan: BASE_URL=https://sip.244.my.id pnpm exec tsx scripts/cek-produksi-foto.ts
  */
 import 'dotenv/config';
 import crypto from 'node:crypto';
@@ -10,7 +10,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { kapitalkan } from '../src/lib/sip/teks';
 
-const BASE = process.env.BASE_URL ?? 'https://btn-sip.vercel.app';
+const BASE = process.env.BASE_URL ?? 'https://sip.244.my.id';
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
 });

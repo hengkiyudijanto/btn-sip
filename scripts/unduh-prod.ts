@@ -10,7 +10,7 @@ async function main() {
   if (!admin) throw new Error('admin tidak ada');
   const token = crypto.randomBytes(32).toString('base64url');
   await prisma.sesi.create({ data: { tokenHash: h(token), pegawaiId: admin.id, expiresAt: new Date(Date.now()+600000) } });
-  const res = await fetch(`https://btn-sip.vercel.app/laporan/ranking/pptx?periode=${process.argv[2]}`, { headers: { cookie: `sip_sesi=${token}` } });
+  const res = await fetch(`https://sip.244.my.id/laporan/ranking/pptx?periode=${process.argv[2]}`, { headers: { cookie: `sip_sesi=${token}` } });
   console.log('status:', res.status);
   if (res.status !== 200) { console.log(await res.text()); return; }
   const buf = Buffer.from(await res.arrayBuffer());

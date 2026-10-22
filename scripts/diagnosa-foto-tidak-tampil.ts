@@ -16,7 +16,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { alamatFoto } from '../src/lib/sip/alamat-foto';
 
-const BASE = process.env.BASE_URL ?? 'https://btn-sip.vercel.app';
+const BASE = process.env.BASE_URL ?? 'https://sip.244.my.id';
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
 });

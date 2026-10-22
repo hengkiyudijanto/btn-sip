@@ -2,7 +2,7 @@
  * Cek apakah tombol "Unduh Excel" benar-benar ada di HTML produksi,
  * dan ambil tangkapan layarnya untuk melihat apakah terlihat di layar.
  *
- * Jalankan: BASE_URL=https://btn-sip.vercel.app pnpm exec tsx scripts/cek-produksi-tombol.ts
+ * Jalankan: BASE_URL=https://sip.244.my.id pnpm exec tsx scripts/cek-produksi-tombol.ts
  */
 import 'dotenv/config';
 import crypto from 'node:crypto';
@@ -12,7 +12,7 @@ import { writeFileSync } from 'node:fs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const BASE = process.env.BASE_URL ?? 'https://btn-sip.vercel.app';
+const BASE = process.env.BASE_URL ?? 'https://sip.244.my.id';
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
 });
@@ -118,7 +118,7 @@ async function main() {
     width: 1400, height: 1000, deviceScaleFactor: 1, mobile: false,
   });
   await c.kirim('Network.setCookie', {
-    name: 'sip_sesi', value: token, domain: 'btn-sip.vercel.app', path: '/',
+    name: 'sip_sesi', value: token, domain: 'sip.244.my.id', path: '/',
   });
   await c.kirim('Page.navigate', { url: `${BASE}/laporan` });
   await new Promise((r) => setTimeout(r, 5000));

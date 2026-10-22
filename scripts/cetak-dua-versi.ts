@@ -77,7 +77,7 @@ async function cetakPdf(url: string, keluar: string, token: string, marginMm: nu
   // halaman login, bukan laporan.
   const host = new URL(BASE).hostname;
   const bagian = host.split('.');
-  // untuk domain seperti btn-sip.vercel.app, pakai domain utuh tanpa leading dot
+  // untuk domain seperti sip.244.my.id, pakai domain utuh tanpa leading dot
   await c.kirim('Network.setCookie', {
     name: 'sip_sesi',
     value: token,

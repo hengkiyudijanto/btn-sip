@@ -6,7 +6,7 @@
  * Tidak mengubah data apa pun — hanya membuat satu baris Sesi sementara.
  *
  * Jalankan:
- *   BASE_URL=https://btn-sip.vercel.app pnpm exec tsx scripts/cetak-laporan-nyata-produksi.ts
+ *   BASE_URL=https://sip.244.my.id pnpm exec tsx scripts/cetak-laporan-nyata-produksi.ts
  */
 import 'dotenv/config';
 import crypto from 'node:crypto';
@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const BASE = process.env.BASE_URL ?? 'https://btn-sip.vercel.app';
+const BASE = process.env.BASE_URL ?? 'https://sip.244.my.id';
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
 const h = (t: string) => crypto.createHash('sha256').update(t).digest('hex');
 
