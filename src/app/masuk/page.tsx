@@ -82,10 +82,6 @@ export default async function HalamanMasuk() {
             ))}
           </ul>
         </div>
-
-        <p className="relative text-xs text-white/40">
-          PT Bank Tabungan Negara (Persero) Tbk
-        </p>
       </div>
 
       {/* ============ Panel kanan — form ============ */}
