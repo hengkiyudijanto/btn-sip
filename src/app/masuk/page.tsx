@@ -43,7 +43,7 @@ export default async function HalamanMasuk() {
         />
 
         <div className="relative">
-          <LogoSIP tinggi={46} className="text-white" />
+          <LogoSIP tinggi={40} className="text-white" />
         </div>
 
         <div className="relative max-w-md">
@@ -93,7 +93,7 @@ export default async function HalamanMasuk() {
         <div className="w-full max-w-sm mx-auto">
           {/* logo tampil di mobile */}
           <div className="lg:hidden mb-8">
-            <LogoSIP tinggi={34} className="text-[#005bfd]" />
+            <LogoSIP tinggi={30} className="text-[#005bfd]" />
           </div>
 
           <div className="mb-8">

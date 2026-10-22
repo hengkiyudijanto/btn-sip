@@ -17,7 +17,7 @@ export default async function HalamanUbahPassword() {
     <div className="flex-1 flex flex-col justify-center px-6 py-12">
       <div className="w-full max-w-md mx-auto">
         <div className="mb-6">
-          <LogoSIP tinggi={32} className="text-[#005bfd]" />
+          <LogoSIP tinggi={30} className="text-[#005bfd]" />
         </div>
 
         <div className="kartu-padat p-7 animasi-naik">

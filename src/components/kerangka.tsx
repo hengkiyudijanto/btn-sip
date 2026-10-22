@@ -30,7 +30,7 @@ export async function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; ch
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-5 min-w-0">
             <Link href="/dasbor" className="flex items-center gap-3 shrink-0">
-              <LogoSIP tinggi={30} className="text-white" aksen="#ff0000" />
+              <LogoSIP tinggi={26} className="text-white" />
             </Link>
 
             <NavigasiMenu
