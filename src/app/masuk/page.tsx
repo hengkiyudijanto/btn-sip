@@ -106,9 +106,14 @@ export default async function HalamanMasuk() {
 
           <FormMasuk aksi={masuk} />
 
-          <div className="mt-8 pt-6 border-t border-abu-200">
+          <div className="mt-8 pt-6 border-t border-abu-200 space-y-2">
             <p className="text-xs text-abu-500 leading-relaxed">
               Lupa password? Hubungi admin cabang untuk melakukan reset.
+            </p>
+            <p className="text-[11px] text-abu-400 leading-relaxed">
+              Situs resmi aplikasi internal penilaian petugas frontliner PT Bank
+              Tabungan Negara (Persero) Tbk. Aplikasi ini tidak pernah meminta
+              nomor kartu, PIN, OTP, atau password perbankan Anda.
             </p>
           </div>
         </div>
