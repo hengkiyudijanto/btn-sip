@@ -107,9 +107,9 @@ export default async function HalamanMasuk() {
               Lupa password? Hubungi admin cabang untuk melakukan reset.
             </p>
             <p className="text-[11px] text-abu-400 leading-relaxed">
-              Situs resmi aplikasi internal penilaian petugas frontliner PT Bank
-              Tabungan Negara (Persero) Tbk. Aplikasi ini tidak pernah meminta
-              nomor kartu, PIN, OTP, atau password perbankan Anda.
+              Situs resmi aplikasi internal penilaian petugas frontliner. Aplikasi
+              ini tidak pernah meminta nomor kartu, PIN, OTP, atau password
+              perbankan Anda.
             </p>
           </div>
         </div>
