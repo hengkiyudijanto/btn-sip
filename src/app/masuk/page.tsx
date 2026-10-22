@@ -5,8 +5,9 @@ import { FormMasuk } from '@/components/form-masuk';
 import { masuk } from '@/app/actions/auth';
 import { pegawaiDariSesi } from '@/lib/auth';
 
+// absolute: judul tab halaman masuk tidak diberi akhiran template
 export const metadata: Metadata = {
-  title: 'Masuk',
+  title: { absolute: 'SIP - Sistem Informasi Penilaian Petugas' },
 };
 
 export default async function HalamanMasuk() {

@@ -10,12 +10,12 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'SIP — Sistem Penilaian Petugas Frontliner | Bank BTN',
-    template: '%s | SIP Bank BTN',
+    default: 'SIP - Sistem Informasi Penilaian Petugas',
+    template: '%s | SIP',
   },
   description:
-    'Sistem Informasi Penilaian petugas frontliner Bank BTN — Teller, Customer Service, Security, Priority Banking.',
-  applicationName: 'SIP BTN',
+    'Sistem Informasi Penilaian Petugas frontliner — Teller, Customer Service, Security, Priority Banking.',
+  applicationName: 'SIP',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
