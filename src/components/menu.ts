@@ -30,7 +30,14 @@ export type ItemMenuPohon = {
  */
 export const MENU: ItemMenuPohon[] = [
   { href: '/dasbor', label: 'Dasbor' },
-  { href: '/penilaian', label: 'Pengukuran', role: ['SUPERVISOR', 'MANAGER', 'ADMIN'] },
+  {
+    label: 'Pengukuran',
+    role: ['SUPERVISOR', 'MANAGER', 'ADMIN'],
+    anak: [
+      { href: '/penilaian', label: 'SIP' },
+      { href: '/monitoring', label: 'IMT' },
+    ],
+  },
   { href: '/persetujuan', label: 'Persetujuan', role: ['MANAGER', 'ADMIN'] },
   {
     // Induk tanpa href sendiri: halaman /laporan sudah jadi submenu
@@ -55,11 +62,6 @@ export const MENU: ItemMenuPohon[] = [
       {
         href: '/pengajuan-pegawai',
         label: 'Usul Pegawai',
-        role: ['SUPERVISOR', 'MANAGER', 'ADMIN'],
-      },
-      {
-        href: '/monitoring',
-        label: 'Monitoring',
         role: ['SUPERVISOR', 'MANAGER', 'ADMIN'],
       },
     ],

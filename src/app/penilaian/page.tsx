@@ -10,7 +10,7 @@ import { PemilihPeriode } from '@/components/pemilih-periode';
 import Link from 'next/link';
 import { boleh } from '@/lib/sip/akses';
 
-export const metadata = { title: 'Daftar Penilaian' };
+export const metadata = { title: 'System Informasi Penilaian' };
 
 const LABEL_STATUS: Record<string, { teks: string; kelas: string }> = {
   DRAFT: { teks: 'Draft', kelas: 'bg-abu-100 text-abu-600' },
@@ -49,7 +49,7 @@ export default async function HalamanPenilaian({
       <Kerangka pegawai={saya}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
         <Kepala
-          judul="Penilaian"
+          judul="System Informasi Penilaian"
           deskripsi="Belum ada periode penilaian aktif."
         />
         <div className="mt-6 kartu p-8 text-center">

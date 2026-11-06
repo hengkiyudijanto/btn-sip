@@ -6,7 +6,7 @@ import { boleh } from '@/lib/sip/akses';
 import { hitungBMI, kategoriBMI } from '@/lib/sip/kesehatan';
 import { simpanBeratBadan } from '@/app/actions/pegawai';
 
-export const metadata = { title: 'Monitoring' };
+export const metadata = { title: 'Indeks Massa Tubuh' };
 
 function umur(tanggal: Date | null): number | null {
   if (!tanggal) return null;
@@ -38,8 +38,8 @@ export default async function HalamanMonitoring() {
   return (
     <Kerangka pegawai={saya}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
-        <h1 className="text-xl font-semibold text-abu-900">Monitoring Pegawai</h1>
-        <p className="mt-1 text-sm text-abu-500">Indikator kebugaran nonmedis berdasarkan data fisik pegawai.</p>
+        <h1 className="text-xl font-semibold text-abu-900">Indeks Massa Tubuh</h1>
+        <p className="mt-1 text-sm text-abu-500">Indikator IMT nonmedis berdasarkan data fisik pegawai.</p>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="kartu p-4"><p className="text-xs text-abu-500">Total pegawai</p><p className="mt-1 text-2xl font-semibold text-abu-900">{ringkas.total}</p></div>
           <div className="kartu p-4"><p className="text-xs text-abu-500">Data fisik lengkap</p><p className="mt-1 text-2xl font-semibold text-abu-900">{ringkas.lengkap}</p></div>
