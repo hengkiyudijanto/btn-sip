@@ -52,6 +52,7 @@ export const MENU: ItemMenuPohon[] = [
     role: ['PENGAMAT', 'SUPERVISOR', 'MANAGER', 'ADMIN'],
     anak: [
       { href: '/laporan', label: 'Laporan & Rekap' },
+      { href: '/laporan/imt', label: 'Rekap IMT', role: ['SUPERVISOR', 'MANAGER', 'ADMIN'] },
       { href: '/laporan/ranking', label: 'Ranking PPTX' },
     ],
   },
