@@ -92,7 +92,7 @@ describe('menu Parameter', () => {
     const menu = saringMenu('SUPERVISOR');
     const pengukuran = menu.find((m) => m.label === 'Pengukuran');
     expect(pengukuran?.anak).toEqual([
-      { href: '/penilaian', label: 'SIP' },
+      { href: '/penilaian', label: 'System Informasi Penilaian' },
       { href: '/monitoring', label: 'IMT' },
     ]);
   });
