@@ -4,7 +4,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { boleh } from '@/lib/sip/akses';
 import { kategoriBMI } from '@/lib/sip/kesehatan';
-import { simpanPengukuranIMT } from '@/app/actions/pegawai';
+import { TombolPengukuranIMT } from '@/components/form-pengukuran-imt';
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 
 export const metadata = { title: 'Indeks Massa Tubuh' };
@@ -65,7 +65,7 @@ export default async function HalamanMonitoring({ searchParams }: { searchParams
             <thead><tr><th>NIP</th><th>Nama</th><th>Cabang</th><th>Jabatan</th><th>Tinggi</th><th>Berat</th><th>IMT</th><th>Kategori</th>{saya.role === 'SUPERVISOR' && <th>Aksi</th>}</tr></thead>
             <tbody>{daftar.map((p) => {
               const data = p.pengukuranIMT[0];
-              return <tr key={p.id}><td className="text-xs tabular-nums">{p.nip}</td><td className="font-medium">{p.nama}</td><td className="text-xs">{p.cabang.kode} — {p.cabang.nama}</td><td className="text-xs">{p.jabatan?.nama ?? '—'}</td><td className="text-xs">{data?.tinggiBadan ?? '—'} cm</td><td className="text-xs">{data?.beratBadan ?? '—'} kg</td><td className="text-xs font-semibold">{data?.nilaiIMT ?? '—'}</td><td className="text-xs">{data?.kategori ?? 'Belum diukur'}</td>{saya.role === 'SUPERVISOR' && <td><form action={simpanPengukuranIMT} className="flex items-center gap-1"><input type="hidden" name="pegawaiId" value={p.id} /><input type="hidden" name="periodeId" value={periode.id} /><input type="hidden" name="tanggal" value={tanggalKey} /><input name="beratBadan" type="number" min="1" step="0.1" defaultValue={data?.beratBadan ?? ''} placeholder="kg" className="w-20 rounded border border-abu-300 px-2 py-1 text-xs" /><button className="rounded bg-btn-biru-600 px-2 py-1 text-xs text-white">Simpan</button></form></td>}</tr>;
+              return <tr key={p.id}><td className="text-xs tabular-nums">{p.nip}</td><td className="font-medium">{p.nama}</td><td className="text-xs">{p.cabang.kode} — {p.cabang.nama}</td><td className="text-xs">{p.jabatan?.nama ?? '—'}</td><td className="text-xs">{data?.tinggiBadan ?? '—'} cm</td><td className="text-xs">{data?.beratBadan ?? '—'} kg</td><td className="text-xs font-semibold">{data?.nilaiIMT ?? '—'}</td><td className="text-xs">{data?.kategori ?? 'Belum diukur'}</td>{saya.role === 'SUPERVISOR' && <td><TombolPengukuranIMT pegawaiId={p.id} periodeId={periode.id} tanggal={tanggalKey} beratBadan={data?.beratBadan ?? null} /></td>}</tr>;
             })}</tbody>
           </table></div>
           {daftar.length === 0 && <p className="p-6 text-center text-sm text-abu-400">Belum ada pegawai dengan peran PEGAWAI.</p>}
