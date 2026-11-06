@@ -98,7 +98,7 @@ export default async function HalamanPenilaian({
     <Kerangka pegawai={saya}>
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
       <Kepala
-        judul="Penilaian"
+        judul="System Informasi Penilaian"
         deskripsi={
           bolehMenilai
             ? `${periode.nama} · ${sudahDinilai} dari ${daftarPegawai.length} petugas sudah dinilai`
