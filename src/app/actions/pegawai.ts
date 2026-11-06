@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit, hashPassword } from '@/lib/auth';
 import crypto from 'node:crypto';
 import { boleh, SEMUA_PERAN } from '@/lib/sip/akses';
+import { validasiDataFisikPegawai } from '@/lib/sip/data-fisik';
 
 export type HasilImpor = {
   error?: string;
@@ -280,6 +281,10 @@ export async function tambahPegawai(
   const role = (SEMUA_PERAN as readonly string[]).includes(roleRaw)
     ? (roleRaw as (typeof SEMUA_PERAN)[number])
     : 'PEGAWAI';
+  const tanggalLahirRaw = String(formData.get('tanggalLahir') ?? '').trim();
+  const tinggiBadanRaw = String(formData.get('tinggiBadan') ?? '').trim();
+  const errorDataFisik = validasiDataFisikPegawai(role, tanggalLahirRaw, tinggiBadanRaw);
+  if (errorDataFisik) return { error: errorDataFisik };
 
   if (!nip || !nama) return { error: 'NIP dan Nama wajib diisi.' };
   if (!cabangId) return { error: 'Cabang wajib dipilih.' };
@@ -297,6 +302,8 @@ export async function tambahPegawai(
       harusGantiPassword: true,
       cabangId,
       jabatanId,
+      tanggalLahir: tanggalLahirRaw ? new Date(`${tanggalLahirRaw}T00:00:00.000Z`) : null,
+      tinggiBadan: tinggiBadanRaw ? Number(tinggiBadanRaw) : null,
     },
   });
 
@@ -360,6 +367,10 @@ export async function ubahPegawai(
     ? (roleRaw as (typeof ROLE_SAH)[number])
     : null;
   if (!role) return { error: 'Peran tidak valid.' };
+  const tanggalLahirRaw = String(formData.get('tanggalLahir') ?? '').trim();
+  const tinggiBadanRaw = String(formData.get('tinggiBadan') ?? '').trim();
+  const errorDataFisik = validasiDataFisikPegawai(role, tanggalLahirRaw, tinggiBadanRaw);
+  if (errorDataFisik) return { error: errorDataFisik };
 
   const lama = await prisma.pegawai.findUnique({ where: { id } });
   if (!lama) return { error: 'Pegawai tidak ditemukan.' };
@@ -401,7 +412,10 @@ export async function ubahPegawai(
 
   await prisma.pegawai.update({
     where: { id },
-    data: { nama, nip, email, cabangId, jabatanId, role },
+    data: { nama, nip, email, cabangId, jabatanId, role,
+      tanggalLahir: tanggalLahirRaw ? new Date(`${tanggalLahirRaw}T00:00:00.000Z`) : null,
+      tinggiBadan: tinggiBadanRaw ? Number(tinggiBadanRaw) : null,
+    },
   });
 
   await catatAudit({

@@ -1,0 +1,2 @@
+ALTER TABLE "Pegawai" ADD COLUMN "tanggalLahir" TIMESTAMP(3);
+ALTER TABLE "Pegawai" ADD COLUMN "tinggiBadan" DOUBLE PRECISION;

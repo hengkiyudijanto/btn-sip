@@ -65,6 +65,8 @@ export default async function HalamanPegawai() {
                 <tr>
                   <th>NIP</th>
                   <th>Nama</th>
+                  <th>Tanggal lahir</th>
+                  <th>Tinggi badan</th>
                   <th>Jabatan</th>
                   <th>Cabang</th>
                   <th>Peran</th>
@@ -77,7 +79,7 @@ export default async function HalamanPegawai() {
                 {daftar.length === 0 && (
                   <tr>
                     <td
-                      colSpan={admin ? 8 : 7}
+                      colSpan={admin ? 10 : 9}
                       className="text-center py-10 text-sm text-abu-400"
                     >
                       Belum ada pegawai terdaftar.
@@ -106,6 +108,10 @@ export default async function HalamanPegawai() {
                         </span>
                       )}
                     </td>
+                    <td className="text-xs text-abu-600 whitespace-nowrap">
+                      {p.tanggalLahir?.toLocaleDateString('id-ID') ?? '—'}
+                    </td>
+                    <td className="text-xs text-abu-600 whitespace-nowrap">{p.tinggiBadan ? `${p.tinggiBadan} cm` : '—'}</td>
                     <td className="text-xs text-abu-600">{p.jabatan?.nama ?? '—'}</td>
                     <td className="text-xs text-abu-600">
                       {p.cabang.kode} — {p.cabang.nama}
@@ -141,6 +147,8 @@ export default async function HalamanPegawai() {
                             cabangId: p.cabangId,
                             jabatanId: p.jabatanId,
                             role: p.role,
+                            tanggalLahir: p.tanggalLahir,
+                            tinggiBadan: p.tinggiBadan,
                           }}
                           daftarCabang={daftarCabang}
                           daftarJabatan={daftarJabatan}

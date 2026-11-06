@@ -81,6 +81,8 @@ model Pegawai {
   nip           String   @unique
   nama          String
   email         String?  @unique
+  tanggalLahir  DateTime?
+  tinggiBadan   Float?
   /// URL foto eksternal (kalau ada). Untuk unggahan, pakai kolom fotoData.
   fotoUrl       String?
   /// Foto 3x4 tersimpan sebagai data URL (base64) — Vercel tidak punya

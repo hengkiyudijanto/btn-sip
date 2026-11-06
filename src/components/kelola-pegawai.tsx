@@ -225,6 +225,15 @@ export function PanelTambah({
           </select>
         </div>
 
+        <div>
+          <label className="block text-xs font-medium text-abu-600 mb-1.5">Tanggal lahir <span className="text-abu-400">(wajib Pegawai)</span></label>
+          <input name="tanggalLahir" type="date" className={kelasInput} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-abu-600 mb-1.5">Tinggi badan (cm) <span className="text-abu-400">(wajib Pegawai)</span></label>
+          <input name="tinggiBadan" type="number" min="1" step="0.1" className={kelasInput} />
+        </div>
+
         <div className="sm:col-span-2 flex items-center gap-3">
           <Tombol>Simpan</Tombol>
           <button
@@ -274,6 +283,8 @@ export function AksiBaris({
     cabangId: string;
     jabatanId: string | null;
     role: string;
+    tanggalLahir: Date | null;
+    tinggiBadan: number | null;
   };
   daftarCabang: { id: string; kode: string; nama: string }[];
   daftarJabatan: { id: string; kode: string; nama: string }[];
@@ -366,6 +377,15 @@ export function AksiBaris({
               <option value="MANAGER">Manager (mengetahui)</option>
               <option value="ADMIN">Administrator</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Tanggal lahir <span className="text-abu-400">(wajib Pegawai)</span></label>
+            <input name="tanggalLahir" type="date" defaultValue={data.tanggalLahir?.toISOString().slice(0, 10) ?? ''} className={kelasKecil} />
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Tinggi badan (cm) <span className="text-abu-400">(wajib Pegawai)</span></label>
+            <input name="tinggiBadan" type="number" min="1" step="0.1" defaultValue={data.tinggiBadan ?? ''} className={kelasKecil} />
           </div>
 
           <div className="flex gap-1.5 pt-1">
