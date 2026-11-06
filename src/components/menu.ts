@@ -59,7 +59,7 @@ export const MENU: ItemMenuPohon[] = [
   {
     label: 'Pegawai',
     anak: [
-      { href: '/pegawai', label: 'Data Pegawai', role: ['ADMIN', 'MANAGER'] },
+      { href: '/pegawai', label: 'Data Pegawai', role: ['ADMIN', 'MANAGER', 'SUPERVISOR'] },
       {
         href: '/pengajuan-pegawai',
         label: 'Usul Pegawai',

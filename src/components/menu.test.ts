@@ -85,7 +85,7 @@ describe('menu Parameter', () => {
     const menu = saringMenu('SUPERVISOR');
     const pegawai = menu.find((m) => m.label === 'Pegawai');
     expect(pegawai).toBeDefined();
-    expect(pegawai!.anak!.map((a) => a.label)).toEqual(['Usul Pegawai']);
+    expect(pegawai!.anak!.map((a) => a.label)).toEqual(['Data Pegawai', 'Usul Pegawai']);
   });
 
   it('Pengukuran memiliki submenu SIP dan IMT', () => {
