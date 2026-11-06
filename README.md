@@ -27,7 +27,9 @@ Banking Customer Service.
 - Ekspor otomatis lewat fitur cetak browser
 
 **Pengelolaan**
-- Login NIP + password, 4 peran: Pegawai, Supervisor, Manager, Admin
+- Login NIP + password, 5 peran inti: Pegawai, Pengamat, Supervisor, Manager, Admin
+- Jabatan seperti Kepala Cabang atau Pemimpin Bidang dipisahkan dari peran dan
+  dapat memakai salah satu dari lima peran inti
 - Wajib ganti password pada login pertama
 - Tambah pegawai manual & impor massal dari CSV
 - Reset password, aktif/nonaktifkan akun

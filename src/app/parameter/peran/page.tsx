@@ -78,19 +78,17 @@ export default async function HalamanPeran() {
         </div>
 
         <div className="kartu mt-6 p-4 sm:p-5">
-          <h2 className="text-sm font-semibold text-abu-900">
-            Peran belum bisa diubah dari layar ini
-          </h2>
+          <h2 className="text-sm font-semibold text-abu-900">Daftar peran inti</h2>
           <p className="mt-2 text-xs leading-relaxed text-abu-600">
-            Peran saat ini tersimpan sebagai <strong>enum</strong> di database —
-            nilainya terkunci di skema dan dipakai langsung oleh kode program
-            untuk menentukan hak akses. Supaya bisa ditambah atau diubah dari
-            layar ini, peran perlu dipindah menjadi tabel tersendiri lebih dulu.
+            Aplikasi menggunakan lima peran inti yang tetap: Pegawai, Pengamat,
+            Supervisor, Manager, dan Admin. Peran tersimpan sebagai{' '}
+            <strong>enum</strong> karena dipakai langsung oleh kode program untuk
+            menentukan hak akses.
           </p>
           <p className="mt-2 text-xs leading-relaxed text-abu-600">
-            Kalau ada peran baru yang dibutuhkan (misalnya Kepala Cabang atau
-            Pemimpin Bidang), sebutkan saja — daftarnya akan difinalkan dulu,
-            baru dipindah ke tabel sekaligus, supaya tidak perlu migrasi dua kali.
+            Jabatan seperti Kepala Cabang atau Pemimpin Bidang bukan peran baru.
+            Jabatan tetap dipilih di data jabatan, sedangkan hak akses orangnya
+            dipilih dari lima peran inti tersebut.
           </p>
         </div>
       </div>
