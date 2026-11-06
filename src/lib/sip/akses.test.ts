@@ -23,6 +23,7 @@ const SEMUA_KEMAMPUAN: Kemampuan[] = [
   'mengetahui',
   'kelola_penilaian',
   'lihat_pegawai',
+  'lihat_monitoring',
   'usul_pegawai',
   'setujui_pegawai',
   'kelola_pegawai',

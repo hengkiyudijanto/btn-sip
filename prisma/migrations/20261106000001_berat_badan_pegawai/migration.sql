@@ -1,0 +1,1 @@
+ALTER TABLE "Pegawai" ADD COLUMN "beratBadan" DOUBLE PRECISION;

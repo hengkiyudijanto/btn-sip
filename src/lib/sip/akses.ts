@@ -44,6 +44,8 @@ export type Kemampuan =
   | 'kelola_penilaian'
   /** Melihat daftar seluruh pegawai. */
   | 'lihat_pegawai'
+  /** Melihat monitoring kebugaran nonmedis pegawai. */
+  | 'lihat_monitoring'
   /** Mengusulkan pegawai baru (perlu persetujuan admin). */
   | 'usul_pegawai'
   /** Menyetujui/menolak usul pegawai. */
@@ -88,6 +90,7 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
     'menilai',
     'mengetahui',
     'lihat_pegawai',
+    'lihat_monitoring',
     'usul_pegawai',
     'setujui_pegawai',
     // manager boleh memilih unit di grafik (perilaku lama) tetapi datanya
@@ -100,6 +103,7 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
     'mengetahui',
     'kelola_penilaian',
     'lihat_pegawai',
+    'lihat_monitoring',
     'usul_pegawai',
     'setujui_pegawai',
     'kelola_pegawai',
@@ -134,6 +138,7 @@ const HALAMAN: Record<string, Peran[] | null> = {
   '/penilaian': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
   '/persetujuan': ['MANAGER', 'ADMIN'],
   '/pegawai': ['MANAGER', 'ADMIN'],
+  '/monitoring': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
   '/pengajuan-pegawai': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
   '/parameter/cabang': ['ADMIN'],
   '/parameter/jabatan': ['ADMIN'],

@@ -57,6 +57,11 @@ export const MENU: ItemMenuPohon[] = [
         label: 'Usul Pegawai',
         role: ['SUPERVISOR', 'MANAGER', 'ADMIN'],
       },
+      {
+        href: '/monitoring',
+        label: 'Monitoring',
+        role: ['SUPERVISOR', 'MANAGER', 'ADMIN'],
+      },
     ],
   },
   {

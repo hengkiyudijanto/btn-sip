@@ -319,6 +319,19 @@ export async function tambahPegawai(
   return { sukses: true, password: pw, pesan: `${nama} berhasil ditambahkan.` };
 }
 
+export async function simpanBeratBadan(formData: FormData): Promise<void> {
+  const cek = await pastikanAdmin();
+  if ('error' in cek) throw new Error(cek.error);
+  const pegawaiId = String(formData.get('pegawaiId') ?? '');
+  const beratRaw = String(formData.get('beratBadan') ?? '').trim();
+  const berat = Number(beratRaw);
+  if (!pegawaiId || !Number.isFinite(berat) || berat <= 0) throw new Error('Berat badan harus lebih besar dari 0.');
+  const target = await prisma.pegawai.findUnique({ where: { id: pegawaiId, role: 'PEGAWAI' }, select: { id: true } });
+  if (!target) throw new Error('Pegawai tidak ditemukan.');
+  await prisma.pegawai.update({ where: { id: pegawaiId }, data: { beratBadan: berat } });
+  revalidatePath('/monitoring');
+}
+
 // ===========================================================================
 // UBAH PEGAWAI
 // ===========================================================================
