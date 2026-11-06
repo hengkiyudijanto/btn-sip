@@ -11,7 +11,7 @@ import {
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { bolehBukaHalaman } from '@/lib/sip/akses';
 
-export const metadata = { title: 'Laporan Ranking' };
+export const metadata = { title: 'Laporan Rekap SIP' };
 
 const JENIS = [
   { nilai: '', label: 'Semua jenis kantor' },
@@ -70,7 +70,7 @@ export default async function HalamanRanking({
     <Kerangka pegawai={saya}>
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
         <div className="animasi-naik">
-          <h1 className="text-2xl font-bold text-abu-900">Laporan Ranking</h1>
+          <h1 className="text-2xl font-bold text-abu-900">Laporan Rekap SIP</h1>
           <div className="mt-2 h-0.5 w-10 bg-btn-merah-500 rounded-full" />
           <p className="mt-3 text-sm text-abu-500">
             Peringkat petugas berdasarkan nilai akhir, disiapkan sebagai slide

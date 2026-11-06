@@ -7,7 +7,7 @@ import { susunRekapIMT } from '@/lib/sip/imt-rekap';
 import { kumpulkanTurunan, susunPohon, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 
-export const metadata = { title: 'Rekap IMT' };
+export const metadata = { title: 'Laporan Rekap IMT' };
 
 export default async function HalamanRekapIMT({ searchParams }: { searchParams: Promise<{ periode?: string; cabang?: string }> }) {
   const saya = await pegawaiDariSesi();
