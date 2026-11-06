@@ -268,12 +268,14 @@ export function PanelTambah({
 // ===========================================================================
 
 export function AksiBaris({
+  izinMode,
   pegawaiId,
   aktif,
   data,
   daftarCabang,
   daftarJabatan,
 }: {
+  izinMode: 'ADMIN' | 'SUPERVISOR';
   pegawaiId: string;
   aktif: boolean;
   data: {
@@ -345,39 +347,27 @@ export function AksiBaris({
             />
           </div>
 
+          {izinMode === 'ADMIN' && <>
           <div>
             <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Cabang</label>
             <select name="cabangId" defaultValue={data.cabangId} required className={kelasKecil}>
-              {daftarCabang.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.kode} — {c.nama}
-                </option>
-              ))}
+              {daftarCabang.map((c) => <option key={c.id} value={c.id}>{c.kode} — {c.nama}</option>)}
             </select>
           </div>
-
           <div>
             <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Jabatan</label>
             <select name="jabatanId" defaultValue={data.jabatanId ?? ''} className={kelasKecil}>
               <option value="">— tidak ada —</option>
-              {daftarJabatan.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.nama}
-                </option>
-              ))}
+              {daftarJabatan.map((j) => <option key={j.id} value={j.id}>{j.nama}</option>)}
             </select>
           </div>
-
           <div>
             <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Peran</label>
             <select name="role" defaultValue={data.role} className={kelasKecil}>
-              <option value="PEGAWAI">Pegawai</option>
-              <option value="PENGAMAT">Pengamat (hanya melihat)</option>
-              <option value="SUPERVISOR">Supervisor (penilai)</option>
-              <option value="MANAGER">Manager (mengetahui)</option>
-              <option value="ADMIN">Administrator</option>
+              <option value="PEGAWAI">Pegawai</option><option value="PENGAMAT">Pengamat</option><option value="SUPERVISOR">Supervisor</option><option value="MANAGER">Manager</option><option value="ADMIN">Administrator</option>
             </select>
           </div>
+          </>}
 
           <div>
             <label className="block text-[10px] font-medium text-abu-500 mb-0.5">Tanggal lahir <span className="text-abu-400">(wajib Pegawai)</span></label>

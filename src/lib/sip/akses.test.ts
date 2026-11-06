@@ -120,11 +120,12 @@ describe('peran lama tidak berubah perilakunya', () => {
     }
   });
 
-  it('SUPERVISOR: boleh menilai & mengusulkan, tidak boleh mengesahkan', () => {
+  it('SUPERVISOR: boleh melihat staf, menilai & mengusulkan, tidak approval', () => {
     expect(boleh('SUPERVISOR', 'menilai')).toBe(true);
+    expect(boleh('SUPERVISOR', 'lihat_pegawai')).toBe(true);
     expect(boleh('SUPERVISOR', 'usul_pegawai')).toBe(true);
     expect(boleh('SUPERVISOR', 'mengetahui')).toBe(false);
-    expect(boleh('SUPERVISOR', 'lihat_pegawai')).toBe(false);
+    expect(boleh('SUPERVISOR', 'setujui_pegawai')).toBe(false);
     expect(boleh('SUPERVISOR', 'kelola_induk')).toBe(false);
     expect(boleh('SUPERVISOR', 'lihat_audit')).toBe(false);
   });

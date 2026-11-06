@@ -15,10 +15,11 @@ export default async function HalamanPegawai() {
   if (!boleh(saya.role, 'lihat_pegawai')) redirect('/dasbor');
 
   const admin = saya.role === 'ADMIN';
+  const supervisor = saya.role === 'SUPERVISOR';
 
   const [daftar, daftarCabang, daftarJabatan] = await Promise.all([
     prisma.pegawai.findMany({
-      where: admin ? {} : { cabangId: saya.cabang.id },
+      where: admin ? {} : supervisor ? { atasanId: saya.id, role: 'PEGAWAI' } : { cabangId: saya.cabang.id },
       include: {
         jabatan: { select: { nama: true } },
         cabang: { select: { kode: true, nama: true } },
@@ -72,14 +73,14 @@ export default async function HalamanPegawai() {
                   <th>Peran</th>
                   <th>Status</th>
                   <th>Login terakhir</th>
-                  {admin && <th className="text-right">Aksi</th>}
+                  {admin || supervisor ? <th className="text-right">Aksi</th> : null}
                 </tr>
               </thead>
               <tbody>
                 {daftar.length === 0 && (
                   <tr>
                     <td
-                      colSpan={admin ? 10 : 9}
+                      colSpan={admin || supervisor ? 10 : 9}
                       className="text-center py-10 text-sm text-abu-400"
                     >
                       Belum ada pegawai terdaftar.
@@ -135,10 +136,11 @@ export default async function HalamanPegawai() {
                           })
                         : '—'}
                     </td>
-                    {admin && (
+                    {(admin || supervisor) && (
                       <td className="text-right">
                         <AksiBaris
                           pegawaiId={p.id}
+                          izinMode={supervisor ? 'SUPERVISOR' : 'ADMIN'}
                           aktif={p.aktif}
                           data={{
                             nip: p.nip,

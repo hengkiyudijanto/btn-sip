@@ -86,7 +86,7 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
   // lakukan tanpa diminta pemilik aplikasi.
   PENGAMAT: ['lihat_semua_cabang'],
 
-  SUPERVISOR: ['menilai', 'isi_monitoring', 'lihat_monitoring', 'usul_pegawai'],
+  SUPERVISOR: ['menilai', 'isi_monitoring', 'lihat_monitoring', 'lihat_pegawai', 'usul_pegawai'],
 
   MANAGER: [
     'menilai',

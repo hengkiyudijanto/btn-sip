@@ -23,7 +23,7 @@ export type HasilImpor = {
 async function pastikanAdmin() {
   const saya = await pegawaiDariSesi();
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' as const };
-  if (!boleh(saya.role, 'kelola_pegawai')) return { error: 'Peran Anda hanya bisa melihat, tidak bisa mengubah data.' };
+  if (!boleh(saya.role, 'kelola_pegawai') && saya.role !== 'SUPERVISOR') return { error: 'Peran Anda tidak boleh mengubah data pegawai.' };
   return { saya };
 }
 
@@ -48,6 +48,7 @@ export async function imporPegawai(
   const cek = await pastikanAdmin();
   if ('error' in cek) return { error: cek.error };
   const saya = cek.saya;
+  if (saya.role !== 'ADMIN') return { error: 'Hanya Admin yang boleh mengimpor pegawai.' };
 
   const teks = String(formData.get('data') ?? '').trim();
   if (!teks) return { error: 'Data kosong. Tempelkan data atau pilih file CSV.' };
@@ -199,6 +200,7 @@ export async function resetPassword(
   const cek = await pastikanAdmin();
   if ('error' in cek) return { error: cek.error };
   const saya = cek.saya;
+  if (saya.role !== 'ADMIN') return { error: 'Hanya Admin yang boleh mereset password.' };
 
   const pegawaiId = String(formData.get('pegawaiId') ?? '');
   const target = await prisma.pegawai.findUnique({ where: { id: pegawaiId } });
@@ -238,6 +240,7 @@ export async function ubahStatusAktif(
   const cek = await pastikanAdmin();
   if ('error' in cek) return { error: cek.error };
   const saya = cek.saya;
+  if (saya.role !== 'ADMIN') return { error: 'Hanya Admin yang boleh mengubah status akun.' };
 
   const pegawaiId = String(formData.get('pegawaiId') ?? '');
   const target = await prisma.pegawai.findUnique({ where: { id: pegawaiId } });
@@ -394,21 +397,30 @@ export async function ubahPegawai(
   const saya = cek.saya;
 
   const id = String(formData.get('id') ?? '');
-  const nama = String(formData.get('nama') ?? '').trim();
-  const nip = String(formData.get('nip') ?? '').trim();
   const emailRaw = String(formData.get('email') ?? '').trim();
-  const cabangId = String(formData.get('cabangId') ?? '');
-  const jabatanId = String(formData.get('jabatanId') ?? '') || null;
-  const roleRaw = String(formData.get('role') ?? '').toUpperCase();
+  const cabangIdInput = String(formData.get('cabangId') ?? '');
+  const jabatanIdInput = String(formData.get('jabatanId') ?? '') || null;
+  const roleRawInput = String(formData.get('role') ?? '').toUpperCase();
 
   if (!id) return { error: 'Pegawai tidak ditemukan.' };
-  if (!nama) return { error: 'Nama wajib diisi.' };
-  if (!nip) return { error: 'NIP wajib diisi.' };
+  const lama = await prisma.pegawai.findUnique({ where: { id } });
+  if (!lama) return { error: 'Pegawai tidak ditemukan.' };
+  if (saya.role === 'SUPERVISOR' && (lama.atasanId !== saya.id || lama.role !== 'PEGAWAI')) {
+    return { error: 'Supervisor hanya boleh mengubah staf bawahannya.' };
+  }
+  const supervisorEdit = saya.role === 'SUPERVISOR';
+  const namaFinal = String(formData.get('nama') ?? '').trim();
+  const nipFinal = String(formData.get('nip') ?? '').trim();
+  const cabangId = supervisorEdit ? lama.cabangId : cabangIdInput;
+  const jabatanId = supervisorEdit ? lama.jabatanId : jabatanIdInput;
+  const roleRaw = supervisorEdit ? lama.role : roleRawInput;
+  if (!namaFinal) return { error: 'Nama wajib diisi.' };
+  if (!nipFinal) return { error: 'NIP wajib diisi.' };
   if (!cabangId) return { error: 'Cabang wajib dipilih.' };
-  if (!/^[A-Za-z0-9._-]+$/.test(nip)) {
+  if (!/^[A-Za-z0-9._-]+$/.test(nipFinal)) {
     return { error: 'NIP hanya boleh huruf, angka, titik, garis bawah, dan tanda hubung.' };
   }
-  if (nip.length > 30) return { error: 'NIP maksimal 30 karakter.' };
+  if (nipFinal.length > 30) return { error: 'NIP maksimal 30 karakter.' };
 
   const role = (ROLE_SAH as readonly string[]).includes(roleRaw)
     ? (roleRaw as (typeof ROLE_SAH)[number])
@@ -419,9 +431,8 @@ export async function ubahPegawai(
   const errorDataFisik = validasiDataFisikPegawai(role, tanggalLahirRaw, tinggiBadanRaw);
   if (errorDataFisik) return { error: errorDataFisik };
 
-  const lama = await prisma.pegawai.findUnique({ where: { id } });
-  if (!lama) return { error: 'Pegawai tidak ditemukan.' };
-
+  const nama = namaFinal;
+  const nip = nipFinal;
   // NIP harus unik
   if (nip !== lama.nip) {
     const bentrok = await prisma.pegawai.findUnique({ where: { nip } });
