@@ -23,6 +23,7 @@ const SEMUA_KEMAMPUAN: Kemampuan[] = [
   'mengetahui',
   'kelola_penilaian',
   'lihat_pegawai',
+  'isi_monitoring',
   'lihat_monitoring',
   'usul_pegawai',
   'setujui_pegawai',
@@ -128,6 +129,12 @@ describe('peran lama tidak berubah perilakunya', () => {
     expect(boleh('SUPERVISOR', 'lihat_audit')).toBe(false);
   });
 
+  it('SUPERVISOR: boleh mengisi IMT, manager hanya melihat', () => {
+    expect(boleh('SUPERVISOR', 'isi_monitoring')).toBe(true);
+    expect(boleh('MANAGER', 'isi_monitoring')).toBe(false);
+    expect(boleh('ADMIN', 'isi_monitoring')).toBe(false);
+  });
+
   it('MANAGER: menilai + mengetahui + lihat pegawai, TIDAK kelola induk', () => {
     expect(boleh('MANAGER', 'menilai')).toBe(true);
     expect(boleh('MANAGER', 'mengetahui')).toBe(true);
@@ -140,8 +147,10 @@ describe('peran lama tidak berubah perilakunya', () => {
 
   it('ADMIN: punya semua kemampuan', () => {
     for (const k of SEMUA_KEMAMPUAN) {
+      if (k === 'isi_monitoring') continue;
       expect(boleh('ADMIN', k), `ADMIN harus punya '${k}'`).toBe(true);
     }
+    expect(boleh('ADMIN', 'isi_monitoring')).toBe(false);
     for (const jalur of Object.keys({ a: 1 })) void jalur;
     expect(bolehBukaHalaman('ADMIN', '/parameter/audit')).toBe(true);
     expect(bolehBukaHalaman('ADMIN', '/laporan/ekspor')).toBe(true);

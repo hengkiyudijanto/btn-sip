@@ -6,6 +6,7 @@ import { pegawaiDariSesi, catatAudit, hashPassword } from '@/lib/auth';
 import crypto from 'node:crypto';
 import { boleh, SEMUA_PERAN } from '@/lib/sip/akses';
 import { validasiDataFisikPegawai } from '@/lib/sip/data-fisik';
+import { hitungBMI, kategoriBMI } from '@/lib/sip/kesehatan';
 
 export type HasilImpor = {
   error?: string;
@@ -329,6 +330,34 @@ export async function simpanBeratBadan(formData: FormData): Promise<void> {
   const target = await prisma.pegawai.findUnique({ where: { id: pegawaiId, role: 'PEGAWAI' }, select: { id: true } });
   if (!target) throw new Error('Pegawai tidak ditemukan.');
   await prisma.pegawai.update({ where: { id: pegawaiId }, data: { beratBadan: berat } });
+  revalidatePath('/monitoring');
+}
+
+export async function simpanPengukuranIMT(formData: FormData): Promise<void> {
+  const pengukur = await pegawaiDariSesi();
+  if (!pengukur) throw new Error('Sesi habis. Silakan masuk kembali.');
+  if (!boleh(pengukur.role, 'isi_monitoring')) throw new Error('Hanya Supervisor yang dapat mengisi IMT.');
+  const pegawaiId = String(formData.get('pegawaiId') ?? '');
+  const periodeId = String(formData.get('periodeId') ?? '');
+  const tanggalRaw = String(formData.get('tanggal') ?? '');
+  const berat = Number(formData.get('beratBadan'));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggalRaw) || !Number.isFinite(berat) || berat <= 0) throw new Error('Tanggal atau berat badan tidak valid.');
+  const tanggal = new Date(`${tanggalRaw}T00:00:00.000Z`);
+  const [target, periode] = await Promise.all([
+    prisma.pegawai.findUnique({ where: { id: pegawaiId, role: 'PEGAWAI' }, select: { id: true, cabangId: true, tinggiBadan: true } }),
+    prisma.periode.findUnique({ where: { id: periodeId }, select: { id: true, tanggalMulai: true, tanggalSelesai: true, dikunci: true } }),
+  ]);
+  if (!target || (pengukur.role !== 'ADMIN' && target.cabangId !== pengukur.cabang.id)) throw new Error('Pegawai tidak ditemukan atau di luar cabang Anda.');
+  if (!periode) throw new Error('Periode tidak ditemukan.');
+  if (periode.dikunci) throw new Error('Periode sudah dikunci.');
+  if (tanggal < periode.tanggalMulai || tanggal > periode.tanggalSelesai) throw new Error('Tanggal harus berada di dalam periode.');
+  if (!target.tinggiBadan || target.tinggiBadan <= 0) throw new Error('Tinggi badan pegawai belum diisi.');
+  const nilaiIMT = hitungBMI(berat, target.tinggiBadan)!;
+  await prisma.pengukuranIMT.upsert({
+    where: { pegawaiId_periodeId_tanggal: { pegawaiId, periodeId, tanggal } },
+    update: { pengukurId: pengukur.id, tinggiBadan: target.tinggiBadan, beratBadan: berat, nilaiIMT, kategori: kategoriBMI(nilaiIMT) },
+    create: { pegawaiId, pengukurId: pengukur.id, periodeId, tanggal, tinggiBadan: target.tinggiBadan, beratBadan: berat, nilaiIMT, kategori: kategoriBMI(nilaiIMT) },
+  });
   revalidatePath('/monitoring');
 }
 

@@ -44,6 +44,8 @@ export type Kemampuan =
   | 'kelola_penilaian'
   /** Melihat daftar seluruh pegawai. */
   | 'lihat_pegawai'
+  /** Mengisi pengukuran IMT. */
+  | 'isi_monitoring'
   /** Melihat monitoring kebugaran nonmedis pegawai. */
   | 'lihat_monitoring'
   /** Mengusulkan pegawai baru (perlu persetujuan admin). */
@@ -84,7 +86,7 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
   // lakukan tanpa diminta pemilik aplikasi.
   PENGAMAT: ['lihat_semua_cabang'],
 
-  SUPERVISOR: ['menilai', 'usul_pegawai'],
+  SUPERVISOR: ['menilai', 'isi_monitoring', 'lihat_monitoring', 'usul_pegawai'],
 
   MANAGER: [
     'menilai',

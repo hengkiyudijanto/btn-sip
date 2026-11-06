@@ -3,8 +3,9 @@ import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { boleh } from '@/lib/sip/akses';
-import { hitungBMI, kategoriBMI } from '@/lib/sip/kesehatan';
-import { simpanBeratBadan } from '@/app/actions/pegawai';
+import { kategoriBMI } from '@/lib/sip/kesehatan';
+import { simpanPengukuranIMT } from '@/app/actions/pegawai';
+import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 
 export const metadata = { title: 'Indeks Massa Tubuh' };
 
@@ -17,21 +18,30 @@ function umur(tanggal: Date | null): number | null {
   return hasil;
 }
 
-export default async function HalamanMonitoring() {
+export default async function HalamanMonitoring({ searchParams }: { searchParams: Promise<{ periode?: string; tanggal?: string }> }) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!boleh(saya.role, 'lihat_monitoring')) redirect('/dasbor');
 
+  const { periode: periodeParam, tanggal: tanggalParam } = await searchParams;
+  const periode = periodeParam
+    ? (await prisma.periode.findUnique({ where: { id: periodeParam } })) ?? await pilihPeriodeRelevan()
+    : await pilihPeriodeRelevan();
+  if (!periode) redirect('/dasbor');
+  const tanggal = tanggalParam && /^\d{4}-\d{2}-\d{2}$/.test(tanggalParam) ? new Date(`${tanggalParam}T00:00:00.000Z`) : new Date();
+  const tanggalAman = tanggal < periode.tanggalMulai ? periode.tanggalMulai : tanggal > periode.tanggalSelesai ? periode.tanggalSelesai : tanggal;
+  const tanggalKey = tanggalAman.toISOString().slice(0, 10);
+  const daftarPeriode = await daftarPeriodeUntukPemilih();
   const daftar = await prisma.pegawai.findMany({
-    where: { role: 'PEGAWAI', ...(boleh(saya.role, 'lihat_semua_cabang') ? {} : { cabangId: saya.cabang.id }) },
-    include: { cabang: { select: { kode: true, nama: true } }, jabatan: { select: { nama: true } } },
+    where: { aktif: true, role: 'PEGAWAI', ...(saya.role === 'ADMIN' ? {} : { cabangId: saya.cabang.id }) },
+    include: { cabang: { select: { kode: true, nama: true } }, jabatan: { select: { nama: true } }, pengukuranIMT: { where: { periodeId: periode.id, tanggal: tanggalAman } } },
     orderBy: [{ cabang: { kode: 'asc' } }, { nama: 'asc' }],
   });
-  const bmiSemua = daftar.map((p) => hitungBMI(p.beratBadan, p.tinggiBadan)).filter((b): b is number => b !== null);
+  const bmiSemua = daftar.map((p) => p.pengukuranIMT[0]?.nilaiIMT ?? null).filter((b): b is number => b !== null);
   const ringkas = {
     total: daftar.length,
-    lengkap: daftar.filter((p) => p.tanggalLahir && p.tinggiBadan && p.beratBadan).length,
+    lengkap: daftar.filter((p) => p.pengukuranIMT.length > 0).length,
     normal: bmiSemua.filter((bmi) => kategoriBMI(bmi) === 'Normal').length,
   };
 
@@ -39,7 +49,12 @@ export default async function HalamanMonitoring() {
     <Kerangka pegawai={saya}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
         <h1 className="text-xl font-semibold text-abu-900">Indeks Massa Tubuh</h1>
-        <p className="mt-1 text-sm text-abu-500">Indikator IMT nonmedis berdasarkan data fisik pegawai.</p>
+        <p className="mt-1 text-sm text-abu-500">{periode.nama} · pengukuran tanggal {tanggalKey}.</p>
+        <div className="mt-6 kartu p-4 flex flex-wrap items-end gap-4"><form className="flex flex-wrap items-end gap-3">
+          <label className="text-xs text-abu-600">Periode<select name="periode" defaultValue={periode.id} className="mt-1 block rounded-lg border border-abu-300 px-3 py-2 text-sm">{daftarPeriode.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}</select></label>
+          <label className="text-xs text-abu-600">Tanggal pengukuran<input name="tanggal" type="date" min={periode.tanggalMulai.toISOString().slice(0, 10)} max={periode.tanggalSelesai.toISOString().slice(0, 10)} defaultValue={tanggalKey} className="mt-1 block rounded-lg border border-abu-300 px-3 py-2 text-sm" /></label>
+          <button className="rounded-lg bg-btn-biru-600 px-4 py-2 text-sm font-semibold text-white">Tampilkan</button>
+        </form></div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="kartu p-4"><p className="text-xs text-abu-500">Total pegawai</p><p className="mt-1 text-2xl font-semibold text-abu-900">{ringkas.total}</p></div>
           <div className="kartu p-4"><p className="text-xs text-abu-500">Data fisik lengkap</p><p className="mt-1 text-2xl font-semibold text-abu-900">{ringkas.lengkap}</p></div>
@@ -47,11 +62,10 @@ export default async function HalamanMonitoring() {
         </div>
         <div className="mt-6 kartu overflow-hidden">
           <div className="overflow-x-auto"><table className="tabel-sip">
-            <thead><tr><th>NIP</th><th>Nama</th><th>Cabang</th><th>Jabatan</th><th>Usia</th><th>Tinggi</th><th>Berat</th><th>BMI</th><th>Status</th>{saya.role === 'ADMIN' && <th>Aksi</th>}</tr></thead>
+            <thead><tr><th>NIP</th><th>Nama</th><th>Cabang</th><th>Jabatan</th><th>Tinggi</th><th>Berat</th><th>IMT</th><th>Kategori</th>{saya.role === 'SUPERVISOR' && <th>Aksi</th>}</tr></thead>
             <tbody>{daftar.map((p) => {
-              const bmi = hitungBMI(p.beratBadan, p.tinggiBadan);
-              const status = bmi === null ? 'Data belum lengkap' : kategoriBMI(bmi);
-              return <tr key={p.id}><td className="text-xs tabular-nums">{p.nip}</td><td className="font-medium">{p.nama}</td><td className="text-xs">{p.cabang.kode} — {p.cabang.nama}</td><td className="text-xs">{p.jabatan?.nama ?? '—'}</td><td className="text-xs">{umur(p.tanggalLahir) ?? '—'}</td><td className="text-xs">{p.tinggiBadan ? `${p.tinggiBadan} cm` : '—'}</td><td className="text-xs">{p.beratBadan ? `${p.beratBadan} kg` : '—'}</td><td className="text-xs font-semibold">{bmi ?? '—'}</td><td><span className="rounded-full bg-abu-100 px-2 py-1 text-[11px]">{status}</span></td>{saya.role === 'ADMIN' && <td><form action={simpanBeratBadan} className="flex items-center gap-1"><input type="hidden" name="pegawaiId" value={p.id} /><input name="beratBadan" type="number" min="1" step="0.1" defaultValue={p.beratBadan ?? ''} placeholder="kg" className="w-20 rounded border border-abu-300 px-2 py-1 text-xs" /><button className="rounded bg-btn-biru-600 px-2 py-1 text-xs text-white">Simpan</button></form></td>}</tr>;
+              const data = p.pengukuranIMT[0];
+              return <tr key={p.id}><td className="text-xs tabular-nums">{p.nip}</td><td className="font-medium">{p.nama}</td><td className="text-xs">{p.cabang.kode} — {p.cabang.nama}</td><td className="text-xs">{p.jabatan?.nama ?? '—'}</td><td className="text-xs">{data?.tinggiBadan ?? '—'} cm</td><td className="text-xs">{data?.beratBadan ?? '—'} kg</td><td className="text-xs font-semibold">{data?.nilaiIMT ?? '—'}</td><td className="text-xs">{data?.kategori ?? 'Belum diukur'}</td>{saya.role === 'SUPERVISOR' && <td><form action={simpanPengukuranIMT} className="flex items-center gap-1"><input type="hidden" name="pegawaiId" value={p.id} /><input type="hidden" name="periodeId" value={periode.id} /><input type="hidden" name="tanggal" value={tanggalKey} /><input name="beratBadan" type="number" min="1" step="0.1" defaultValue={data?.beratBadan ?? ''} placeholder="kg" className="w-20 rounded border border-abu-300 px-2 py-1 text-xs" /><button className="rounded bg-btn-biru-600 px-2 py-1 text-xs text-white">Simpan</button></form></td>}</tr>;
             })}</tbody>
           </table></div>
           {daftar.length === 0 && <p className="p-6 text-center text-sm text-abu-400">Belum ada pegawai dengan peran PEGAWAI.</p>}
