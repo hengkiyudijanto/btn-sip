@@ -35,7 +35,7 @@ export const MENU: ItemMenuPohon[] = [
     role: ['SUPERVISOR', 'MANAGER', 'ADMIN'],
     anak: [
       { href: '/penilaian', label: 'System Informasi Penilaian' },
-      { href: '/monitoring', label: 'IMT' },
+      { href: '/monitoring', label: 'Index Masa Tubuh' },
     ],
   },
   { href: '/persetujuan', label: 'Persetujuan', role: ['MANAGER', 'ADMIN'] },

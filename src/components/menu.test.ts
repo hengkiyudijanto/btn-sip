@@ -93,7 +93,7 @@ describe('menu Parameter', () => {
     const pengukuran = menu.find((m) => m.label === 'Pengukuran');
     expect(pengukuran?.anak).toEqual([
       { href: '/penilaian', label: 'System Informasi Penilaian' },
-      { href: '/monitoring', label: 'IMT' },
+      { href: '/monitoring', label: 'Index Masa Tubuh' },
     ]);
   });
 });
