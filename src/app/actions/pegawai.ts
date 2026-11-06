@@ -341,7 +341,12 @@ export async function simpanPengukuranIMT(formData: FormData): Promise<void> {
   const periodeId = String(formData.get('periodeId') ?? '');
   const tanggalRaw = String(formData.get('tanggal') ?? '');
   const berat = Number(formData.get('beratBadan'));
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggalRaw) || !Number.isFinite(berat) || berat <= 0) throw new Error('Tanggal atau berat badan tidak valid.');
+  const lingkarPinggang = Number(formData.get('lingkarPinggang'));
+  const fotoSeluruhBadanData = String(formData.get('fotoSeluruhBadanData') ?? '');
+  const fotoTimbanganData = String(formData.get('fotoTimbanganData') ?? '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggalRaw) || !Number.isFinite(berat) || berat <= 0 || !Number.isFinite(lingkarPinggang) || lingkarPinggang <= 0) throw new Error('Tanggal, berat badan, atau lingkar pinggang tidak valid.');
+  if (!/^data:image\/(jpeg|png|webp);base64,/.test(fotoSeluruhBadanData) || !/^data:image\/(jpeg|png|webp);base64,/.test(fotoTimbanganData)) throw new Error('Foto seluruh badan dan foto alat timbang wajib diunggah.');
+  if (fotoSeluruhBadanData.length > 550000 || fotoTimbanganData.length > 550000) throw new Error('Ukuran foto terlalu besar. Gunakan foto maksimal sekitar 400 KB.');
   const tanggal = new Date(`${tanggalRaw}T00:00:00.000Z`);
   const [target, periode] = await Promise.all([
     prisma.pegawai.findUnique({ where: { id: pegawaiId, role: 'PEGAWAI' }, select: { id: true, cabangId: true, tinggiBadan: true } }),
@@ -355,8 +360,8 @@ export async function simpanPengukuranIMT(formData: FormData): Promise<void> {
   const nilaiIMT = hitungBMI(berat, target.tinggiBadan)!;
   await prisma.pengukuranIMT.upsert({
     where: { pegawaiId_periodeId_tanggal: { pegawaiId, periodeId, tanggal } },
-    update: { pengukurId: pengukur.id, tinggiBadan: target.tinggiBadan, beratBadan: berat, nilaiIMT, kategori: kategoriBMI(nilaiIMT) },
-    create: { pegawaiId, pengukurId: pengukur.id, periodeId, tanggal, tinggiBadan: target.tinggiBadan, beratBadan: berat, nilaiIMT, kategori: kategoriBMI(nilaiIMT) },
+    update: { pengukurId: pengukur.id, tinggiBadan: target.tinggiBadan, beratBadan: berat, lingkarPinggang, nilaiIMT, kategori: kategoriBMI(nilaiIMT), fotoSeluruhBadanData, fotoSeluruhBadanMime: 'image/jpeg', fotoTimbanganData, fotoTimbanganMime: 'image/jpeg' },
+    create: { pegawaiId, pengukurId: pengukur.id, periodeId, tanggal, tinggiBadan: target.tinggiBadan, beratBadan: berat, lingkarPinggang, nilaiIMT, kategori: kategoriBMI(nilaiIMT), fotoSeluruhBadanData, fotoSeluruhBadanMime: 'image/jpeg', fotoTimbanganData, fotoTimbanganMime: 'image/jpeg' },
   });
   revalidatePath('/monitoring');
 }

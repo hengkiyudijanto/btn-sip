@@ -238,8 +238,13 @@ model PengukuranIMT {
   tanggal     DateTime
   tinggiBadan Float
   beratBadan  Float
+  lingkarPinggang Float
   nilaiIMT    Float
   kategori    String
+  fotoSeluruhBadanData String?
+  fotoSeluruhBadanMime String?
+  fotoTimbanganData String?
+  fotoTimbanganMime String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
