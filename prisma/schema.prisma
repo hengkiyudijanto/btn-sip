@@ -120,13 +120,19 @@ model Pegawai {
   sesi                         Sesi[]
 
   /// pengajuan pegawai yang dibuat supervisor ini
-  pengajuanDiajukan      PengajuanPegawai[] @relation("PengajuanOleh")
+  pengajuanDiajukan       PengajuanPegawai[]     @relation("PengajuanOleh")
   /// pengajuan yang diputuskan admin ini
-  pengajuanDiputus       PengajuanPegawai[] @relation("PengajuanDiputuskan")
+  pengajuanDiputus        PengajuanPegawai[]     @relation("PengajuanDiputuskan")
   /// pengajuan yang menunjuk pegawai ini sebagai atasan
-  pengajuanSebagaiAtasan PengajuanPegawai[] @relation("PengajuanAtasan")
+  pengajuanSebagaiAtasan  PengajuanPegawai[]     @relation("PengajuanAtasan")
   /// pengajuan yang menghasilkan pegawai ini
-  pengajuanHasil         PengajuanPegawai?  @relation("PengajuanHasil")
+  pengajuanHasil          PengajuanPegawai?      @relation("PengajuanHasil")
+  /// pengajuan perubahan data fisik dari supervisor
+  perubahanDiajukan       PerubahanDataPegawai[] @relation("PerubahanTarget")
+  /// perubahan data yang diajukan supervisor ini
+  perubahanSebagaiPengaju PerubahanDataPegawai[] @relation("PerubahanOleh")
+  /// perubahan yang diputuskan admin ini
+  perubahanDiputus        PerubahanDataPegawai[] @relation("PerubahanDiputuskan")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -228,25 +234,25 @@ model Penilaian {
 }
 
 model PengukuranIMT {
-  id          String   @id @default(cuid())
-  pegawaiId   String
-  pegawai     Pegawai  @relation("PegawaiDiukur", fields: [pegawaiId], references: [id])
-  pengukurId  String
-  pengukur    Pegawai  @relation("Pengukur", fields: [pengukurId], references: [id])
-  periodeId   String
-  periode     Periode  @relation(fields: [periodeId], references: [id])
-  tanggal     DateTime
-  tinggiBadan Float
-  beratBadan  Float
-  lingkarPinggang Float
-  nilaiIMT    Float
-  kategori    String
+  id                   String   @id @default(cuid())
+  pegawaiId            String
+  pegawai              Pegawai  @relation("PegawaiDiukur", fields: [pegawaiId], references: [id])
+  pengukurId           String
+  pengukur             Pegawai  @relation("Pengukur", fields: [pengukurId], references: [id])
+  periodeId            String
+  periode              Periode  @relation(fields: [periodeId], references: [id])
+  tanggal              DateTime
+  tinggiBadan          Float
+  beratBadan           Float
+  lingkarPinggang      Float
+  nilaiIMT             Float
+  kategori             String
   fotoSeluruhBadanData String?
   fotoSeluruhBadanMime String?
-  fotoTimbanganData String?
-  fotoTimbanganMime String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  fotoTimbanganData    String?
+  fotoTimbanganMime    String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@unique([pegawaiId, periodeId, tanggal])
   @@index([periodeId, tanggal])
@@ -387,5 +393,32 @@ model PengajuanPegawai {
 
   @@index([status])
   @@index([cabangId])
+  @@index([pengajuId])
+}
+
+/// Perubahan tanggal lahir/tinggi badan yang diajukan supervisor.
+model PerubahanDataPegawai {
+  id     String          @id @default(cuid())
+  status StatusPengajuan @default(MENUNGGU)
+
+  pegawaiId        String
+  pegawai          Pegawai  @relation("PerubahanTarget", fields: [pegawaiId], references: [id])
+  pengajuId        String
+  pengaju          Pegawai  @relation("PerubahanOleh", fields: [pengajuId], references: [id])
+  diputuskanOlehId String?
+  diputuskanOleh   Pegawai? @relation("PerubahanDiputuskan", fields: [diputuskanOlehId], references: [id])
+
+  tanggalLahirLama DateTime?
+  tanggalLahirBaru DateTime?
+  tinggiBadanLama  Float?
+  tinggiBadanBaru  Float?
+  catatanPengaju   String?
+  catatanAdmin     String?
+  diputuskanAt     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status])
+  @@index([pegawaiId])
   @@index([pengajuId])
 }

@@ -8,6 +8,9 @@ import {
   ubahStatusAktif,
   tambahPegawai,
   ubahPegawai,
+  ajukanPerubahanDataFisik,
+  setujuiPerubahanDataFisik,
+  tolakPerubahanDataFisik,
 } from '@/app/actions/pegawai';
 import type { HasilImpor } from '@/app/actions/pegawai';
 
@@ -263,9 +266,35 @@ export function PanelTambah({
   );
 }
 
-// ===========================================================================
-// Aksi baris: ubah data, reset password & aktif/nonaktif
-// ===========================================================================
+export function FormPerubahanDataFisik({
+  pegawaiId,
+  tanggalLahir,
+  tinggiBadan,
+}: {
+  pegawaiId: string;
+  tanggalLahir: Date | null;
+  tinggiBadan: number | null;
+}) {
+  const [state, aksi] = useActionState(ajukanPerubahanDataFisik, {});
+  const [buka, setBuka] = useState(false);
+  if (!buka) return <button type="button" onClick={() => setBuka(true)} className="rounded-md border border-btn-biru-200 bg-btn-biru-50 px-2.5 py-1 text-[11px] font-medium text-btn-biru-700 hover:bg-btn-biru-100">Ajukan perubahan fisik</button>;
+  return <form action={aksi} className="min-w-[260px] space-y-2 text-left">
+    <input type="hidden" name="id" value={pegawaiId} />
+    <label className="block text-[10px] text-abu-500">Tanggal lahir<input name="tanggalLahir" type="date" required defaultValue={tanggalLahir?.toISOString().slice(0, 10) ?? ''} className="w-full rounded border border-abu-300 px-2 py-1 text-xs" /></label>
+    <label className="block text-[10px] text-abu-500">Tinggi badan (cm)<input name="tinggiBadan" type="number" min="1" step="0.1" required defaultValue={tinggiBadan ?? ''} className="w-full rounded border border-abu-300 px-2 py-1 text-xs" /></label>
+    <input name="catatan" placeholder="Catatan (opsional)" className="w-full rounded border border-abu-300 px-2 py-1 text-xs" />
+    <div className="flex gap-1.5"><button type="submit" className="rounded bg-btn-biru-600 px-2.5 py-1.5 text-[11px] font-semibold text-white">Kirim ke admin</button><button type="button" onClick={() => setBuka(false)} className="rounded border px-2.5 py-1.5 text-[11px]">Batal</button></div>
+    {state.error && <p className="text-[11px] text-bahaya">{state.error}</p>}{state.sukses && <p className="text-[11px] text-sukses">{state.pesan}</p>}
+  </form>;
+}
+
+export function AksiPerubahanDataFisik({ perubahanId }: { perubahanId: string }) {
+  const [stateSetuju, aksiSetuju] = useActionState(setujuiPerubahanDataFisik, {});
+  const [stateTolak, aksiTolak] = useActionState(tolakPerubahanDataFisik, {});
+  return <div className="flex flex-wrap gap-1.5"><form action={aksiSetuju}><input type="hidden" name="perubahanId" value={perubahanId} /><button type="submit" className="rounded bg-sukses px-2.5 py-1.5 text-[11px] font-semibold text-white">Setujui</button></form><form action={aksiTolak} className="flex gap-1"><input type="hidden" name="perubahanId" value={perubahanId} /><input name="alasan" required minLength={5} placeholder="Alasan tolak" className="w-28 rounded border px-2 py-1 text-[11px]" /><button type="submit" className="rounded bg-btn-merah-600 px-2.5 py-1.5 text-[11px] font-semibold text-white">Tolak</button></form>{(stateSetuju.error || stateTolak.error) && <p className="w-full text-[11px] text-bahaya">{stateSetuju.error || stateTolak.error}</p>}</div>;
+}
+
+
 
 export function AksiBaris({
   izinMode,
@@ -413,56 +442,49 @@ export function AksiBaris({
   return (
     <div className="flex flex-col items-end gap-1.5">
       <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => setMode('ubah')}
-          className="rounded-md border border-btn-biru-200 bg-btn-biru-50 px-2.5 py-1 text-[11px] font-medium text-btn-biru-700 hover:bg-btn-biru-100 transition-colors whitespace-nowrap"
-        >
-          Ubah
-        </button>
-
-        {!konfirmasi ? (
+        {izinMode === 'SUPERVISOR' ? (
+          <FormPerubahanDataFisik
+            pegawaiId={pegawaiId}
+            tanggalLahir={data.tanggalLahir}
+            tinggiBadan={data.tinggiBadan}
+          />
+        ) : (
           <button
             type="button"
-            onClick={() => setKonfirmasi(true)}
-            className="rounded-md border border-abu-200 px-2.5 py-1 text-[11px] font-medium text-abu-600 hover:bg-abu-50 transition-colors whitespace-nowrap"
+            onClick={() => setMode('ubah')}
+            className="rounded-md border border-btn-biru-200 bg-btn-biru-50 px-2.5 py-1 text-[11px] font-medium text-btn-biru-700 hover:bg-btn-biru-100 transition-colors whitespace-nowrap"
           >
-            Reset password
+            Ubah
           </button>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <form action={aksiReset}>
-              <input type="hidden" name="pegawaiId" value={pegawaiId} />
-              <button
-                type="submit"
-                className="rounded-md bg-btn-merah-600 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-btn-merah-700 transition-colors whitespace-nowrap"
-              >
-                Ya, reset
-              </button>
-            </form>
-            <button
-              type="button"
-              onClick={() => setKonfirmasi(false)}
-              className="rounded-md border border-abu-200 px-2 py-1 text-[11px] text-abu-500 hover:bg-abu-50 transition-colors"
-            >
-              Batal
-            </button>
-          </div>
         )}
 
-        <form action={aksiStatus}>
-          <input type="hidden" name="pegawaiId" value={pegawaiId} />
-          <button
-            type="submit"
-            className={`rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors whitespace-nowrap ${
-              aktif
-                ? 'border-abu-200 text-abu-600 hover:bg-abu-50'
-                : 'border-sukses/30 bg-sukses-bg text-sukses hover:bg-sukses-bg/70'
-            }`}
-          >
-            {aktif ? 'Nonaktifkan' : 'Aktifkan'}
-          </button>
-        </form>
+        {izinMode === 'ADMIN' && (
+          <>
+            {!konfirmasi ? (
+              <button
+                type="button"
+                onClick={() => setKonfirmasi(true)}
+                className="rounded-md border border-abu-200 px-2.5 py-1 text-[11px] font-medium text-abu-600 hover:bg-abu-50 transition-colors whitespace-nowrap"
+              >
+                Reset password
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <form action={aksiReset}>
+                  <input type="hidden" name="pegawaiId" value={pegawaiId} />
+                  <button type="submit" className="rounded-md bg-btn-merah-600 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-btn-merah-700 transition-colors whitespace-nowrap">Ya, reset</button>
+                </form>
+                <button type="button" onClick={() => setKonfirmasi(false)} className="rounded-md border border-abu-200 px-2 py-1 text-[11px] text-abu-500 hover:bg-abu-50">Batal</button>
+              </div>
+            )}
+            <form action={aksiStatus}>
+              <input type="hidden" name="pegawaiId" value={pegawaiId} />
+              <button type="submit" className={`rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors whitespace-nowrap ${aktif ? 'border-abu-200 text-abu-600 hover:bg-abu-50' : 'border-sukses/30 bg-sukses-bg text-sukses hover:bg-sukses-bg/70'}`}>
+                {aktif ? 'Nonaktifkan' : 'Aktifkan'}
+              </button>
+            </form>
+          </>
+        )}
       </div>
 
       {stateReset.sukses && stateReset.password && (

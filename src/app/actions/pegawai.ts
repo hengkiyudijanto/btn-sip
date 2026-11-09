@@ -276,7 +276,7 @@ export async function tambahPegawai(
   const cek = await pastikanAdmin();
   if ('error' in cek) return { error: cek.error };
   const saya = cek.saya;
-
+  if (saya.role !== 'ADMIN') return { error: 'Hanya Admin yang boleh menambah pegawai.' };
   const nip = String(formData.get('nip') ?? '').trim();
   const nama = String(formData.get('nama') ?? '').trim();
   const cabangId = String(formData.get('cabangId') ?? '');
@@ -326,6 +326,7 @@ export async function tambahPegawai(
 export async function simpanBeratBadan(formData: FormData): Promise<void> {
   const cek = await pastikanAdmin();
   if ('error' in cek) throw new Error(cek.error);
+  if (cek.saya.role !== 'ADMIN') throw new Error('Hanya Admin yang boleh mengubah berat badan.');
   const pegawaiId = String(formData.get('pegawaiId') ?? '');
   const beratRaw = String(formData.get('beratBadan') ?? '').trim();
   const berat = Number(beratRaw);
@@ -373,6 +374,92 @@ export async function simpanPengukuranIMT(formData: FormData): Promise<void> {
 // UBAH PEGAWAI
 // ===========================================================================
 
+export async function ajukanPerubahanDataFisik(
+  _sebelumnya: { error?: string; sukses?: boolean; pesan?: string },
+  formData: FormData
+): Promise<{ error?: string; sukses?: boolean; pesan?: string }> {
+  const cek = await pastikanAdmin();
+  if ('error' in cek) return { error: cek.error };
+  const saya = cek.saya;
+  if (saya.role !== 'SUPERVISOR') return { error: 'Hanya Supervisor yang dapat mengajukan perubahan ini.' };
+
+  const pegawaiId = String(formData.get('id') ?? '');
+  const target = await prisma.pegawai.findUnique({ where: { id: pegawaiId } });
+  if (!target || target.role !== 'PEGAWAI' || target.atasanId !== saya.id) {
+    return { error: 'Supervisor hanya boleh mengubah staf bawahannya.' };
+  }
+  const tanggalRaw = String(formData.get('tanggalLahir') ?? '').trim();
+  const tinggiRaw = String(formData.get('tinggiBadan') ?? '').trim();
+  const errorDataFisik = validasiDataFisikPegawai(target.role, tanggalRaw, tinggiRaw);
+  if (errorDataFisik) return { error: errorDataFisik };
+  const tanggal = new Date(`${tanggalRaw}T00:00:00.000Z`);
+  const tinggi = Number(tinggiRaw);
+
+  const pending = await prisma.perubahanDataPegawai.findFirst({
+    where: { pegawaiId, status: 'MENUNGGU' },
+  });
+  if (pending) return { error: 'Masih ada perubahan data yang menunggu persetujuan admin.' };
+
+  await prisma.perubahanDataPegawai.create({
+    data: {
+      pegawaiId,
+      pengajuId: saya.id,
+      tanggalLahirLama: target.tanggalLahir,
+      tanggalLahirBaru: tanggal,
+      tinggiBadanLama: target.tinggiBadan,
+      tinggiBadanBaru: tinggi,
+      catatanPengaju: String(formData.get('catatan') ?? '').trim() || null,
+    },
+  });
+  await catatAudit({ pegawaiId: saya.id, aksi: 'AJUKAN_PERUBAHAN_DATA_FISIK', entitas: 'Pegawai', entitasId: pegawaiId, dataBaru: { nip: target.nip, tanggalLahir: tanggalRaw, tinggiBadan: tinggi } });
+  revalidatePath('/pegawai');
+  return { sukses: true, pesan: 'Perubahan diajukan dan menunggu persetujuan admin.' };
+}
+
+export async function setujuiPerubahanDataFisik(
+  _sebelumnya: { error?: string; sukses?: boolean; pesan?: string },
+  formData: FormData
+): Promise<{ error?: string; sukses?: boolean; pesan?: string }> {
+  const cek = await pastikanAdmin();
+  if ('error' in cek || cek.saya.role !== 'ADMIN') return { error: 'Hanya Admin yang dapat menyetujui perubahan.' };
+  const id = String(formData.get('perubahanId') ?? '');
+  const p = await prisma.perubahanDataPegawai.findUnique({ where: { id } });
+  if (!p || p.status !== 'MENUNGGU') return { error: 'Pengajuan perubahan tidak ditemukan atau sudah diputuskan.' };
+  const hasil = await prisma.$transaction(async (tx) => {
+    const keputusan = await tx.perubahanDataPegawai.updateMany({
+      where: { id, status: 'MENUNGGU' },
+      data: { status: 'DISETUJUI', diputuskanOlehId: cek.saya.id, diputuskanAt: new Date() },
+    });
+    if (keputusan.count !== 1) return false;
+    await tx.pegawai.update({ where: { id: p.pegawaiId }, data: { tanggalLahir: p.tanggalLahirBaru, tinggiBadan: p.tinggiBadanBaru } });
+    return true;
+  });
+  if (!hasil) return { error: 'Pengajuan perubahan sudah diputuskan oleh admin lain.' };
+  await catatAudit({ pegawaiId: cek.saya.id, aksi: 'SETUJUI_PERUBAHAN_DATA_FISIK', entitas: 'Pegawai', entitasId: p.pegawaiId, dataBaru: { perubahanId: id } });
+  revalidatePath('/pegawai');
+  return { sukses: true, pesan: 'Perubahan data disetujui.' };
+}
+
+export async function tolakPerubahanDataFisik(
+  _sebelumnya: { error?: string; sukses?: boolean; pesan?: string },
+  formData: FormData
+): Promise<{ error?: string; sukses?: boolean; pesan?: string }> {
+  const cek = await pastikanAdmin();
+  if ('error' in cek || cek.saya.role !== 'ADMIN') return { error: 'Hanya Admin yang dapat menolak perubahan.' };
+  const id = String(formData.get('perubahanId') ?? '');
+  const alasan = String(formData.get('alasan') ?? '').trim();
+  if (alasan.length < 5) return { error: 'Alasan penolakan minimal 5 karakter.' };
+  const p = await prisma.perubahanDataPegawai.findUnique({ where: { id } });
+  if (!p || p.status !== 'MENUNGGU') return { error: 'Pengajuan perubahan tidak ditemukan atau sudah diputuskan.' };
+  const keputusan = await prisma.perubahanDataPegawai.updateMany({
+    where: { id, status: 'MENUNGGU' },
+    data: { status: 'DITOLAK', diputuskanOlehId: cek.saya.id, catatanAdmin: alasan, diputuskanAt: new Date() },
+  });
+  if (keputusan.count !== 1) return { error: 'Pengajuan perubahan sudah diputuskan oleh admin lain.' };
+  revalidatePath('/pegawai');
+  return { sukses: true, pesan: 'Perubahan data ditolak.' };
+}
+
 // Daftar peran sah diambil dari modul akses (SEMUA_PERAN) — SATU sumber.
 // Dulu daftarnya disalin di tiga tempat dan tidak ikut diperbarui saat peran
 // PENGAMAT ditambahkan, sehingga 'ubah peran ke Pengamat' ditolak dengan
@@ -395,6 +482,7 @@ export async function ubahPegawai(
   const cek = await pastikanAdmin();
   if ('error' in cek) return { error: cek.error };
   const saya = cek.saya;
+  if (saya.role !== 'ADMIN') return { error: 'Hanya Admin yang boleh mengubah data umum pegawai.' };
 
   const id = String(formData.get('id') ?? '');
   const emailRaw = String(formData.get('email') ?? '').trim();
@@ -405,15 +493,11 @@ export async function ubahPegawai(
   if (!id) return { error: 'Pegawai tidak ditemukan.' };
   const lama = await prisma.pegawai.findUnique({ where: { id } });
   if (!lama) return { error: 'Pegawai tidak ditemukan.' };
-  if (saya.role === 'SUPERVISOR' && (lama.atasanId !== saya.id || lama.role !== 'PEGAWAI')) {
-    return { error: 'Supervisor hanya boleh mengubah staf bawahannya.' };
-  }
-  const supervisorEdit = saya.role === 'SUPERVISOR';
   const namaFinal = String(formData.get('nama') ?? '').trim();
   const nipFinal = String(formData.get('nip') ?? '').trim();
-  const cabangId = supervisorEdit ? lama.cabangId : cabangIdInput;
-  const jabatanId = supervisorEdit ? lama.jabatanId : jabatanIdInput;
-  const roleRaw = supervisorEdit ? lama.role : roleRawInput;
+  const cabangId = cabangIdInput;
+  const jabatanId = jabatanIdInput;
+  const roleRaw = roleRawInput;
   if (!namaFinal) return { error: 'Nama wajib diisi.' };
   if (!nipFinal) return { error: 'NIP wajib diisi.' };
   if (!cabangId) return { error: 'Cabang wajib dipilih.' };

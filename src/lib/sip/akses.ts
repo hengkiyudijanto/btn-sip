@@ -139,7 +139,7 @@ const HALAMAN: Record<string, Peran[] | null> = {
 
   '/penilaian': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
   '/persetujuan': ['MANAGER', 'ADMIN'],
-  '/pegawai': ['MANAGER', 'ADMIN'],
+  '/pegawai': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
   '/monitoring': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
   '/pengajuan-pegawai': ['SUPERVISOR', 'MANAGER', 'ADMIN'],
   '/parameter/cabang': ['ADMIN'],

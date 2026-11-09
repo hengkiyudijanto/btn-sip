@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
-import { PanelImpor, PanelTambah, AksiBaris } from '@/components/kelola-pegawai';
+import { PanelImpor, PanelTambah, AksiBaris, FormPerubahanDataFisik, AksiPerubahanDataFisik } from '@/components/kelola-pegawai';
 import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Pegawai' };
@@ -17,7 +17,7 @@ export default async function HalamanPegawai() {
   const admin = saya.role === 'ADMIN';
   const supervisor = saya.role === 'SUPERVISOR';
 
-  const [daftar, daftarCabang, daftarJabatan] = await Promise.all([
+  const [daftar, daftarCabang, daftarJabatan, perubahan] = await Promise.all([
     prisma.pegawai.findMany({
       where: admin ? {} : supervisor ? { atasanId: saya.id, role: 'PEGAWAI' } : { cabangId: saya.cabang.id },
       include: {
@@ -28,6 +28,11 @@ export default async function HalamanPegawai() {
     }),
     prisma.cabang.findMany({ where: { aktif: true }, orderBy: { kode: 'asc' } }),
     prisma.jabatan.findMany({ where: { aktif: true }, orderBy: { kode: 'asc' } }),
+    prisma.perubahanDataPegawai.findMany({
+      where: admin ? { status: 'MENUNGGU' } : { pengajuId: saya.id, status: 'MENUNGGU' },
+      include: { pegawai: { select: { id: true, nip: true, nama: true, tanggalLahir: true, tinggiBadan: true } }, pengaju: { select: { nama: true } } },
+      orderBy: { createdAt: 'asc' },
+    }),
   ]);
 
   const labelRole: Record<string, string> = {
@@ -58,7 +63,17 @@ export default async function HalamanPegawai() {
           </div>
         )}
 
-        {/* Tabel pegawai */}
+        {/* Pengajuan perubahan data fisik */}
+        {perubahan.length > 0 && (
+          <div className="mt-6 kartu overflow-hidden">
+            <div className="border-b border-abu-200 px-4 py-3"><h2 className="text-sm font-semibold text-abu-800">{admin ? 'Menunggu persetujuan perubahan data fisik' : 'Pengajuan perubahan data fisik'}</h2></div>
+            <div className="divide-y divide-abu-100">
+              {perubahan.map((p) => <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs"><div><strong>{p.pegawai.nama}</strong> <span className="text-abu-400">({p.pegawai.nip})</span><div className="mt-1 text-abu-500">Tanggal lahir: {p.pegawai.tanggalLahir?.toLocaleDateString('id-ID') ?? '—'} → {p.tanggalLahirBaru?.toLocaleDateString('id-ID') ?? '—'} · Tinggi: {p.pegawai.tinggiBadan ?? '—'} → {p.tinggiBadanBaru ?? '—'} cm</div>{admin && <div className="text-abu-400">Diajukan oleh {p.pengaju.nama}</div>}</div>{admin ? <AksiPerubahanDataFisik perubahanId={p.id} /> : <span className="rounded bg-peringatan-bg px-2 py-1 text-peringatan">Menunggu admin</span>}</div>)}
+            </div>
+          </div>
+        )}
+
+
         <div className="mt-6 kartu overflow-hidden">
           <div className="overflow-x-auto">
             <table className="tabel-sip">

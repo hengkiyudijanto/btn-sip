@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { UnggahFoto } from '@/components/unggah-foto';
 import { LABEL_JENIS, WARNA_JENIS } from '@/lib/sip/hierarki';
 import { alamatFoto } from '@/lib/sip/alamat-foto';
+import { bolehBukaHalaman } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Detail Pegawai' };
 
@@ -35,6 +36,8 @@ export default async function HalamanDetailPegawai({
   });
   if (!p) notFound();
 
+  if (!bolehBukaHalaman(saya.role, '/pegawai')) redirect('/dasbor');
+  if (saya.role === 'SUPERVISOR' && (p.atasanId !== saya.id || p.role !== 'PEGAWAI')) redirect('/pegawai');
   // pegawai biasa hanya boleh melihat dirinya sendiri
   if (saya.role === 'PEGAWAI' && p.id !== saya.id) redirect('/dasbor');
 

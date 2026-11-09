@@ -38,6 +38,15 @@ describe('struktur menu', () => {
   });
 });
 
+describe('menu Pegawai', () => {
+  it('supervisor melihat menu Pegawai', () => {
+    const menu = saringMenu('SUPERVISOR');
+    const pegawai = menu.find((m) => m.label === 'Pegawai');
+    expect(pegawai).toBeDefined();
+    expect(pegawai!.anak?.map((a) => a.href)).toContain('/pegawai');
+  });
+});
+
 describe('menu Parameter', () => {
   it('admin melihat Parameter berisi Cabang, Jabatan, Peran, Periode', () => {
     const menu = saringMenu('ADMIN');
