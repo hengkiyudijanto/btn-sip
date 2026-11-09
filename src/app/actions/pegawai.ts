@@ -385,8 +385,8 @@ export async function ajukanPerubahanDataFisik(
 
   const pegawaiId = String(formData.get('id') ?? '');
   const target = await prisma.pegawai.findUnique({ where: { id: pegawaiId } });
-  if (!target || target.role !== 'PEGAWAI' || target.atasanId !== saya.id) {
-    return { error: 'Supervisor hanya boleh mengubah staf bawahannya.' };
+  if (!target || target.role !== 'PEGAWAI' || target.cabangId !== saya.cabang.id) {
+    return { error: 'Supervisor hanya boleh mengubah pegawai di cabangnya sendiri.' };
   }
   const tanggalRaw = String(formData.get('tanggalLahir') ?? '').trim();
   const tinggiRaw = String(formData.get('tinggiBadan') ?? '').trim();

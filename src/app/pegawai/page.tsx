@@ -19,7 +19,7 @@ export default async function HalamanPegawai() {
 
   const [daftar, daftarCabang, daftarJabatan, perubahan] = await Promise.all([
     prisma.pegawai.findMany({
-      where: admin ? {} : supervisor ? { atasanId: saya.id, role: 'PEGAWAI' } : { cabangId: saya.cabang.id },
+      where: admin ? {} : supervisor ? { cabangId: saya.cabang.id, role: 'PEGAWAI' } : { cabangId: saya.cabang.id, role: 'PEGAWAI' },
       include: {
         jabatan: { select: { nama: true } },
         cabang: { select: { kode: true, nama: true } },

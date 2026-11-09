@@ -37,7 +37,7 @@ export default async function HalamanDetailPegawai({
   if (!p) notFound();
 
   if (!bolehBukaHalaman(saya.role, '/pegawai')) redirect('/dasbor');
-  if (saya.role === 'SUPERVISOR' && (p.atasanId !== saya.id || p.role !== 'PEGAWAI')) redirect('/pegawai');
+  if (saya.role === 'SUPERVISOR' && (p.cabangId !== saya.cabang.id || p.role !== 'PEGAWAI')) redirect('/pegawai');
   // pegawai biasa hanya boleh melihat dirinya sendiri
   if (saya.role === 'PEGAWAI' && p.id !== saya.id) redirect('/dasbor');
 
