@@ -83,6 +83,28 @@ export async function susunRankingGabungan(
     unitLabel = label[filter.jenis] ?? `Jenis ${filter.jenis}`;
   }
 
+  // Ambil semua Pegawai agar yang belum punya baris Penilaian tetap muncul.
+  if (filter.semuaPegawai) {
+    const pegawai = await prisma.pegawai.findMany({
+      where: {
+        role: 'PEGAWAI', aktif: true,
+        ...(cabangIds ? { cabangId: { in: cabangIds } } : {}),
+        ...(filter.kodeJabatan ? { jabatan: { kode: filter.kodeJabatan } } : {}),
+      },
+      orderBy: { nama: 'asc' },
+      select: {
+        nama: true, nip: true, fotoData: true,
+        jabatan: { select: { kode: true, nama: true } }, cabang: { select: { nama: true } },
+        penilaianku: { where: { periodeId: filter.periodeId }, select: { nilaiAkhir: true, fotoData: true }, take: 1 },
+      },
+    });
+    const baris = pegawai.map((p) => {
+      const nilai = p.penilaianku[0]?.nilaiAkhir == null ? null : Number(p.penilaianku[0].nilaiAkhir);
+      return { peringkat: 0, nama: p.nama, nip: p.nip, jabatan: labelPosisi(p.jabatan?.kode ?? null, p.jabatan?.nama ?? 'Tanpa jabatan'), unit: p.cabang.nama, nilai, kategori: nilai == null ? 'Belum dinilai' : kategoriDariNilai(nilai), foto: p.penilaianku[0]?.fotoData ?? p.fotoData ?? null };
+    }).sort((a, b) => ((b.nilai ?? -1) - (a.nilai ?? -1)) || a.nip.localeCompare(b.nip)).map((b, i) => ({ ...b, peringkat: i + 1 }));
+    return { unit: unitLabel, posisi: filter.kodeJabatan ? (baris[0]?.jabatan ?? filter.kodeJabatan) : 'Semua posisi', periode: periode.nama, jenisKantor: filter.jenis ? `Jenis ${filter.jenis}` : 'Semua jenis', jumlahPeserta: baris.length, baris };
+  }
+
   const penilaian = await prisma.penilaian.findMany({
     where: {
       periodeId: filter.periodeId,

@@ -122,6 +122,40 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
     unitLabel = label[filter.jenis] ?? `Jenis ${filter.jenis}`;
   }
 
+  // Mode "semua pegawai" harus mengambil sumber dari Pegawai, bukan Penilaian.
+  // Pegawai yang belum pernah dibuatkan baris Penilaian tidak akan ada di query
+  // Penilaian sama sekali.
+  if (filter.semuaPegawai) {
+    const pegawai = await prisma.pegawai.findMany({
+      where: {
+        role: 'PEGAWAI',
+        aktif: true,
+        ...(cabangIds ? { cabangId: { in: cabangIds } } : {}),
+        ...(filter.kodeJabatan ? { jabatan: { kode: filter.kodeJabatan } } : {}),
+      },
+      orderBy: { nama: 'asc' },
+      select: {
+        nama: true, nip: true,
+        jabatan: { select: { kode: true, nama: true } },
+        cabang: { select: { kode: true, nama: true } },
+        penilaianku: { where: { periodeId: filter.periodeId }, select: { nilaiAkhir: true }, take: 1 },
+      },
+    });
+    const kelompok = new Map<string, KelompokRanking>();
+    for (const p of pegawai) {
+      const posisi = labelPosisi(p.jabatan?.kode ?? null, p.jabatan?.nama ?? 'Tanpa jabatan');
+      const kunci = `${p.cabang.kode}|${posisi}`;
+      if (!kelompok.has(kunci)) kelompok.set(kunci, { unit: p.cabang.nama, posisi, baris: [] });
+      const nilai = p.penilaianku[0]?.nilaiAkhir == null ? null : Number(p.penilaianku[0].nilaiAkhir);
+      kelompok.get(kunci)!.baris.push({ nama: p.nama, nip: p.nip, nilai, kategori: kategoriRanking(nilai) });
+    }
+    return {
+      unit: unitLabel, posisi: filter.kodeJabatan ? ([...kelompok.values()][0]?.posisi ?? filter.kodeJabatan) : 'Semua posisi',
+      periode: periode.nama, jenisKantor: filter.jenis ? `Jenis ${filter.jenis}` : 'Semua jenis', jumlahPeserta: pegawai.length,
+      kelompok: [...kelompok.values()].map((k) => ({ ...k, baris: k.baris.sort((a, b) => (b.nilai ?? -1) - (a.nilai ?? -1)) })).sort((a, b) => a.unit === b.unit ? a.posisi.localeCompare(b.posisi) : a.unit.localeCompare(b.unit)),
+    };
+  }
+
   const penilaian = await prisma.penilaian.findMany({
     where: {
       periodeId: filter.periodeId,
