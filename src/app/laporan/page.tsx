@@ -9,7 +9,7 @@ import { kumpulkanTurunan, susunPohon, LABEL_JENIS, type CabangRingkas } from '@
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 import { boleh, bolehBukaHalaman } from '@/lib/sip/akses';
 
-export const metadata = { title: 'Laporan' };
+export const metadata = { title: 'Laporan Detail SIP' };
 
 export default async function HalamanLaporan({
   searchParams,
@@ -108,7 +108,7 @@ export default async function HalamanLaporan({
     <Kerangka pegawai={saya}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
         <div className="animasi-naik">
-          <h1 className="text-2xl font-bold text-abu-900">Laporan &amp; Rekap</h1>
+          <h1 className="text-2xl font-bold text-abu-900">Laporan Detail SIP</h1>
           <div className="mt-2 h-0.5 w-10 bg-btn-merah-500 rounded-full" />
           <p className="mt-3 text-sm text-abu-500">
             Lihat rekap penilaian per periode, lalu cetak laporan SIP per petugas.

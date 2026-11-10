@@ -40,8 +40,8 @@ export const MENU: ItemMenuPohon[] = [
   },
   { href: '/persetujuan', label: 'Persetujuan', role: ['MANAGER', 'ADMIN'] },
   {
-    // Induk tanpa href sendiri: halaman /laporan sudah jadi submenu
-    // "Laporan & Rekap". Kalau induknya juga menunjuk ke /laporan, ada dua
+    // Induk tanpa href sendiri: halaman laporan sudah menjadi submenu.
+    // Kalau induknya juga menunjuk ke /laporan, ada dua
     // pintu ke halaman yang sama.
     //
     // PEGAWAI sengaja tidak diberi role apa pun di sini... justru sebaliknya:
@@ -51,9 +51,9 @@ export const MENU: ItemMenuPohon[] = [
     label: 'Laporan',
     role: ['PENGAMAT', 'SUPERVISOR', 'MANAGER', 'ADMIN'],
     anak: [
-      { href: '/laporan', label: 'Laporan detail SIP' },
-      { href: '/laporan/imt', label: 'Laporan Rekap IMT', role: ['SUPERVISOR', 'MANAGER', 'ADMIN'] },
       { href: '/laporan/ranking', label: 'Laporan Rekap SIP' },
+      { href: '/laporan', label: 'Laporan Detail SIP' },
+      { href: '/laporan/imt', label: 'Laporan Rekap IMT', role: ['SUPERVISOR', 'MANAGER', 'ADMIN'] },
     ],
   },
   {
