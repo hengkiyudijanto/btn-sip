@@ -27,7 +27,7 @@ export default async function HalamanRekapIMT({ searchParams }: { searchParams: 
   return (
     <Kerangka pegawai={saya}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-        <div><h1 className="text-2xl font-bold text-abu-900">Rekapitulasi Indeks Massa Tubuh</h1><p className="mt-2 text-sm text-abu-500">Filter mengikuti Rekap SIP: periode dan unit kerja.</p></div>
+        <div><h1 className="text-2xl font-bold text-abu-900">Laporan Rekap IMT</h1><p className="mt-2 text-sm text-abu-500">Filter mengikuti Rekap SIP: periode dan unit kerja.</p></div>
         <form className="mt-6 kartu p-5" method="get"><div className={`grid gap-4 ${bolehSemua && cabangPilihan.length ? 'sm:grid-cols-2' : ''}`}>
           <label className="text-xs text-abu-600">Periode<select name="periode" defaultValue={periode?.id ?? ''} className="mt-1 block w-full rounded-lg border border-abu-300 px-3 py-2 text-sm">{daftarPeriode.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}</select></label>
           {bolehSemua && cabangPilihan.length > 0 && <label className="text-xs text-abu-600">Unit kerja<select name="cabang" defaultValue={unit?.id ?? ''} className="mt-1 block w-full rounded-lg border border-abu-300 px-3 py-2 text-sm"><option value="">Semua unit</option>{susunPohon(cabangPilihan.map((c) => ({ id: c.id, kode: c.kode, nama: c.nama, jenis: c.jenis, indukId: c.indukId, aktif: c.aktif }))).map((c) => <option key={c.id} value={c.id}>{' '.repeat(c.kedalaman * 3)}{LABEL_JENIS[c.jenis]} {c.kode} — {c.nama}</option>)}</select></label>}
