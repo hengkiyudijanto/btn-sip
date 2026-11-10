@@ -147,9 +147,6 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
   const peta = new Map<string, KelompokRanking>();
 
   for (const p of penilaian) {
-    if (p.nilaiAkhir === null) continue;
-    // Label posisi untuk slide (mis. "Teller" -> "Teller Service").
-    // Lihat src/lib/sip/label-posisi.ts — nama jabatan di database tidak diubah.
     const posisi = labelPosisi(
       p.pegawai.jabatan?.kode ?? null,
       p.pegawai.jabatan?.nama ?? 'Tanpa jabatan'

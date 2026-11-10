@@ -215,8 +215,7 @@ export default async function HalamanRanking({
         {hasil && hasil.jumlahPeserta > 0 && (
           <>
             <div className="mt-6 rounded-lg border border-abu-200 bg-abu-50 px-4 py-3 text-xs text-abu-600 leading-relaxed">
-              <strong>{hasil.jumlahPeserta} petugas</strong> dengan penilaian
-              bernilai pada <strong>{hasil.periode}</strong> &middot;{' '}
+              <strong>{hasil.jumlahPeserta} petugas</strong>{semuaPegawai ? ' dalam laporan' : ' dengan penilaian bernilai'} pada <strong>{hasil.periode}</strong> &middot;{' '}
               {hasil.unit} &middot; {hasil.posisi} &middot; akan menjadi{' '}
               <strong>{hasil.kelompok.length} slide</strong> ranking.
             </div>
