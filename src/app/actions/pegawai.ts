@@ -6,6 +6,7 @@ import { pegawaiDariSesi, catatAudit, hashPassword } from '@/lib/auth';
 import crypto from 'node:crypto';
 import { boleh, SEMUA_PERAN } from '@/lib/sip/akses';
 import { validasiDataFisikPegawai } from '@/lib/sip/data-fisik';
+import { kumpulkanTurunan } from '@/lib/sip/hierarki';
 import { hitungBMI, kategoriBMI } from '@/lib/sip/kesehatan';
 
 export type HasilImpor = {
@@ -25,6 +26,12 @@ async function pastikanAdmin() {
   if (!saya) return { error: 'Sesi habis. Silakan masuk kembali.' as const };
   if (!boleh(saya.role, 'kelola_pegawai') && saya.role !== 'SUPERVISOR') return { error: 'Peran Anda tidak boleh mengubah data pegawai.' };
   return { saya };
+}
+
+async function cabangDalamCakupanSupervisor(saya: { role: string; cabang: { id: string } }, cabangId: string): Promise<boolean> {
+  if (saya.role !== 'SUPERVISOR') return false;
+  const semua = await prisma.cabang.findMany({ select: { id: true, indukId: true } });
+  return kumpulkanTurunan(saya.cabang.id, semua).includes(cabangId);
 }
 
 /** Buat password awal acak yang mudah dibaca tapi tetap kuat. */
@@ -287,8 +294,11 @@ export async function tambahPegawai(
     : 'PEGAWAI';
   const tanggalLahirRaw = String(formData.get('tanggalLahir') ?? '').trim();
   const tinggiBadanRaw = String(formData.get('tinggiBadan') ?? '').trim();
+  const beratBadanRaw = String(formData.get('beratBadan') ?? '').trim();
   const errorDataFisik = validasiDataFisikPegawai(role, tanggalLahirRaw, tinggiBadanRaw);
   if (errorDataFisik) return { error: errorDataFisik };
+  const beratBadan = Number(beratBadanRaw);
+  if (role === 'PEGAWAI' && (!Number.isFinite(beratBadan) || beratBadan <= 0)) return { error: 'Berat badan awal wajib diisi untuk peran Pegawai.' };
 
   if (!nip || !nama) return { error: 'NIP dan Nama wajib diisi.' };
   if (!cabangId) return { error: 'Cabang wajib dipilih.' };
@@ -308,6 +318,7 @@ export async function tambahPegawai(
       jabatanId,
       tanggalLahir: tanggalLahirRaw ? new Date(`${tanggalLahirRaw}T00:00:00.000Z`) : null,
       tinggiBadan: tinggiBadanRaw ? Number(tinggiBadanRaw) : null,
+      beratBadan: role === 'PEGAWAI' ? beratBadan : null,
     },
   });
 
@@ -385,7 +396,7 @@ export async function ajukanPerubahanDataFisik(
 
   const pegawaiId = String(formData.get('id') ?? '');
   const target = await prisma.pegawai.findUnique({ where: { id: pegawaiId } });
-  if (!target || target.role !== 'PEGAWAI' || target.cabangId !== saya.cabang.id) {
+  if (!target || target.role !== 'PEGAWAI' || !(await cabangDalamCakupanSupervisor(saya, target.cabangId))) {
     return { error: 'Supervisor hanya boleh mengubah pegawai di cabangnya sendiri.' };
   }
   const tanggalRaw = String(formData.get('tanggalLahir') ?? '').trim();
@@ -426,7 +437,7 @@ export async function ajukanPerubahanDataUmum(
   if (saya.role !== 'SUPERVISOR') return { error: 'Hanya Supervisor yang dapat mengajukan perubahan data.' };
   const id = String(formData.get('id') ?? '');
   const target = await prisma.pegawai.findUnique({ where: { id } });
-  if (!target || target.role !== 'PEGAWAI' || target.cabangId !== saya.cabang.id) return { error: 'Supervisor hanya boleh mengubah pegawai di cabangnya sendiri.' };
+  if (!target || target.role !== 'PEGAWAI' || !(await cabangDalamCakupanSupervisor(saya, target.cabangId))) return { error: 'Supervisor hanya boleh mengubah pegawai di cabang dan KCP bawah cakupannya.' };
   const nama = String(formData.get('nama') ?? '').trim();
   const nip = String(formData.get('nip') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim() || null;

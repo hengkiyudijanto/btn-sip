@@ -237,6 +237,10 @@ export function PanelTambah({
           <label className="block text-xs font-medium text-abu-600 mb-1.5">Tinggi badan (cm) <span className="text-abu-400">(wajib Pegawai)</span></label>
           <input name="tinggiBadan" type="number" min="1" step="0.1" className={kelasInput} />
         </div>
+        <div>
+          <label className="block text-xs font-medium text-abu-600 mb-1.5">Berat badan awal (kg) <span className="text-abu-400">(wajib Pegawai)</span></label>
+          <input name="beratBadan" type="number" min="1" step="0.1" className={kelasInput} />
+        </div>
 
         <div className="sm:col-span-2 flex items-center gap-3">
           <Tombol>Simpan</Tombol>

@@ -5,6 +5,7 @@ import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { PanelImpor, PanelTambah, AksiBaris, AksiPerubahanDataFisik } from '@/components/kelola-pegawai';
 import { boleh } from '@/lib/sip/akses';
+import { kumpulkanTurunan } from '@/lib/sip/hierarki';
 
 export const metadata = { title: 'Pegawai' };
 
@@ -16,17 +17,21 @@ export default async function HalamanPegawai() {
 
   const admin = saya.role === 'ADMIN';
   const supervisor = saya.role === 'SUPERVISOR';
+  const semuaCabang = await prisma.cabang.findMany({ where: { aktif: true }, orderBy: { kode: 'asc' } });
+  const cabangSupervisor = supervisor
+    ? kumpulkanTurunan(saya.cabang.id, semuaCabang.map((c) => ({ id: c.id, indukId: c.indukId })))
+    : null;
 
   const [daftar, daftarCabang, daftarJabatan, perubahan] = await Promise.all([
     prisma.pegawai.findMany({
-      where: admin ? {} : supervisor ? { cabangId: saya.cabang.id, role: 'PEGAWAI' } : { cabangId: saya.cabang.id, role: 'PEGAWAI' },
+      where: admin ? {} : supervisor ? { cabangId: { in: cabangSupervisor! }, role: 'PEGAWAI' } : { cabangId: saya.cabang.id, role: 'PEGAWAI' },
       include: {
         jabatan: { select: { nama: true } },
         cabang: { select: { kode: true, nama: true } },
       },
       orderBy: [{ cabang: { kode: 'asc' } }, { nama: 'asc' }],
     }),
-    prisma.cabang.findMany({ where: { aktif: true }, orderBy: { kode: 'asc' } }),
+    Promise.resolve(semuaCabang),
     prisma.jabatan.findMany({ where: { aktif: true }, orderBy: { kode: 'asc' } }),
     prisma.perubahanDataPegawai.findMany({
       where: admin ? { status: 'MENUNGGU' } : { pengajuId: saya.id, status: 'MENUNGGU' },

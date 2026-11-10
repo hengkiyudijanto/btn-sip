@@ -88,13 +88,10 @@ describe('menu Parameter', () => {
     expect(label(menu)).not.toContain('Parameter');
   });
 
-  it('grup tanpa anak yang boleh diakses tidak ditampilkan', () => {
-    // Pegawai: supervisor hanya berhak "Usul Pegawai", dan grupnya tetap
-    // tampil karena masih ada anak yang boleh
+  it('grup Pegawai hanya berisi Data Pegawai', () => {
     const menu = saringMenu('SUPERVISOR');
     const pegawai = menu.find((m) => m.label === 'Pegawai');
-    expect(pegawai).toBeDefined();
-    expect(pegawai!.anak!.map((a) => a.label)).toEqual(['Data Pegawai', 'Usul Pegawai']);
+    expect(pegawai?.anak?.map((a) => a.label)).toEqual(['Data Pegawai']);
   });
 
   it('Pengukuran memiliki submenu SIP dan IMT', () => {
