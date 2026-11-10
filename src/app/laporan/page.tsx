@@ -70,7 +70,18 @@ export default async function HalamanLaporan({
     ? ringkasCabang.filter((c) => idCakupan!.includes(c.id) && c.id !== unitTerpilih.id)
     : [];
 
-  const penilaian = periodeTerpilih
+  type BarisDetail = {
+    id: string;
+    pegawai: { nama: string; nip: string; cabang: { id: string; kode: string; nama: string }; jabatan: { nama: string } | null };
+    nilaiPenampilan: number | null;
+    nilaiKemampuan: number | null;
+    nilaiSikap: number | null;
+    nilaiAkhir: number | null;
+    rating: string | null;
+    status: string;
+  };
+
+  const penilaianDb = periodeTerpilih
     ? await prisma.penilaian.findMany({
         where: {
           periodeId: periodeTerpilih.id,
@@ -80,19 +91,35 @@ export default async function HalamanLaporan({
         include: {
           pegawai: {
             select: {
-              nama: true,
-              nip: true,
+              nama: true, nip: true,
               cabang: { select: { id: true, kode: true, nama: true } },
               jabatan: { select: { nama: true } },
             },
           },
         },
-        // Sama seperti ekspor rekap: NULL (DRAFT kosong) harus di BELAKANG, bukan
-        // di depan. Tanpa `nulls: 'last'`, PostgreSQL menaruh baris belum bernilai
-        // di atas baris yang sudah dinilai, sehingga rekap peringkat menyesatkan.
         orderBy: [{ nilaiAkhir: { sort: 'desc', nulls: 'last' } }],
       })
     : [];
+
+  const penilaian: BarisDetail[] = semuaPegawai && periodeTerpilih
+    ? (await prisma.pegawai.findMany({
+        where: {
+          role: 'PEGAWAI', aktif: true,
+          ...(idCakupan ? { cabangId: { in: idCakupan } } : {}),
+        },
+        orderBy: { nama: 'asc' },
+        select: {
+          id: true, nama: true, nip: true,
+          cabang: { select: { id: true, kode: true, nama: true } },
+          jabatan: { select: { nama: true } },
+          penilaianku: { where: { periodeId: periodeTerpilih.id }, select: { id: true, nilaiPenampilan: true, nilaiKemampuan: true, nilaiSikap: true, nilaiAkhir: true, rating: true, status: true }, take: 1 },
+        },
+      })).map((p) => {
+        const n = p.penilaianku[0];
+        return { id: n?.id ?? `pegawai-${p.id}`, pegawai: { nama: p.nama, nip: p.nip, cabang: p.cabang, jabatan: p.jabatan }, nilaiPenampilan: n?.nilaiPenampilan ?? null, nilaiKemampuan: n?.nilaiKemampuan ?? null, nilaiSikap: n?.nilaiSikap ?? null, nilaiAkhir: n?.nilaiAkhir ?? null, rating: n?.rating ?? null, status: n?.status ?? 'BELUM DINILAI' };
+      }).sort((a, b) => (b.nilaiAkhir ?? -1) - (a.nilaiAkhir ?? -1) || a.pegawai.nama.localeCompare(b.pegawai.nama))
+    : penilaianDb;
+
 
   const rekap =
     penilaian.length > 0
@@ -397,20 +424,11 @@ export default async function HalamanLaporan({
                     <td className="text-right tabular-nums text-sm">{angkaID(p.nilaiKemampuan)}</td>
                     <td className="text-right tabular-nums text-sm">{angkaID(p.nilaiSikap)}</td>
                     <td className="text-right">
-                      <BadgeRating
-                        rating={p.rating ?? 'Baik'}
-                        nilai={p.nilaiAkhir ?? 0}
-                        ukuran="kecil"
-                      />
+                      {p.nilaiAkhir == null ? <span className="text-xs text-abu-400">Belum dinilai</span> : <BadgeRating rating={p.rating ?? 'Baik'} nilai={p.nilaiAkhir} ukuran="kecil" />}
                     </td>
                     <td className="text-center text-[11px] text-abu-500">{p.status}</td>
                     <td className="text-right">
-                      <Link
-                        href={`/laporan/${p.id}`}
-                        className="inline-flex items-center gap-1 rounded-md border border-btn-biru-200 bg-btn-biru-50 px-3 py-1.5 text-xs font-medium text-btn-biru-700 hover:bg-btn-biru-100 transition-colors"
-                      >
-                        Lihat
-                      </Link>
+                      {p.nilaiAkhir == null ? <span className="text-xs text-abu-400">—</span> : <Link href={`/laporan/${p.id}`} className="inline-flex items-center gap-1 rounded-md border border-btn-biru-200 bg-btn-biru-50 px-3 py-1.5 text-xs font-medium text-btn-biru-700 hover:bg-btn-biru-100 transition-colors">Lihat</Link>}
                     </td>
                   </tr>
                 ))}
