@@ -412,6 +412,16 @@ model PerubahanDataPegawai {
   tanggalLahirBaru DateTime?
   tinggiBadanLama  Float?
   tinggiBadanBaru  Float?
+  namaLama         String?
+  namaBaru         String?
+  nipLama          String?
+  nipBaru          String?
+  emailLama        String?
+  emailBaru        String?
+  jabatanIdLama    String?
+  jabatanIdBaru    String?
+  cabangIdLama     String?
+  cabangIdBaru     String?
   catatanPengaju   String?
   catatanAdmin     String?
   diputuskanAt     DateTime?

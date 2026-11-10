@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
-import { PanelImpor, PanelTambah, AksiBaris, FormPerubahanDataFisik, AksiPerubahanDataFisik } from '@/components/kelola-pegawai';
+import { PanelImpor, PanelTambah, AksiBaris, AksiPerubahanDataFisik } from '@/components/kelola-pegawai';
 import { boleh } from '@/lib/sip/akses';
 
 export const metadata = { title: 'Pegawai' };
@@ -68,7 +68,7 @@ export default async function HalamanPegawai() {
           <div className="mt-6 kartu overflow-hidden">
             <div className="border-b border-abu-200 px-4 py-3"><h2 className="text-sm font-semibold text-abu-800">{admin ? 'Menunggu persetujuan perubahan data fisik' : 'Pengajuan perubahan data fisik'}</h2></div>
             <div className="divide-y divide-abu-100">
-              {perubahan.map((p) => <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs"><div><strong>{p.pegawai.nama}</strong> <span className="text-abu-400">({p.pegawai.nip})</span><div className="mt-1 text-abu-500">Tanggal lahir: {p.pegawai.tanggalLahir?.toLocaleDateString('id-ID') ?? '—'} → {p.tanggalLahirBaru?.toLocaleDateString('id-ID') ?? '—'} · Tinggi: {p.pegawai.tinggiBadan ?? '—'} → {p.tinggiBadanBaru ?? '—'} cm</div>{admin && <div className="text-abu-400">Diajukan oleh {p.pengaju.nama}</div>}</div>{admin ? <AksiPerubahanDataFisik perubahanId={p.id} /> : <span className="rounded bg-peringatan-bg px-2 py-1 text-peringatan">Menunggu admin</span>}</div>)}
+              {perubahan.map((p) => <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs"><div><strong>{p.pegawai.nama}</strong> <span className="text-abu-400">({p.pegawai.nip})</span><div className="mt-1 text-abu-500">{p.namaBaru ? `Nama: ${p.pegawai.nama} → ${p.namaBaru} · NIP: ${p.pegawai.nip} → ${p.nipBaru}` : `Tanggal lahir: ${p.pegawai.tanggalLahir?.toLocaleDateString('id-ID') ?? '—'} → ${p.tanggalLahirBaru?.toLocaleDateString('id-ID') ?? '—'} · Tinggi: ${p.pegawai.tinggiBadan ?? '—'} → ${p.tinggiBadanBaru ?? '—'} cm`}</div>{admin && <div className="text-abu-400">Diajukan oleh {p.pengaju.nama}</div>}</div>{admin ? <AksiPerubahanDataFisik perubahanId={p.id} /> : <span className="rounded bg-peringatan-bg px-2 py-1 text-peringatan">Menunggu admin</span>}</div>)}
             </div>
           </div>
         )}
