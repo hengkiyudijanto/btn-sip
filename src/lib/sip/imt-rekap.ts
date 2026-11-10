@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { kumpulkanTurunan, type CabangRingkas } from './hierarki';
 
-export type FilterRekapIMT = { periodeId: string; cabangIds?: string[] | null };
+export type FilterRekapIMT = { periodeId: string; cabangIds?: string[] | null; semuaPegawai?: boolean };
 export type BarisRekapIMT = { nip: string; nama: string; jabatan: string; berat: number | null; imt: number | null; kategori: string | null };
 export type SlideRekapIMT = { periode: string; mulai: Date; selesai: Date; unit: string; baris: BarisRekapIMT[] };
 
@@ -22,6 +22,14 @@ export async function susunRekapIMT(filter: FilterRekapIMT): Promise<SlideRekapI
     },
   });
   if (!periode) return [];
+  if (filter.semuaPegawai) {
+    const pegawai = await prisma.pegawai.findMany({
+      where: { role: 'PEGAWAI', ...(filter.cabangIds ? { cabangId: { in: filter.cabangIds } } : {}) },
+      orderBy: { nama: 'asc' },
+      include: { jabatan: { select: { nama: true } }, cabang: { select: { nama: true } }, pengukuranIMT: { where: { periodeId: filter.periodeId }, orderBy: { tanggal: 'desc' }, take: 1 } },
+    });
+    return [{ periode: periode.nama, mulai: periode.tanggalMulai, selesai: periode.tanggalSelesai, unit: filter.cabangIds ? (pegawai[0]?.cabang.nama ?? 'Unit terpilih') : 'Semua unit', baris: pegawai.map((p) => ({ nip: p.nip, nama: p.nama, jabatan: p.jabatan?.nama ?? '—', berat: p.pengukuranIMT[0]?.beratBadan ?? null, imt: p.pengukuranIMT[0]?.nilaiIMT ?? null, kategori: p.pengukuranIMT[0]?.kategori ?? null })) }];
+  }
   const terakhir = new Map<string, (typeof periode.pengukuranIMT)[number]>();
   for (const x of periode.pengukuranIMT) if (!terakhir.has(x.pegawaiId)) terakhir.set(x.pegawaiId, x);
   const baris = [...terakhir.values()].sort((a, b) => a.pegawai.nama.localeCompare(b.pegawai.nama)).map((x) => ({
