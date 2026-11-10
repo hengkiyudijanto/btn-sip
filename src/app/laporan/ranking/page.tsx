@@ -23,7 +23,7 @@ const JENIS = [
 export default async function HalamanRanking({
   searchParams,
 }: {
-  searchParams: Promise<{ periode?: string; jenis?: string; cabang?: string; posisi?: string }>;
+  searchParams: Promise<{ periode?: string; jenis?: string; cabang?: string; posisi?: string; semua?: string }>;
 }) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
@@ -32,6 +32,7 @@ export default async function HalamanRanking({
   if (!bolehBukaHalaman(saya.role, '/laporan/ranking')) redirect('/dasbor');
 
   const sp = await searchParams;
+  const semuaPegawai = sp.semua === '1';
 
   const [daftarPeriode, daftarJabatan, daftarCabang] = await Promise.all([
     periodeUntukRanking(),
@@ -56,6 +57,7 @@ export default async function HalamanRanking({
         jenis: (sp.jenis as 'KANWIL' | 'KC' | 'KCP' | undefined) || null,
         kodeCabang: sp.cabang || null,
         kodeJabatan: sp.posisi || null,
+        semuaPegawai,
       })
     : null;
 
@@ -65,6 +67,7 @@ export default async function HalamanRanking({
   if (sp.jenis) kueri.set('jenis', sp.jenis);
   if (sp.cabang) kueri.set('cabang', sp.cabang);
   if (sp.posisi) kueri.set('posisi', sp.posisi);
+  if (semuaPegawai) kueri.set('semua', '1');
 
   return (
     <Kerangka pegawai={saya}>
@@ -157,6 +160,7 @@ export default async function HalamanRanking({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm text-abu-700"><input type="checkbox" name="semua" value="1" defaultChecked={semuaPegawai} /> Termasuk semua pegawai (termasuk yang belum dinilai)</label>
             <button
               type="submit"
               className="rounded-lg bg-btn-biru-600 px-4 py-2 text-xs font-semibold text-white hover:bg-btn-biru-700 transition-colors"
@@ -259,7 +263,7 @@ export default async function HalamanRanking({
                             <td className="text-sm font-medium text-abu-900">{b.nama}</td>
                             <td className="text-xs text-abu-600 tabular-nums">{b.nip}</td>
                             <td className="text-right tabular-nums text-sm font-semibold text-abu-900">
-                              {b.nilai.toFixed(2).replace('.', ',')}
+                              {b.nilai == null ? '—' : b.nilai.toFixed(2).replace('.', ',')}
                             </td>
                             <td>
                               <span

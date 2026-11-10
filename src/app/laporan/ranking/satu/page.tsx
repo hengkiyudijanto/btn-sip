@@ -117,6 +117,7 @@ export default async function HalamanRankingSatu({
     jenis?: string;
     cabang?: string;
     posisi?: string;
+    semua?: string;
     cetak?: string;
   }>;
 }) {
@@ -127,6 +128,7 @@ export default async function HalamanRankingSatu({
 
   const sp = await searchParams;
   const modeCetak = sp.cetak === '1';
+  const semuaPegawai = sp.semua === '1';
 
   if (!sp.periode) {
     const relevan = await pilihPeriodeRelevan();
@@ -136,6 +138,7 @@ export default async function HalamanRankingSatu({
       if (sp.jenis) q.set('jenis', sp.jenis);
       if (sp.cabang) q.set('cabang', sp.cabang);
       if (sp.posisi) q.set('posisi', sp.posisi);
+      if (semuaPegawai) q.set('semua', '1');
       if (modeCetak) q.set('cetak', '1');
       redirect(`/laporan/ranking/satu?${q.toString()}`);
     }
@@ -147,6 +150,7 @@ export default async function HalamanRankingSatu({
         jenis: (sp.jenis as JenisCabang | undefined) || null,
         kodeCabang: sp.cabang || null,
         kodeJabatan: sp.posisi || null,
+        semuaPegawai,
       })
     : null;
 
@@ -156,6 +160,7 @@ export default async function HalamanRankingSatu({
   if (sp.jenis) kueri.set('jenis', sp.jenis);
   if (sp.cabang) kueri.set('cabang', sp.cabang);
   if (sp.posisi) kueri.set('posisi', sp.posisi);
+  if (semuaPegawai) kueri.set('semua', '1');
 
   const kueriCetak = new URLSearchParams(kueri);
   kueriCetak.set('cetak', '1');
@@ -285,7 +290,7 @@ export default async function HalamanRankingSatu({
                     <td className="lembar-nama">{kapitalkan(b.nama)}</td>
                     <td className="lembar-kecil">{b.jabatan}</td>
                     <td className="lembar-kecil">{b.unit}</td>
-                    <td className="ta-c lembar-nilai">{b.nilai.toFixed(2).replace('.', ',')}</td>
+                    <td className="ta-c lembar-nilai">{b.nilai == null ? '—' : b.nilai.toFixed(2).replace('.', ',')}</td>
                     <td className="ta-c">
                       <span className={`lembar-pil pil-${b.kategori.toLowerCase().replace(/\s+/g, '-')}`}>
                         {b.kategori}

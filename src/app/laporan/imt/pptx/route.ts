@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
   const periodeId = sp.get('periode');
   if (!periodeId) return new NextResponse('Periode wajib dipilih', { status: 400 });
   const cabangId = sp.get('cabang');
+  const semuaPegawai = sp.get('semua') === '1';
   const semuaCabang = await prisma.cabang.findMany({ select: { id: true, indukId: true } });
   const cabangIds = cabangId ? kumpulkanTurunan(cabangId, semuaCabang) : bolehBukaHalaman(saya.role, '/laporan/ranking') ? null : [saya.cabang.id];
-  const data = await susunRekapIMT({ periodeId, cabangIds });
+  const data = await susunRekapIMT({ periodeId, cabangIds, semuaPegawai });
   if (!data.some((x) => x.baris.length)) return new NextResponse('Belum ada data IMT pada tahun tersebut.', { status: 404 });
   const buffer = await bangunPptxRekapIMT(data);
   await catatAudit({ pegawaiId: saya.id, aksi: 'UNDUH_REKAP_IMT_PPTX', entitas: 'PengukuranIMT', dataBaru: { periodeId, cabangId, slide: data.length } });

@@ -20,12 +20,13 @@ export type FilterRanking = {
   jenis?: JenisCabang | null;
   kodeCabang?: string | null;
   kodeJabatan?: string | null;
+  semuaPegawai?: boolean;
 };
 
 export type BarisRanking = {
   nama: string;
   nip: string;
-  nilai: number;
+  nilai: number | null;
   kategori: string;
 };
 
@@ -51,6 +52,10 @@ export function kategoriDariNilai(nilai: number): string {
   if (nilai >= 4.0) return 'Baik';
   if (nilai >= 3.6) return 'Cukup';
   return 'Kurang';
+}
+
+export function kategoriRanking(nilai: number | null): string {
+  return nilai == null ? 'Belum dinilai' : kategoriDariNilai(nilai);
 }
 
 /** Daftar periode yang punya penilaian — untuk pemilih di halaman. */
@@ -120,7 +125,7 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
   const penilaian = await prisma.penilaian.findMany({
     where: {
       periodeId: filter.periodeId,
-      nilaiAkhir: { not: null },
+      ...(filter.semuaPegawai ? {} : { nilaiAkhir: { not: null } }),
       pegawai: {
         ...(cabangIds ? { cabangId: { in: cabangIds } } : {}),
         ...(filter.kodeJabatan ? { jabatan: { kode: filter.kodeJabatan } } : {}),
@@ -158,17 +163,17 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
         baris: [],
       });
     }
-    const nilai = Number(p.nilaiAkhir);
+    const nilai = p.nilaiAkhir == null ? null : Number(p.nilaiAkhir);
     peta.get(kunci)!.baris.push({
       nama: p.pegawai.nama,
       nip: p.pegawai.nip,
       nilai,
-      kategori: kategoriDariNilai(nilai),
+      kategori: kategoriRanking(nilai),
     });
   }
 
   const kelompok = [...peta.values()]
-    .map((k) => ({ ...k, baris: k.baris.sort((a, b) => b.nilai - a.nilai) }))
+    .map((k) => ({ ...k, baris: k.baris.sort((a, b) => (b.nilai ?? -1) - (a.nilai ?? -1)) }))
     .sort((a, b) =>
       a.unit === b.unit ? a.posisi.localeCompare(b.posisi) : a.unit.localeCompare(b.unit)
     );
@@ -180,7 +185,7 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
       : 'Semua posisi',
     periode: periode.nama,
     jenisKantor: filter.jenis ? `Jenis ${filter.jenis}` : 'Semua jenis',
-    jumlahPeserta: penilaian.filter((p) => p.nilaiAkhir !== null).length,
+    jumlahPeserta: penilaian.length,
     kelompok,
   };
 }

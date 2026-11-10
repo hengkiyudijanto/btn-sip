@@ -33,6 +33,7 @@ export async function GET(req: Request) {
     jenis: (u.searchParams.get('jenis') as JenisCabang | null) || null,
     kodeCabang: u.searchParams.get('cabang'),
     kodeJabatan: u.searchParams.get('posisi'),
+    semuaPegawai: u.searchParams.get('semua') === '1',
   });
 
   if (data.jumlahPeserta === 0) {

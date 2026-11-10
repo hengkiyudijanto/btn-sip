@@ -28,10 +28,11 @@ export async function GET(req: NextRequest) {
   const jenis = (sp.get('jenis') as JenisCabang | null) || null;
   const kodeCabang = sp.get('cabang');
   const kodeJabatan = sp.get('posisi');
+  const semuaPegawai = sp.get('semua') === '1';
 
   let hasil;
   try {
-    hasil = await susunRanking({ periodeId, jenis, kodeCabang, kodeJabatan });
+    hasil = await susunRanking({ periodeId, jenis, kodeCabang, kodeJabatan, semuaPegawai });
   } catch (e) {
     return new NextResponse((e as Error).message, { status: 404 });
   }
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
   const penilaian = await prisma.penilaian.findMany({
     where: {
       periodeId,
-      nilaiAkhir: { not: null },
+      ...(semuaPegawai ? {} : { nilaiAkhir: { not: null } }),
       pegawai: {
         ...(kodeCabang || jenis
           ? {

@@ -623,7 +623,7 @@ function slideRanking(
     const kotakTinggi = KOTAK_NILAI_TINGGI;
     // Panjang kotak nilai MENGIKUTI NILAINYA (skala 0..5 -> 0..lebar penuh).
     // Nilai 5,00 akan penuh; 3,51 jadi sekitar 70% lebar kolom.
-    const porsiNilai = Math.max(0, Math.min(1, b.nilai / NILAI_MAKSIMUM));
+    const porsiNilai = b.nilai == null ? 0 : Math.max(0, Math.min(1, b.nilai / NILAI_MAKSIMUM));
     const wKotakIsi = wKotak * porsiNilai;
 
     // Tiap lapis digambar sesuai porsinya. TIDAK ada tambahan tinggi di sini:
@@ -651,7 +651,7 @@ function slideRanking(
       line: { color: WARNA_BATAS_NILAI, width: 0.5 },
     });
     // Angka nilai ditulis di UJUNG kotak, menempel pada batangnya.
-    slide.addText(angkaID(b.nilai), {
+    slide.addText(b.nilai == null ? '—' : angkaID(b.nilai), {
       x: xKotak, y: kotakAtas, w: Math.max(wKotakIsi - 0.08, 0.60),
       h: KOTAK_NILAI_TINGGI,
       fontSize: F_NILAI, bold: true, color: PUTIH, align: 'right',

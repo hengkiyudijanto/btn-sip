@@ -39,6 +39,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const periodeId = url.searchParams.get('periode');
   const cabangId = url.searchParams.get('cabang');
+  const semuaPegawai = url.searchParams.get('semua') === '1';
 
   const periode = periodeId
     ? await prisma.periode.findUnique({ where: { id: periodeId } })
@@ -85,6 +86,7 @@ export async function GET(request: Request) {
     where: {
       periodeId: periode.id,
       pegawai: { cabangId: { in: cakupanId } },
+      ...(semuaPegawai ? {} : { nilaiAkhir: { not: null } }),
     },
     include: {
       pegawai: {

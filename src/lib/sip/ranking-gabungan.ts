@@ -26,6 +26,7 @@ export type FilterRankingGabungan = {
   jenis?: JenisCabang | null;
   kodeCabang?: string | null;
   kodeJabatan?: string | null;
+  semuaPegawai?: boolean;
 };
 
 export type BarisRankingGabungan = {
@@ -34,7 +35,7 @@ export type BarisRankingGabungan = {
   nip: string;
   jabatan: string;
   unit: string;
-  nilai: number;
+  nilai: number | null;
   kategori: string;
   /** Data URL JPEG foto petugas (foto penilaian, cadangan foto pegawai). */
   foto: string | null;
@@ -85,7 +86,7 @@ export async function susunRankingGabungan(
   const penilaian = await prisma.penilaian.findMany({
     where: {
       periodeId: filter.periodeId,
-      nilaiAkhir: { not: null },
+      ...(filter.semuaPegawai ? {} : { nilaiAkhir: { not: null } }),
       pegawai: {
         ...(cabangIds ? { cabangId: { in: cabangIds } } : {}),
         ...(filter.kodeJabatan ? { jabatan: { kode: filter.kodeJabatan } } : {}),
@@ -109,9 +110,8 @@ export async function susunRankingGabungan(
   });
 
   const baris: BarisRankingGabungan[] = penilaian
-    .filter((p) => p.nilaiAkhir !== null)
     .map((p) => {
-      const nilai = Number(p.nilaiAkhir);
+      const nilai = p.nilaiAkhir == null ? null : Number(p.nilaiAkhir);
       // foto penilaian lebih relevan (kondisi petugas periode itu);
       // foto pegawai jadi cadangan
       //
@@ -130,12 +130,12 @@ export async function susunRankingGabungan(
         ),
         unit: p.pegawai.cabang.nama,
         nilai,
-        kategori: kategoriDariNilai(nilai),
+        kategori: nilai == null ? 'Belum dinilai' : kategoriDariNilai(nilai),
         foto,
       };
     })
     // nilai tertinggi di atas; NIP sebagai pemutus supaya urutannya stabil
-    .sort((a, b) => (b.nilai - a.nilai) || a.nip.localeCompare(b.nip))
+    .sort((a, b) => ((b.nilai ?? -1) - (a.nilai ?? -1)) || a.nip.localeCompare(b.nip))
     .map((b, i) => ({ ...b, peringkat: i + 1 }));
 
   return {

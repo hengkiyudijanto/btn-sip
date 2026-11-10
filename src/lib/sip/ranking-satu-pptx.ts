@@ -213,7 +213,7 @@ export async function bangunPptxRankingSatu(
       valign: 'middle', fontFace: FONT, wrap: false, margin: 0.02,
     });
 
-    slide.addText(b.nilai.toFixed(2).replace('.', ','), {
+    slide.addText(b.nilai == null ? '—' : b.nilai.toFixed(2).replace('.', ','), {
       x: x(5), y, w: kolom[5], h: tinggiBaris,
       fontSize: ukuranHuruf + 1, bold: true, color: TEKS_UTAMA,
       align: 'center', valign: 'middle', fontFace: FONT, margin: 0.02,

@@ -14,7 +14,7 @@ export const metadata = { title: 'Laporan Detail SIP' };
 export default async function HalamanLaporan({
   searchParams,
 }: {
-  searchParams: Promise<{ periode?: string; cabang?: string }>;
+  searchParams: Promise<{ periode?: string; cabang?: string; semua?: string }>;
 }) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
@@ -22,7 +22,8 @@ export default async function HalamanLaporan({
   // Laporan memuat nilai SEMUA petugas dalam cakupan — bukan halaman pegawai.
   if (!bolehBukaHalaman(saya.role, '/laporan')) redirect('/dasbor');
 
-  const { periode: periodeId, cabang: cabangId } = await searchParams;
+  const { periode: periodeId, cabang: cabangId, semua } = await searchParams;
+  const semuaPegawai = semua === '1';
 
   // Periode di sekitar hari ini (3 bulan ke belakang sampai 6 bulan ke
   // depan). Sebelumnya memakai orderBy desc + take 20, yang mengambil
@@ -74,6 +75,7 @@ export default async function HalamanLaporan({
         where: {
           periodeId: periodeTerpilih.id,
           ...(idCakupan ? { pegawai: { cabangId: { in: idCakupan } } } : {}),
+          ...(semuaPegawai ? {} : { nilaiAkhir: { not: null } }),
         },
         include: {
           pegawai: {
@@ -269,6 +271,7 @@ export default async function HalamanLaporan({
                 href={`/laporan/ekspor?${new URLSearchParams({
                   ...(periodeTerpilih ? { periode: periodeTerpilih.id } : {}),
                   ...(unitTerpilih ? { cabang: unitTerpilih.id } : {}),
+                  ...(semuaPegawai ? { semua: '1' } : {}),
                 }).toString()}`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-abu-300 bg-white px-4 py-2 text-sm font-medium text-abu-700 hover:bg-abu-50 transition-colors"
                 title="Unduh rekap periode dan cakupan ini sebagai berkas Excel/CSV"
@@ -279,6 +282,7 @@ export default async function HalamanLaporan({
                 </svg>
                 Unduh Excel
               </a>
+              <label className="inline-flex items-center gap-2 text-sm text-abu-700"><input type="checkbox" name="semua" value="1" defaultChecked={semuaPegawai} /> Termasuk semua pegawai (termasuk yang belum dinilai)</label>
             </div>
           </div>
         </form>
