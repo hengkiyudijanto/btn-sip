@@ -83,6 +83,7 @@ export default async function HalamanPegawai() {
                   <th>Nama</th>
                   <th>Tanggal lahir</th>
                   <th>Tinggi badan</th>
+                  <th>Berat badan awal</th>
                   <th>Jabatan</th>
                   <th>Cabang</th>
                   <th>Peran</th>
@@ -128,6 +129,7 @@ export default async function HalamanPegawai() {
                       {p.tanggalLahir?.toLocaleDateString('id-ID') ?? '—'}
                     </td>
                     <td className="text-xs text-abu-600 whitespace-nowrap">{p.tinggiBadan ? `${p.tinggiBadan} cm` : '—'}</td>
+                    <td className="text-xs text-abu-600 whitespace-nowrap">{p.beratBadan ? `${p.beratBadan} kg` : '—'}</td>
                     <td className="text-xs text-abu-600">{p.jabatan?.nama ?? '—'}</td>
                     <td className="text-xs text-abu-600">
                       {p.cabang.kode} — {p.cabang.nama}
@@ -166,6 +168,7 @@ export default async function HalamanPegawai() {
                             role: p.role,
                             tanggalLahir: p.tanggalLahir,
                             tinggiBadan: p.tinggiBadan,
+                            beratBadan: p.beratBadan,
                           }}
                           daftarCabang={daftarCabang}
                           daftarJabatan={daftarJabatan}

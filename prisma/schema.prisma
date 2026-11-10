@@ -412,6 +412,8 @@ model PerubahanDataPegawai {
   tanggalLahirBaru DateTime?
   tinggiBadanLama  Float?
   tinggiBadanBaru  Float?
+  beratBadanLama   Float?
+  beratBadanBaru   Float?
   namaLama         String?
   namaBaru         String?
   nipLama          String?

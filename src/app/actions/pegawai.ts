@@ -434,6 +434,7 @@ export async function ajukanPerubahanDataUmum(
   const jabatanId = String(formData.get('jabatanId') ?? '').trim() || null;
   const tanggalRaw = String(formData.get('tanggalLahir') ?? '').trim();
   const tinggiRaw = String(formData.get('tinggiBadan') ?? '').trim();
+  const beratRaw = String(formData.get('beratBadan') ?? '').trim();
   if (!nama || !nip || !cabangId) return { error: 'Nama, NIP, dan cabang wajib diisi.' };
   if (!/^[A-Za-z0-9._-]+$/.test(nip) || nip.length > 30) return { error: 'NIP tidak valid.' };
   const errorFisik = validasiDataFisikPegawai(target.role, tanggalRaw, tinggiRaw);
@@ -442,12 +443,14 @@ export async function ajukanPerubahanDataUmum(
   if (email && await prisma.pegawai.findFirst({ where: { email, id: { not: id } } })) return { error: `Email ${email} sudah dipakai.` };
   if (!await prisma.cabang.findUnique({ where: { id: cabangId } })) return { error: 'Cabang tidak ditemukan.' };
   if (jabatanId && !await prisma.jabatan.findUnique({ where: { id: jabatanId } })) return { error: 'Jabatan tidak ditemukan.' };
+  const berat = Number(beratRaw);
+  if (!Number.isFinite(berat) || berat <= 0) return { error: 'Berat badan awal harus lebih besar dari 0.' };
   if (await prisma.perubahanDataPegawai.findFirst({ where: { pegawaiId: id, status: 'MENUNGGU' } })) return { error: 'Masih ada perubahan yang menunggu persetujuan admin.' };
   await prisma.perubahanDataPegawai.create({ data: {
     pegawaiId: id, pengajuId: saya.id, namaLama: target.nama, namaBaru: nama, nipLama: target.nip, nipBaru: nip,
     emailLama: target.email, emailBaru: email, jabatanIdLama: target.jabatanId, jabatanIdBaru: jabatanId,
     cabangIdLama: target.cabangId, cabangIdBaru: cabangId, tanggalLahirLama: target.tanggalLahir,
-    tanggalLahirBaru: new Date(`${tanggalRaw}T00:00:00.000Z`), tinggiBadanLama: target.tinggiBadan, tinggiBadanBaru: Number(tinggiRaw),
+    tanggalLahirBaru: new Date(`${tanggalRaw}T00:00:00.000Z`), tinggiBadanLama: target.tinggiBadan, tinggiBadanBaru: Number(tinggiRaw), beratBadanLama: target.beratBadan, beratBadanBaru: berat,
     catatanPengaju: String(formData.get('catatan') ?? '').trim() || null,
   }});
   await catatAudit({ pegawaiId: saya.id, aksi: 'AJUKAN_PERUBAHAN_DATA_PEGAWAI', entitas: 'Pegawai', entitasId: id, dataBaru: { nip, nama } });
@@ -478,7 +481,7 @@ export async function setujuiPerubahanDataFisik(
       const bentrok = await tx.pegawai.findFirst({ where: { nip: p.nipBaru, id: { not: p.pegawaiId } }, select: { id: true } });
       if (bentrok) return false;
     }
-    await tx.pegawai.update({ where: { id: p.pegawaiId }, data: p.namaBaru ? { nama: p.namaBaru, nip: p.nipBaru ?? undefined, email: p.emailBaru, jabatanId: p.jabatanIdBaru, cabangId: p.cabangIdBaru ?? undefined, tanggalLahir: p.tanggalLahirBaru, tinggiBadan: p.tinggiBadanBaru } : { tanggalLahir: p.tanggalLahirBaru, tinggiBadan: p.tinggiBadanBaru } });
+    await tx.pegawai.update({ where: { id: p.pegawaiId }, data: p.namaBaru ? { nama: p.namaBaru, nip: p.nipBaru ?? undefined, email: p.emailBaru, jabatanId: p.jabatanIdBaru, cabangId: p.cabangIdBaru ?? undefined, tanggalLahir: p.tanggalLahirBaru, tinggiBadan: p.tinggiBadanBaru, beratBadan: p.beratBadanBaru } : { tanggalLahir: p.tanggalLahirBaru, tinggiBadan: p.tinggiBadanBaru, beratBadan: p.beratBadanBaru } });
     return true;
   });
   if (!hasil) return { error: 'Pengajuan perubahan sudah diputuskan oleh admin lain.' };
