@@ -8,8 +8,9 @@
 
 import { NextResponse } from 'next/server';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
-import { bolehBukaHalaman } from '@/lib/sip/akses';
+import { bolehUnduhLaporan } from '@/lib/sip/akses';
 import { susunRankingGabungan } from '@/lib/sip/ranking-gabungan';
+import { cabangDiizinkanUntukRanking } from '@/lib/sip/ranking';
 import { bangunPptxRankingSatu } from '@/lib/sip/ranking-satu-pptx';
 import type { JenisCabang } from '@prisma/client';
 
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   if (!saya) {
     return NextResponse.json({ error: 'Belum masuk.' }, { status: 401 });
   }
-  if (!bolehBukaHalaman(saya.role, '/laporan/ranking')) {
+  if (!bolehUnduhLaporan(saya, '/laporan/ranking')) {
     return NextResponse.json({ error: 'Tidak punya akses.' }, { status: 403 });
   }
 
@@ -28,12 +29,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Periode wajib diisi.' }, { status: 400 });
   }
 
+  const cabangDiizinkanIds = await cabangDiizinkanUntukRanking(saya.role, saya.cabang.id);
   const data = await susunRankingGabungan({
     periodeId,
     jenis: (u.searchParams.get('jenis') as JenisCabang | null) || null,
     kodeCabang: u.searchParams.get('cabang'),
     kodeJabatan: u.searchParams.get('posisi'),
     semuaPegawai: u.searchParams.get('semua') === '1',
+    cabangDiizinkanIds,
   });
 
   if (data.jumlahPeserta === 0) {

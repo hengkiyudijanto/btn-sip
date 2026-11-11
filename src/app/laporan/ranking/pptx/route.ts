@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
+import { bolehUnduhLaporan } from '@/lib/sip/akses';
 import { prisma } from '@/lib/db';
-import { susunRanking } from '@/lib/sip/ranking';
+import { cabangDiizinkanUntukRanking, susunRanking } from '@/lib/sip/ranking';
 import { bangunPptxRanking } from '@/lib/sip/ranking-pptx';
 import { siapkanFotoUntukKotak } from '@/lib/sip/foto-bulat';
+import { fotoUntukRankingPptx, nipDalamRanking } from '@/lib/sip/ranking-foto-pptx';
 import type { JenisCabang } from '@prisma/client';
 
 /**
@@ -17,9 +19,7 @@ import type { JenisCabang } from '@prisma/client';
 export async function GET(req: NextRequest) {
   const saya = await pegawaiDariSesi();
   if (!saya) return new NextResponse('Belum masuk', { status: 401 });
-  if (saya.harusGantiPassword) {
-    return new NextResponse('Wajib ganti password dulu', { status: 403 });
-  }
+  if (!bolehUnduhLaporan(saya, '/laporan/ranking')) return new NextResponse('Tidak berwenang', { status: 403 });
 
   const sp = req.nextUrl.searchParams;
   const periodeId = sp.get('periode');
@@ -32,7 +32,8 @@ export async function GET(req: NextRequest) {
 
   let hasil;
   try {
-    hasil = await susunRanking({ periodeId, jenis, kodeCabang, kodeJabatan, semuaPegawai });
+    const cabangDiizinkanIds = await cabangDiizinkanUntukRanking(saya.role, saya.cabang.id);
+    hasil = await susunRanking({ periodeId, jenis, kodeCabang, kodeJabatan, semuaPegawai, cabangDiizinkanIds });
   } catch (e) {
     return new NextResponse((e as Error).message, { status: 404 });
   }
@@ -45,27 +46,16 @@ export async function GET(req: NextRequest) {
   }
 
   // Foto diambil terpisah supaya hanya query ini yang membawa data besar.
-  const penilaian = await prisma.penilaian.findMany({
+  const nipsRanking = new Set(hasil.kelompok.flatMap((g) => g.baris.map((b) => b.nip)));
+  const pegawaiRanking = await prisma.pegawai.findMany({
     where: {
-      periodeId,
-      ...(semuaPegawai ? {} : { nilaiAkhir: { not: null } }),
-      pegawai: {
-        ...(kodeCabang || jenis
-          ? {
-              cabang: kodeCabang
-                ? { kode: kodeCabang }
-                : { jenis: jenis ?? undefined },
-            }
-          : {}),
-        ...(kodeJabatan ? { jabatan: { kode: kodeJabatan } } : {}),
-      },
+      nip: { in: [...nipsRanking] },
     },
     select: {
+      nip: true,
       fotoData: true,
-      pegawai: {
-        select: { nip: true, cabang: { select: { kode: true } }, jabatan: { select: { nama: true } } },
-      },
-      pegawaiId: true,
+      fotoUrl: true,
+      penilaianku: { where: { periodeId }, select: { fotoData: true }, take: 1 },
     },
   });
 
@@ -75,18 +65,15 @@ export async function GET(req: NextRequest) {
   // sudutnya dibuat membulat + tembus pandang (src/lib/sip/foto-bulat.ts).
   // Kalau penyiapan gagal, foto aslinya tetap dipakai — lebih baik tampil
   // apa adanya daripada tidak tampil sama sekali.
+  const fotoTerseleksi = fotoUntukRankingPptx(nipDalamRanking(hasil.kelompok.flatMap((g) => g.baris)), pegawaiRanking.map((p) => ({ nip: p.nip, fotoPenilaian: p.penilaianku[0]?.fotoData ?? null, fotoProfil: p.fotoData ?? p.fotoUrl ?? null })));
   const petaFoto = new Map<string, string>();
-  for (const p of penilaian) {
-    if (!p.fotoData) continue;
-    const koma = p.fotoData.indexOf(',');
+  for (const [nip, foto] of fotoTerseleksi) {
+    const koma = foto.indexOf(',');
     if (koma <= 0) continue;
 
-    const base64Asli = p.fotoData.slice(koma + 1);
+    const base64Asli = foto.slice(koma + 1);
     const siap = await siapkanFotoUntukKotak(Buffer.from(base64Asli, 'base64'));
-    petaFoto.set(
-      p.pegawai.nip,
-      siap ? siap.toString('base64') : base64Asli
-    );
+    petaFoto.set(nip, siap ? siap.toString('base64') : base64Asli);
   }
 
   const buffer = await bangunPptxRanking(hasil, petaFoto);

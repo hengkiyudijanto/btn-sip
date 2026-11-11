@@ -13,7 +13,16 @@
 import { prisma } from '@/lib/db';
 import { kumpulkanTurunan } from './hierarki';
 import { labelPosisi } from './label-posisi';
+import { batasiCakupanCabangRanking } from './ranking-cakupan';
+import { boleh } from './akses';
 import type { JenisCabang } from '@prisma/client';
+
+/** Return branch IDs allowed for ranking data based only on the authenticated identity. */
+export async function cabangDiizinkanUntukRanking(role: string, cabangId: string): Promise<string[] | undefined> {
+  if (boleh(role, 'lihat_semua_cabang')) return undefined;
+  const cabang = await prisma.cabang.findMany({ select: { id: true, indukId: true } });
+  return kumpulkanTurunan(cabangId, cabang);
+}
 
 export type FilterRanking = {
   periodeId: string;
@@ -21,6 +30,8 @@ export type FilterRanking = {
   kodeCabang?: string | null;
   kodeJabatan?: string | null;
   semuaPegawai?: boolean;
+  /** Authorized branch scope derived server-side from the authenticated user. */
+  cabangDiizinkanIds?: string[];
 };
 
 export type BarisRanking = {
@@ -77,9 +88,12 @@ export async function jabatanUntukRanking() {
 }
 
 /** Daftar cabang yang punya penilaian — untuk pemilih unit. */
-export async function cabangUntukRanking() {
+export async function cabangUntukRanking(cabangDiizinkanIds?: string[]) {
   return prisma.cabang.findMany({
-    where: { pegawai: { some: { penilaianku: { some: { nilaiAkhir: { not: null } } } } } },
+    where: {
+      ...(cabangDiizinkanIds ? { id: { in: cabangDiizinkanIds } } : {}),
+      pegawai: { some: { penilaianku: { some: { nilaiAkhir: { not: null } } } } },
+    },
     orderBy: { kode: 'asc' },
     select: { kode: true, nama: true, jenis: true },
   });
@@ -109,7 +123,7 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
       cabangIds = [cabang.id, ...turunan];
       // Nama cabang saja, tanpa kode (permintaan user)
       unitLabel = cabang.nama;
-    }
+    } else cabangIds = [];
   } else if (filter.jenis) {
     const daftar = await prisma.cabang.findMany({
       where: { jenis: filter.jenis },
@@ -121,6 +135,8 @@ export async function susunRanking(filter: FilterRanking): Promise<DataRanking> 
     };
     unitLabel = label[filter.jenis] ?? `Jenis ${filter.jenis}`;
   }
+
+  cabangIds = batasiCakupanCabangRanking(cabangIds, filter.cabangDiizinkanIds);
 
   // Mode "semua pegawai" harus mengambil sumber dari Pegawai, bukan Penilaian.
   // Pegawai yang belum pernah dibuatkan baris Penilaian tidak akan ada di query

@@ -14,6 +14,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { pegawaiDariSesi } from '@/lib/auth';
 import { susunRankingGabungan } from '@/lib/sip/ranking-gabungan';
+import { cabangDiizinkanUntukRanking } from '@/lib/sip/ranking';
 import { bolehBukaHalaman } from '@/lib/sip/akses';
 import { kapitalkan } from '@/lib/sip/teks';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
@@ -129,6 +130,7 @@ export default async function HalamanRankingSatu({
   const sp = await searchParams;
   const modeCetak = sp.cetak === '1';
   const semuaPegawai = sp.semua === '1';
+  const cabangDiizinkanIds = await cabangDiizinkanUntukRanking(saya.role, saya.cabang.id);
 
   if (!sp.periode) {
     const relevan = await pilihPeriodeRelevan();
@@ -151,6 +153,7 @@ export default async function HalamanRankingSatu({
         kodeCabang: sp.cabang || null,
         kodeJabatan: sp.posisi || null,
         semuaPegawai,
+        cabangDiizinkanIds,
       })
     : null;
 

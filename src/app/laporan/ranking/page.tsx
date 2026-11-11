@@ -6,6 +6,7 @@ import {
   periodeUntukRanking,
   jabatanUntukRanking,
   cabangUntukRanking,
+  cabangDiizinkanUntukRanking,
   susunRanking,
 } from '@/lib/sip/ranking';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
@@ -33,11 +34,12 @@ export default async function HalamanRanking({
 
   const sp = await searchParams;
   const semuaPegawai = sp.semua === '1';
+  const cabangDiizinkanIds = await cabangDiizinkanUntukRanking(saya.role, saya.cabang.id);
 
   const [daftarPeriode, daftarJabatan, daftarCabang] = await Promise.all([
     periodeUntukRanking(),
     jabatanUntukRanking(),
-    cabangUntukRanking(),
+    cabangUntukRanking(cabangDiizinkanIds),
   ]);
 
   // periode default: yang relevan hari ini kalau ada penilaian, kalau tidak
@@ -58,6 +60,7 @@ export default async function HalamanRanking({
         kodeCabang: sp.cabang || null,
         kodeJabatan: sp.posisi || null,
         semuaPegawai,
+        cabangDiizinkanIds,
       })
     : null;
 

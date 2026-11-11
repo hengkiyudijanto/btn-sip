@@ -173,6 +173,11 @@ export function bolehBukaHalaman(role: string, jalur: string): boolean {
   return izin.includes(role as Peran);
 }
 
+/** Route export memakai hak akses laporan yang sama dengan halaman dan menahan akun yang wajib mengganti password. */
+export function bolehUnduhLaporan(pegawai: { role: string; harusGantiPassword: boolean }, jalur: string): boolean {
+  return !pegawai.harusGantiPassword && bolehBukaHalaman(pegawai.role, jalur);
+}
+
 /**
  * Penjaga untuk SERVER ACTION.
  *

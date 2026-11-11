@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation';
 import { pegawaiDariSesi } from '@/lib/auth';
-import { bolehBukaHalaman } from '@/lib/sip/akses';
+import { boleh, bolehBukaHalaman } from '@/lib/sip/akses';
 import { kelompokkanBarisRekapIMT, susunRekapIMT } from '@/lib/sip/imt-rekap';
+import { cakupanCabangRekapIMT } from '@/lib/sip/imt-rekap-cakupan';
 import { prisma } from '@/lib/db';
-import { kumpulkanTurunan, type CabangRingkas } from '@/lib/sip/hierarki';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { TombolCetak } from '@/components/tombol-cetak';
 
@@ -11,13 +11,13 @@ export const metadata = { title: 'Rekap IMT Satu Halaman' };
 export default async function HalamanSatu({ searchParams }: { searchParams: Promise<{ periode?: string; cabang?: string; semua?: string; tanggal?: string }> }) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
+  if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!bolehBukaHalaman(saya.role, '/laporan/ranking')) redirect('/dasbor');
   const sp = await searchParams;
   const periode = sp.periode ? await prisma.periode.findUnique({ where: { id: sp.periode } }) : await pilihPeriodeRelevan();
   if (!periode) redirect('/laporan/imt');
-  const cabang = await prisma.cabang.findMany();
-  const ringkas: CabangRingkas[] = cabang.map((c) => ({ id: c.id, kode: c.kode, nama: c.nama, jenis: c.jenis, indukId: c.indukId, aktif: c.aktif }));
-  const cabangIds = sp.cabang ? kumpulkanTurunan(sp.cabang, ringkas) : null;
+  const cabang = await prisma.cabang.findMany({ select: { id: true, indukId: true } });
+  const cabangIds = cakupanCabangRekapIMT({ bolehSemua: boleh(saya.role, 'lihat_semua_cabang'), cabangPenggunaId: saya.cabang.id, cabangDimintaId: sp.cabang ?? null, pohon: cabang });
   const tanggal = sp.tanggal && /^\d{4}-\d{2}-\d{2}$/.test(sp.tanggal) ? new Date(`${sp.tanggal}T00:00:00.000Z`) : undefined;
   const data = (await susunRekapIMT({ periodeId: periode.id, cabangIds, semuaPegawai: sp.semua === '1', tanggal }))[0];
   const warnaKategori = (kategori: string | null) => kategori === 'Normal' ? 'bg-[#d1fae5] text-[#047857]' : kategori === 'Berlebih' ? 'bg-[#fce7f3] text-[#be185d]' : kategori === 'Obesitas' ? 'bg-[#991b1b] text-white' : kategori === 'Kurus' ? 'bg-[#e0f2fe] text-[#0369a1]' : 'bg-abu-100 text-abu-500';

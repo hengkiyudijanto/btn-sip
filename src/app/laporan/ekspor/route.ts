@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db';
 import { kumpulkanTurunan, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { susunCsvRekap, namaBerkasRekap, type BarisRekap } from '@/lib/sip/ekspor';
-import { bolehBukaHalaman } from '@/lib/sip/akses';
+import { gabungkanPegawaiBelumDinilai, hitungRingkasanPenilaian } from '@/lib/sip/laporan-semua-pegawai';
+import { boleh, bolehUnduhLaporan } from '@/lib/sip/akses';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
   // Route ini tidak lewat gerbang halaman, jadi perannya diperiksa di sini.
   // Berkasnya memuat NIP, nama, jabatan, dan nilai seluruh petugas dalam
   // cakupan — pegawai biasa tidak boleh mengunduhnya.
-  if (!bolehBukaHalaman(saya.role, '/laporan/ekspor')) {
+  if (!bolehUnduhLaporan(saya, '/laporan/ekspor')) {
     return NextResponse.json({ error: 'Anda tidak berwenang mengunduh rekap.' }, { status: 403 });
   }
 
@@ -49,7 +50,7 @@ export async function GET(request: Request) {
   }
 
   // ===== tentukan cakupan cabang (sama seperti halaman laporan) =====
-  const bolehLihatSemua = saya.role === 'ADMIN';
+  const bolehLihatSemua = boleh(saya.role, 'lihat_semua_cabang');
   const semuaCabang = await prisma.cabang.findMany({ orderBy: { kode: 'asc' } });
   const ringkas: CabangRingkas[] = semuaCabang.map((c) => ({
     id: c.id, kode: c.kode, nama: c.nama, jenis: c.jenis,
@@ -118,35 +119,26 @@ export async function GET(request: Request) {
     status: LABEL_STATUS[p.status] ?? p.status,
   }));
 
-  const nilai = penilaian.map((p) => p.nilaiAkhir ?? 0);
-  const rataRata = nilai.length > 0 ? nilai.reduce((a, b) => a + b, 0) / nilai.length : 0;
+  const semuaBaris = semuaPegawai
+    ? gabungkanPegawaiBelumDinilai(baris, (await prisma.pegawai.findMany({
+        where: { role: 'PEGAWAI', aktif: true, cabangId: { in: cakupanId } },
+        select: { nama: true, nip: true, jabatan: { select: { nama: true } }, cabang: { select: { kode: true, nama: true } } },
+      })).map((p) => ({ nama: p.nama, nip: p.nip, jabatan: p.jabatan?.nama ?? null, cabang: `${p.cabang.kode} - ${p.cabang.nama}` })))
+    : baris;
 
-  const sebaran: Record<string, number> = {};
-  for (const p of penilaian) {
-    const r = p.rating ?? '—';
-    sebaran[r] = (sebaran[r] ?? 0) + 1;
-  }
+  const ringkasan = hitungRingkasanPenilaian(semuaBaris);
 
   const csv = susunCsvRekap(
     {
       periode: periode.nama,
       cakupan: namaCakupan,
-      jumlahDinilai: penilaian.length,
-      rataRata,
-      tertinggi:
-        penilaian.length > 0
-          ? { nama: penilaian[0].pegawai.nama, nilai: penilaian[0].nilaiAkhir ?? 0 }
-          : null,
-      terendah:
-        penilaian.length > 0
-          ? {
-              nama: penilaian[penilaian.length - 1].pegawai.nama,
-              nilai: penilaian[penilaian.length - 1].nilaiAkhir ?? 0,
-            }
-          : null,
-      sebaran,
+      jumlahDinilai: ringkasan.jumlahDinilai,
+      rataRata: ringkasan.rataRata,
+      tertinggi: ringkasan.tertinggi,
+      terendah: ringkasan.terendah,
+      sebaran: ringkasan.sebaran,
     },
-    baris
+    semuaBaris
   );
 
   // catat ekspor di audit log — berkas berisi data pribadi pegawai

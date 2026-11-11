@@ -19,6 +19,7 @@ import { kumpulkanTurunan } from './hierarki';
 import { labelPosisi } from './label-posisi';
 import { kategoriDariNilai } from './ranking';
 import { rapikanHasil } from '@/lib/rapikan-data';
+import { batasiCakupanCabangRanking } from './ranking-cakupan';
 import type { JenisCabang } from '@prisma/client';
 
 export type FilterRankingGabungan = {
@@ -27,6 +28,8 @@ export type FilterRankingGabungan = {
   kodeCabang?: string | null;
   kodeJabatan?: string | null;
   semuaPegawai?: boolean;
+  /** Authorized branch scope derived server-side from the authenticated user. */
+  cabangDiizinkanIds?: string[];
 };
 
 export type BarisRankingGabungan = {
@@ -70,7 +73,7 @@ export async function susunRankingGabungan(
       const turunan = kumpulkanTurunan(cabang.id, semua);
       cabangIds = [cabang.id, ...turunan];
       unitLabel = cabang.nama;
-    }
+    } else cabangIds = [];
   } else if (filter.jenis) {
     const daftar = await prisma.cabang.findMany({
       where: { jenis: filter.jenis },
@@ -82,6 +85,8 @@ export async function susunRankingGabungan(
     };
     unitLabel = label[filter.jenis] ?? `Jenis ${filter.jenis}`;
   }
+
+  cabangIds = batasiCakupanCabangRanking(cabangIds, filter.cabangDiizinkanIds);
 
   // Ambil semua Pegawai agar yang belum punya baris Penilaian tetap muncul.
   if (filter.semuaPegawai) {

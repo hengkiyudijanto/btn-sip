@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db';
 import { Kerangka } from '@/components/kerangka';
 import { bolehBukaHalaman, boleh } from '@/lib/sip/akses';
 import { daftarTanggalPengukuranIMT, kelompokkanBarisRekapIMT, susunRekapIMT } from '@/lib/sip/imt-rekap';
-import { kumpulkanTurunan, susunPohon, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
+import { cakupanCabangRekapIMT } from '@/lib/sip/imt-rekap-cakupan';
+import { susunPohon, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 
 export const metadata = { title: 'Laporan Rekap IMT' };
@@ -12,6 +13,7 @@ export const metadata = { title: 'Laporan Rekap IMT' };
 export default async function HalamanRekapIMT({ searchParams }: { searchParams: Promise<{ periode?: string; cabang?: string; semua?: string; tanggal?: string }> }) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
+  if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!bolehBukaHalaman(saya.role, '/laporan/ranking')) redirect('/dasbor');
   const sp = await searchParams;
   const semuaPegawai = sp.semua === '1';
@@ -20,9 +22,9 @@ export default async function HalamanRekapIMT({ searchParams }: { searchParams: 
   const semuaCabang = await prisma.cabang.findMany({ orderBy: { kode: 'asc' } });
   const bolehSemua = boleh(saya.role, 'lihat_semua_cabang');
   const cabangPilihan = bolehSemua ? semuaCabang.filter((c) => c.aktif) : [];
-  const unit = sp.cabang ? semuaCabang.find((c) => c.id === sp.cabang) : null;
   const ringkasCabang: CabangRingkas[] = semuaCabang.map((c) => ({ id: c.id, kode: c.kode, nama: c.nama, jenis: c.jenis, indukId: c.indukId, aktif: c.aktif }));
-  const cabangIds = unit ? kumpulkanTurunan(unit.id, ringkasCabang) : bolehSemua ? null : [saya.cabang.id];
+  const unit = bolehSemua && sp.cabang ? semuaCabang.find((c) => c.id === sp.cabang) ?? null : null;
+  const cabangIds = cakupanCabangRekapIMT({ bolehSemua, cabangPenggunaId: saya.cabang.id, cabangDimintaId: sp.cabang ?? null, pohon: ringkasCabang });
   const tanggalTersedia = periode ? await daftarTanggalPengukuranIMT(periode.id, cabangIds) : [];
   const tanggalYangDiminta = sp.tanggal && /^\d{4}-\d{2}-\d{2}$/.test(sp.tanggal) ? sp.tanggal : undefined;
   const tanggalDipilih = tanggalTersedia.find((tanggal) => tanggal.toISOString().slice(0, 10) === tanggalYangDiminta) ?? tanggalTersedia[0];

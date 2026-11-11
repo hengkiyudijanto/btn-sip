@@ -20,17 +20,17 @@
   "dependencies": {
     "@neon/config": "^1.8.2",
     "@neon/env": "^1.4.7",
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.10.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
     "jszip": "^3.10.2",
-    "next": "16.3.6",
+    "next": "16.4.6",
     "pg": "^8.23.0",
     "pptxgenjs": "^4.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "^0.35.5",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -43,8 +43,8 @@
     "@vitest/coverage-v8": "^5.0.2",
     "dotenv": "^18.0.4",
     "eslint": "^9",
-    "eslint-config-next": "16.3.6",
-    "prisma": "7.10.0",
+    "eslint-config-next": "16.4.6",
+    "prisma": "7.10.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",

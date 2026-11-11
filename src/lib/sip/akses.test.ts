@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   boleh,
   bolehBukaHalaman,
+  bolehUnduhLaporan,
   wajibKemampuan,
   SEMUA_PERAN,
   KETERANGAN_PERAN,
@@ -214,6 +215,20 @@ describe('wajibKemampuan', () => {
   it('menolak peran tak dikenal (jangan pernah loloskan default)', () => {
     expect(wajibKemampuan({ role: 'PERAN_ASING' }, 'menilai')).not.toBeNull();
     expect(boleh('PERAN_ASING', 'menilai')).toBe(false);
+  });
+});
+
+describe('otorisasi export laporan', () => {
+  it('menolak PEGAWAI mengunduh ranking yang halaman web-nya tidak boleh dibuka', () => {
+    expect(bolehUnduhLaporan({ role: 'PEGAWAI', harusGantiPassword: false }, '/laporan/ranking')).toBe(false);
+  });
+
+  it('menolak semua export sebelum password awal diganti', () => {
+    expect(bolehUnduhLaporan({ role: 'ADMIN', harusGantiPassword: true }, '/laporan/ranking')).toBe(false);
+  });
+
+  it('mengizinkan PENGAMAT mengunduh ranking yang boleh dibaca', () => {
+    expect(bolehUnduhLaporan({ role: 'PENGAMAT', harusGantiPassword: false }, '/laporan/ranking')).toBe(true);
   });
 });
 
