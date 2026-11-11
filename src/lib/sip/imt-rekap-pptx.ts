@@ -15,7 +15,7 @@ export async function bangunPptxRekapIMT(slideData: SlideRekapIMT[]): Promise<Bu
     slide.addText('PT BANK TABUNGAN NEGARA (PERSERO) TBK', { x: margin, y: 0.22, w: width, h: 0.2, fontSize: 8, bold: true, color: '1B3A8F', fontFace: 'Aptos' });
     slide.addText('REKAPITULASI INDEKS MASSA TUBUH', { x: margin, y: 0.43, w: width, h: 0.35, fontSize: 20, bold: true, color: '101A3D', fontFace: 'Aptos' });
     slide.addText(`${data.periode} · ${data.unit}`, { x: margin, y: 0.83, w: width, h: 0.22, fontSize: 10, color: '55607A', fontFace: 'Aptos' });
-    slide.addText(`Tanggal pengukuran: ${data.mulai.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} – ${data.selesai.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, { x: margin, y: 1.04, w: width, h: 0.18, fontSize: 8, color: '55607A', fontFace: 'Aptos' });
+    slide.addText(`Tanggal pengukuran: ${data.tanggal.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, { x: margin, y: 1.04, w: width, h: 0.18, fontSize: 8, color: '55607A', fontFace: 'Aptos' });
     const headY = 1.32;
     const rowH = Math.min(0.36, 4.95 / Math.max(1, data.baris.length));
     const cols = [0.45, 1.05, 3.0, 2.0, 1.35, 1.15, 1.5, 2.0];

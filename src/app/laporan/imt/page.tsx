@@ -3,13 +3,13 @@ import { pegawaiDariSesi } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { Kerangka } from '@/components/kerangka';
 import { bolehBukaHalaman, boleh } from '@/lib/sip/akses';
-import { susunRekapIMT } from '@/lib/sip/imt-rekap';
+import { daftarTanggalPengukuranIMT, susunRekapIMT } from '@/lib/sip/imt-rekap';
 import { kumpulkanTurunan, susunPohon, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 
 export const metadata = { title: 'Laporan Rekap IMT' };
 
-export default async function HalamanRekapIMT({ searchParams }: { searchParams: Promise<{ periode?: string; cabang?: string; semua?: string }> }) {
+export default async function HalamanRekapIMT({ searchParams }: { searchParams: Promise<{ periode?: string; cabang?: string; semua?: string; tanggal?: string }> }) {
   const saya = await pegawaiDariSesi();
   if (!saya) redirect('/masuk');
   if (!bolehBukaHalaman(saya.role, '/laporan/ranking')) redirect('/dasbor');
@@ -23,7 +23,11 @@ export default async function HalamanRekapIMT({ searchParams }: { searchParams: 
   const unit = sp.cabang ? semuaCabang.find((c) => c.id === sp.cabang) : null;
   const ringkasCabang: CabangRingkas[] = semuaCabang.map((c) => ({ id: c.id, kode: c.kode, nama: c.nama, jenis: c.jenis, indukId: c.indukId, aktif: c.aktif }));
   const cabangIds = unit ? kumpulkanTurunan(unit.id, ringkasCabang) : bolehSemua ? null : [saya.cabang.id];
-  const rekap = periode ? await susunRekapIMT({ periodeId: periode.id, cabangIds, semuaPegawai }) : [];
+  const tanggalTersedia = periode ? await daftarTanggalPengukuranIMT(periode.id, cabangIds) : [];
+  const tanggalYangDiminta = sp.tanggal && /^\d{4}-\d{2}-\d{2}$/.test(sp.tanggal) ? sp.tanggal : undefined;
+  const tanggalDipilih = tanggalTersedia.find((tanggal) => tanggal.toISOString().slice(0, 10) === tanggalYangDiminta) ?? tanggalTersedia[0];
+  const tanggalKey = tanggalDipilih?.toISOString().slice(0, 10) ?? '';
+  const rekap = periode ? await susunRekapIMT({ periodeId: periode.id, cabangIds, semuaPegawai, tanggal: tanggalDipilih }) : [];
 
   return (
     <Kerangka pegawai={saya}>
@@ -31,9 +35,10 @@ export default async function HalamanRekapIMT({ searchParams }: { searchParams: 
         <div><h1 className="text-2xl font-bold text-abu-900">Laporan Rekap IMT</h1><p className="mt-2 text-sm text-abu-500">Filter mengikuti Rekap SIP: periode dan unit kerja.</p></div>
         <form className="mt-6 kartu p-5" method="get"><div className={`grid gap-4 ${bolehSemua && cabangPilihan.length ? 'sm:grid-cols-2' : ''}`}>
           <label className="text-xs text-abu-600">Periode<select name="periode" defaultValue={periode?.id ?? ''} className="mt-1 block w-full rounded-lg border border-abu-300 px-3 py-2 text-sm">{daftarPeriode.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}</select></label>
+          {periode && <label className="text-xs text-abu-600">Tanggal pengukuran<select name="tanggal" required={tanggalTersedia.length > 0} defaultValue={tanggalKey} className="mt-1 block w-full rounded-lg border border-abu-300 px-3 py-2 text-sm">{tanggalTersedia.length === 0 && <option value="">Belum ada pengukuran</option>}{tanggalTersedia.map((tanggal) => <option key={tanggal.toISOString()} value={tanggal.toISOString().slice(0, 10)}>{tanggal.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</option>)}</select></label>}
           {bolehSemua && cabangPilihan.length > 0 && <label className="text-xs text-abu-600">Unit kerja<select name="cabang" defaultValue={unit?.id ?? ''} className="mt-1 block w-full rounded-lg border border-abu-300 px-3 py-2 text-sm"><option value="">Semua unit</option>{susunPohon(cabangPilihan.map((c) => ({ id: c.id, kode: c.kode, nama: c.nama, jenis: c.jenis, indukId: c.indukId, aktif: c.aktif }))).map((c) => <option key={c.id} value={c.id}>{' '.repeat(c.kedalaman * 3)}{LABEL_JENIS[c.jenis]} {c.kode} — {c.nama}</option>)}</select></label>}
         </div><div className="mt-4 flex flex-wrap items-center gap-3"><button className="rounded-lg bg-btn-biru-600 px-4 py-2 text-xs font-semibold text-white">Tampilkan</button><label className="inline-flex items-center gap-2 text-sm text-abu-700"><input type="checkbox" name="semua" value="1" defaultChecked={semuaPegawai} /> Termasuk semua pegawai (termasuk yang belum diukur)</label></div></form>
-        <div className="mt-4 flex flex-wrap items-center gap-3">{periode && <form action="/laporan/imt/pptx" method="get"><input type="hidden" name="periode" value={periode.id} />{unit && <input type="hidden" name="cabang" value={unit.id} />}{semuaPegawai && <input type="hidden" name="semua" value="1" />}<button className="rounded-lg bg-btn-biru-600 px-4 py-2 text-xs font-semibold text-white">Cetak PPT Landscape</button></form>}{periode && <a href={`/laporan/imt/satu?periode=${periode.id}${unit ? `&cabang=${unit.id}` : ''}${semuaPegawai ? '&semua=1' : ''}`} className="rounded-lg bg-btn-biru-600 px-4 py-2 text-xs font-semibold text-white">Cetak / Simpan PDF</a>}<span className="text-xs text-abu-500">{unit ? `Cakupan: ${unit.nama} beserta turunannya` : 'Cakupan: semua unit yang berwenang'}</span></div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">{periode && <form action="/laporan/imt/pptx" method="get"><input type="hidden" name="periode" value={periode.id} />{tanggalKey && <input type="hidden" name="tanggal" value={tanggalKey} />}{unit && <input type="hidden" name="cabang" value={unit.id} />}{semuaPegawai && <input type="hidden" name="semua" value="1" />}<button className="rounded-lg bg-btn-biru-600 px-4 py-2 text-xs font-semibold text-white">Cetak PPT Landscape</button></form>}{periode && <a href={`/laporan/imt/satu?periode=${periode.id}${tanggalKey ? `&tanggal=${tanggalKey}` : ''}${unit ? `&cabang=${unit.id}` : ''}${semuaPegawai ? '&semua=1' : ''}`} className="rounded-lg bg-btn-biru-600 px-4 py-2 text-xs font-semibold text-white">Cetak / Simpan PDF</a>}<span className="text-xs text-abu-500">{unit ? `Cakupan: ${unit.nama} beserta turunannya` : 'Cakupan: semua unit yang berwenang'}</span></div>
         <div className="mt-6 space-y-6">
           {rekap.map((p) => {
             const kantor = new Map<string, typeof p.baris>();
@@ -43,7 +48,7 @@ export default async function HalamanRekapIMT({ searchParams }: { searchParams: 
             return (
               <section key={p.periode}>
                 <h2 className="mb-1 text-lg font-bold text-abu-900">{p.periode} · {p.unit}</h2>
-                <p className="mb-3 text-sm text-abu-600">Tanggal pengukuran: {p.mulai.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} – {p.selesai.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                <p className="mb-3 text-sm text-abu-600">Tanggal pengukuran: {p.tanggal.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 {[...kantor.entries()].map(([namaKantor, baris]) => (
                   <div key={namaKantor} className="kartu mb-5 overflow-hidden">
                     <h3 className="border-b border-abu-200 bg-abu-50 px-4 py-3 text-sm font-bold text-abu-900">{namaKantor}</h3>
