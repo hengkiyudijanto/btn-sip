@@ -4,6 +4,16 @@ import { kumpulkanTurunan, type CabangRingkas } from './hierarki';
 export type FilterRekapIMT = { periodeId: string; cabangIds?: string[] | null; semuaPegawai?: boolean; tanggal?: Date };
 export type BarisRekapIMT = { nip: string; nama: string; kantor: string; unitKerja: string; foto: string | null; beratAwal: number | null; berat: number | null; perubahan: number | null; imt: number | null; kategori: string | null };
 export type SlideRekapIMT = { periode: string; mulai: Date; selesai: Date; tanggal: Date; unit: string; baris: BarisRekapIMT[] };
+export type GrupRekapIMT = { kantor: string; unitKerja: string; baris: BarisRekapIMT[] };
+
+export function kelompokkanBarisRekapIMT(baris: BarisRekapIMT[]): GrupRekapIMT[] {
+  const kantor = new Map<string, Map<string, BarisRekapIMT[]>>();
+  for (const b of baris) {
+    const unit = kantor.get(b.kantor) ?? (kantor.set(b.kantor, new Map()), kantor.get(b.kantor)!);
+    (unit.get(b.unitKerja) ?? (unit.set(b.unitKerja, []), unit.get(b.unitKerja)!)).push(b);
+  }
+  return [...kantor.entries()].flatMap(([namaKantor, unit]) => [...unit.entries()].map(([unitKerja, data]) => ({ kantor: namaKantor, unitKerja, baris: data })));
+}
 
 export async function daftarTanggalPengukuranIMT(periodeId: string, cabangIds?: string[] | null): Promise<Date[]> {
   const daftar = await prisma.pengukuranIMT.findMany({ where: { periodeId, ...(cabangIds ? { pegawai: { cabangId: { in: cabangIds } } } : {}) }, select: { tanggal: true }, distinct: ['tanggal'], orderBy: { tanggal: 'desc' } });
