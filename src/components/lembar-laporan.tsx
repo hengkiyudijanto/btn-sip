@@ -29,8 +29,6 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
         <div>
           <div className="sip-kop-judul">
             SERVICE INDIVIDUAL PERFORMANCE
-            <br />
-            PETUGAS FRONTLINER
           </div>
           <div className="sip-kop-sub">
             PT Bank Tabungan Negara (Persero) Tbk &middot; Cabang {data.kodeCabang}{' '}
