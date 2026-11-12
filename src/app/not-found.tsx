@@ -16,7 +16,7 @@ export default async function HalamanTidakDitemukan() {
       <header className="bg-btn-biru-800 text-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center">
           <span className="text-sm font-medium text-white/90">
-            Sistem Informasi Penilaian
+            Service Individual Performance
           </span>
         </div>
         <div className="h-1 bg-btn-merah-500" />

@@ -49,9 +49,9 @@ export default async function HalamanMasuk() {
 
         <div className="relative max-w-md">
           <h1 className="text-3xl font-bold leading-tight tracking-tight">
-            Sistem Informasi
+            Service Individual
             <br />
-            Penilaian Petugas
+            Performance
           </h1>
           <div className="mt-4 h-1 w-16 bg-btn-merah-500 rounded-full" />
           <p className="mt-5 text-sm leading-relaxed text-white/75">

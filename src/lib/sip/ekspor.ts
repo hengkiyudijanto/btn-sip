@@ -57,7 +57,7 @@ export function susunCsvRekap(info: InfoRekap, baris: BarisRekap[]): string {
 
   // ===== bagian 1: ringkasan =====
   L.push('REKAP PENILAIAN PETUGAS FRONTLINER');
-  L.push('Bank BTN - Sistem Informasi Penilaian (SIP)');
+  L.push('Bank BTN - Service Individual Performance');
   L.push('');
   L.push(`Periode;${sel(info.periode)}`);
   L.push(`Cakupan;${sel(info.cakupan)}`);
