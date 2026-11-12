@@ -33,7 +33,7 @@ export default async function HalamanUbahPassword() {
         </div>
 
         <p className="mt-5 text-center text-xs text-abu-400">
-          SIP — Sistem Informasi Penilaian Petugas Frontliner
+          SIP — Service Individual Performance
         </p>
       </div>
     </div>

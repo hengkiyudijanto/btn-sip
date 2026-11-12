@@ -263,8 +263,7 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
       </div>
 
       <div className="sip-footer">
-        Dokumen ini dihasilkan oleh SIP &mdash; Sistem Informasi Penilaian Petugas
-        Frontliner &middot; Dicetak {data.tanggalCetak} &middot; Status: {data.status}
+        Dokumen ini dihasilkan oleh SIP &mdash; Service Individual Performance &middot; Dicetak {data.tanggalCetak} &middot; Status: {data.status}
       </div>
     </div>
   );

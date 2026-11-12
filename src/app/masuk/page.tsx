@@ -7,7 +7,7 @@ import { pegawaiDariSesi } from '@/lib/auth';
 
 // absolute: judul tab halaman masuk tidak diberi akhiran template
 export const metadata: Metadata = {
-  title: { absolute: 'SIP - Sistem Informasi Penilaian Petugas' },
+  title: { absolute: 'SIP - Service Individual Performance' },
 };
 
 export default async function HalamanMasuk() {

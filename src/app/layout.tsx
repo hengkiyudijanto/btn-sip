@@ -10,11 +10,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'SIP - Sistem Informasi Penilaian Petugas',
+    default: 'SIP - Service Individual Performance',
     template: '%s | SIP',
   },
   description:
-    'Sistem Informasi Penilaian Petugas frontliner — Teller, Customer Service, Security, Priority Banking.',
+    'Service Individual Performance frontliner — Teller, Customer Service, Security, Priority Banking.',
   applicationName: 'SIP',
 };
 

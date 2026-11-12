@@ -81,7 +81,7 @@ export async function Kerangka({ pegawai, children }: { pegawai: PegawaiSesi; ch
       <footer className="border-t border-abu-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] text-abu-400">
-            SIP — Sistem Informasi Penilaian Petugas Frontliner
+            SIP — Service Individual Performance
           </p>
           <p className="text-[11px] text-abu-400">
             PT Bank Tabungan Negara (Persero) Tbk
