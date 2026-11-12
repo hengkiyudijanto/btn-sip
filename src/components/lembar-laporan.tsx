@@ -28,7 +28,7 @@ export function LembarLaporan({ data }: { data: DataLaporan }) {
       <div className="sip-kop">
         <div>
           <div className="sip-kop-judul">
-            SISTEM INFORMASI PENILAIAN (SIP)
+            SERVICE INDIVIDUAL PERFORMANCE
             <br />
             PETUGAS FRONTLINER
           </div>

@@ -88,7 +88,7 @@ async function main() {
   // 3. Halaman cetak laporan
   const r2 = await get(`${BASE}/laporan/${penilaian.id}`, token);
   console.log(`\n2. /laporan/[id]               → ${r2.status}`);
-  cek(r2.html.includes('SISTEM INFORMASI PENILAIAN'), 'kop laporan ada');
+  cek(r2.html.includes('SERVICE INDIVIDUAL PERFORMANCE'), 'kop laporan ada');
   cek(r2.html.includes('IDENTITAS'), 'ada kata IDENTITAS');
   cek(r2.html.includes('PENAMPILAN'), 'blok A PENAMPILAN ada');
   cek(r2.html.includes('KEMAMPUAN'), 'blok B KEMAMPUAN ada');

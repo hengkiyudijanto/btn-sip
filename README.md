@@ -1,4 +1,4 @@
-# SIP — Sistem Informasi Penilaian Petugas Frontliner
+# SIP — Service Individual Performance
 
 Aplikasi web penilaian kinerja mingguan petugas frontliner **Bank BTN** —
 Teller, Customer Service, Security, Priority Banking Teller, dan Priority
