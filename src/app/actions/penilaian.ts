@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
 import { boleh, wajibKemampuan } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 import { KATEGORI, hitungPenilaian, nilaiKeSkala, type InputAspek } from '@/lib/sip/penilaian';
 
 const skemaSimpan = z.object({
@@ -81,6 +82,8 @@ export async function simpanPenilaian(
     prisma.periode.findUnique({ where: { id: periodeId } }),
   ]);
   if (!target) return { error: 'Pegawai tidak ditemukan.' };
+  const cakupanCabang = await cakupanCabangUntukPegawai(penilai);
+  if (cakupanCabang && (!cakupanCabang.includes(target.cabangId) || target.role !== 'PEGAWAI')) return { error: 'Pegawai berada di luar cakupan cabang Anda.' };
   if (!periode) return { error: 'Periode tidak ditemukan.' };
   if (periode.dikunci) return { error: 'Periode sudah dikunci, penilaian tidak dapat diubah.' };
 

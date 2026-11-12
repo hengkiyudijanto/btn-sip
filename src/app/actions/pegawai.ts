@@ -6,6 +6,7 @@ import { pegawaiDariSesi, catatAudit, hashPassword } from '@/lib/auth';
 import crypto from 'node:crypto';
 import { boleh, SEMUA_PERAN } from '@/lib/sip/akses';
 import { validasiDataFisikPegawai } from '@/lib/sip/data-fisik';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 import { kumpulkanTurunan } from '@/lib/sip/hierarki';
 import { hitungBMI, kategoriBMI } from '@/lib/sip/kesehatan';
 
@@ -367,7 +368,8 @@ export async function simpanPengukuranIMT(formData: FormData): Promise<void> {
     prisma.pegawai.findUnique({ where: { id: pegawaiId, role: 'PEGAWAI' }, select: { id: true, cabangId: true, tinggiBadan: true } }),
     prisma.periode.findUnique({ where: { id: periodeId }, select: { id: true, tanggalMulai: true, tanggalSelesai: true, dikunci: true } }),
   ]);
-  if (!target || (pengukur.role !== 'ADMIN' && target.cabangId !== pengukur.cabang.id)) throw new Error('Pegawai tidak ditemukan atau di luar cabang Anda.');
+  const cakupanCabang = await cakupanCabangUntukPegawai(pengukur);
+  if (!target || (cakupanCabang && !cakupanCabang.includes(target.cabangId))) throw new Error('Pegawai tidak ditemukan atau di luar cabang Anda.');
   if (!periode) throw new Error('Periode tidak ditemukan.');
   if (periode.dikunci) throw new Error('Periode sudah dikunci.');
   if (tanggal < periode.tanggalMulai || tanggal > periode.tanggalSelesai) throw new Error('Tanggal harus berada di dalam periode.');

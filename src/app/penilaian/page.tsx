@@ -9,6 +9,7 @@ import { PanelPengingat } from '@/components/panel-pengingat';
 import { PemilihPeriode } from '@/components/pemilih-periode';
 import Link from 'next/link';
 import { boleh } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 export const metadata = { title: 'System Informasi Penilaian' };
 
@@ -30,6 +31,7 @@ export default async function HalamanPenilaian({
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!boleh(saya.role, 'menilai')) redirect('/dasbor');
+  const cakupanCabang = await cakupanCabangUntukPegawai(saya);
 
   const bolehMenilai = BOLEH_MENILAI.has(saya.role);
 
@@ -78,7 +80,7 @@ export default async function HalamanPenilaian({
     where: {
       aktif: true,
       role: 'PEGAWAI',
-      ...(saya.role === 'ADMIN' ? {} : { cabangId: saya.cabang.id }),
+      ...(cakupanCabang ? { cabangId: { in: cakupanCabang } } : {}),
     },
     include: {
       jabatan: true,

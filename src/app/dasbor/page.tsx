@@ -13,6 +13,7 @@ import { GrafikBatang } from '@/components/grafik-batang';
 import { FilterGrafikBatang } from '@/components/filter-grafik-batang';
 import { daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 import { boleh } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 const LABEL_ROLE: Record<string, string> = {
   PEGAWAI: 'Pegawai',
@@ -41,6 +42,8 @@ export default async function Dasbor({
   const BOLEH_MENILAI = boleh(pegawai.role, 'menilai');
   const MELIHAT_KINERJA = BOLEH_MENILAI || pegawai.role === 'PENGAMAT';
   const CAKUPAN_SEMUA = pegawai.role === 'ADMIN' || pegawai.role === 'PENGAMAT';
+  const cabangIds = await cakupanCabangUntukPegawai(pegawai);
+  const filterCabang = cabangIds ? { cabangId: { in: cabangIds } } : {};
 
   // Statistik ringkas
   const periode = await pilihPeriodeRelevan();
@@ -50,7 +53,7 @@ export default async function Dasbor({
       where: {
         aktif: true,
         role: 'PEGAWAI',
-        ...(CAKUPAN_SEMUA ? {} : { cabangId: pegawai.cabang.id }),
+        ...filterCabang,
       },
     }),
     prisma.penilaian.findMany({
@@ -75,14 +78,14 @@ export default async function Dasbor({
           where: {
             periodeId: periode.id,
             nilaiAkhir: { not: null },
-            pegawai: CAKUPAN_SEMUA ? {} : { cabangId: pegawai.cabang.id },
+            pegawai: filterCabang,
           },
         }),
         prisma.pegawai.count({
           where: {
             aktif: true,
             role: 'PEGAWAI',
-            ...(pegawai.role === 'ADMIN' ? {} : { cabangId: pegawai.cabang.id }),
+            ...filterCabang,
           },
         }),
       ])
@@ -239,7 +242,7 @@ export default async function Dasbor({
                 unitTerpilih={grafik.unitTerpilih}
                 opsiJabatan={grafik.opsiJabatan}
                 jabatanTerpilih={grafik.jabatanTerpilih}
-                bolehPilihUnit={CAKUPAN_SEMUA || pegawai.role === 'MANAGER'}
+                bolehPilihUnit={CAKUPAN_SEMUA || pegawai.role === 'MANAGER' || pegawai.role === 'SUPERVISOR'}
               />
             )}
 

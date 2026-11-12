@@ -21,6 +21,7 @@ import { kumpulkanTurunan } from '@/lib/sip/hierarki';
 import { boleh } from '@/lib/sip/akses';
 import { daftarPeriodeUntukPemilih, pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { denganJabatanTerpilih } from '@/lib/sip/batang-jabatan';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 export type BatangNilai = {
   /** kunci stabil untuk React */
@@ -130,10 +131,11 @@ export async function ambilDataGrafikBatang(
   // ===== 2. cakupan kantor =====
   // Peran selain admin terkunci di cabangnya sendiri — sama seperti halaman lain.
   const cakupanSemua = boleh(saya.role, 'lihat_semua_cabang');
-  const bolehPilihUnit = cakupanSemua;
+  const bolehPilihUnit = cakupanSemua || saya.role === 'MANAGER' || saya.role === 'SUPERVISOR';
   // Cabang akar: null = tidak dibatasi (semua unit), selain itu dikunci ke
   // kode cabangnya. Sebelumnya `bolehPilihUnit` dipakai untuk dua hal
   // sekaligus sehingga peran tanpa hak pilih unit ikut terlihat bisa memilih.
+  const cabangIdsDiizinkan = await cakupanCabangUntukPegawai(saya);
   const cabangAkar = cakupanSemua ? null : saya.cabang.kode;
 
   // Admin boleh memilih unit mana pun; manager/supervisor hanya di bawah cabangnya.
@@ -149,6 +151,8 @@ export async function ambilDataGrafikBatang(
   // Validasi pilihan: kalau di luar wewenang, kembali ke cakupan semula.
   if (kodeTerpilih && cabangAkar && !bolehPilihUnit) kodeTerpilih = cabangAkar;
   if (kodeTerpilih && !petaCabang.has(kodeTerpilih)) kodeTerpilih = cabangAkar ?? '';
+  const unitDiminta = petaCabang.get(kodeTerpilih);
+  if (unitDiminta && cabangIdsDiizinkan && !cabangIdsDiizinkan.includes(unitDiminta.id)) kodeTerpilih = cabangAkar ?? '';
 
   // kumpulkanTurunan mengembalikan **id** cabang (termasuk yang dipilih),
   // bukan kode — jadi pemetaannya harus lewat id, bukan kode.

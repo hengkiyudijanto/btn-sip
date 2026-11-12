@@ -160,10 +160,10 @@ describe('peran lama tidak berubah perilakunya', () => {
 });
 
 describe('cakupan lintas cabang (lihat_semua_cabang)', () => {
-  it('diberikan ke ADMIN, MANAGER, dan PENGAMAT', () => {
+  it('diberikan ke ADMIN dan PENGAMAT, bukan Manager/Supervisor', () => {
     expect(boleh('ADMIN', 'lihat_semua_cabang')).toBe(true);
-    expect(boleh('MANAGER', 'lihat_semua_cabang')).toBe(true);
     expect(boleh('PENGAMAT', 'lihat_semua_cabang')).toBe(true);
+    expect(boleh('MANAGER', 'lihat_semua_cabang')).toBe(false);
   });
 
   it('TIDAK diberikan ke PEGAWAI dan SUPERVISOR (tetap cabangnya sendiri)', () => {
@@ -173,7 +173,7 @@ describe('cakupan lintas cabang (lihat_semua_cabang)', () => {
 
   it('tidak ada peran yang mendapatkannya tanpa niat (cek menyeluruh)', () => {
     const punya = SEMUA_PERAN.filter((r) => boleh(r, 'lihat_semua_cabang'));
-    expect(punya.sort()).toEqual(['ADMIN', 'MANAGER', 'PENGAMAT']);
+    expect(punya.sort()).toEqual(['ADMIN', 'PENGAMAT']);
   });
 });
 

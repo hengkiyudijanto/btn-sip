@@ -12,6 +12,7 @@ import {
   FormKembalikan,
 } from '@/components/aksi-persetujuan';
 import { boleh } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 export const metadata = { title: 'Persetujuan' };
 
@@ -23,6 +24,7 @@ export default async function HalamanPersetujuan() {
   if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!boleh(saya.role, 'mengetahui')) redirect('/dasbor');
 
+  const cakupanCabang = await cakupanCabangUntukPegawai(saya);
   const periode = await pilihPeriodeRelevan();
 
   const menunggu = periode
@@ -30,8 +32,8 @@ export default async function HalamanPersetujuan() {
         where: {
           periodeId: periode.id,
           status: 'DIKIRIM',
-          ...(saya.role === 'MANAGER'
-            ? { pegawai: { cabangId: saya.cabang.id } }
+          ...(cakupanCabang
+            ? { pegawai: { cabangId: { in: cakupanCabang } } }
             : {}),
           // manager tidak menilai dirinya sendiri
           ...(saya.role === 'MANAGER' ? { penilaiId: { not: saya.id } } : {}),
@@ -56,8 +58,8 @@ export default async function HalamanPersetujuan() {
         where: {
           periodeId: periode.id,
           status: { in: ['DIKETAHUI', 'FINAL'] },
-          ...(saya.role === 'MANAGER'
-            ? { pegawai: { cabangId: saya.cabang.id } }
+          ...(cakupanCabang
+            ? { pegawai: { cabangId: { in: cakupanCabang } } }
             : {}),
         },
         include: {

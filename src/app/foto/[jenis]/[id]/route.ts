@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pegawaiDariSesi } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 /**
  * Menyajikan foto sebagai berkas gambar tersendiri, bukan sebagai data URL
@@ -39,6 +40,7 @@ export async function GET(
   if (!saya) return new NextResponse(null, { status: 401 });
 
   const { jenis, id } = await params;
+  const cakupanCabang = await cakupanCabangUntukPegawai(saya);
 
   if (jenis === 'penilaian') {
     const p = await prisma.penilaian.findUnique({
@@ -60,7 +62,7 @@ export async function GET(
       saya.role === 'ADMIN' ||
       p.penilaiId === saya.id ||
       p.pegawaiId === saya.id ||
-      (saya.role === 'MANAGER' && p.pegawai.cabangId === saya.cabang.id) ||
+      (cakupanCabang?.includes(p.pegawai.cabangId) ?? false) ||
       p.pegawai.atasanId === saya.id;
     if (!boleh) return new NextResponse(null, { status: 403 });
 
@@ -78,8 +80,7 @@ export async function GET(
 
     const boleh =
       saya.role === 'ADMIN' ||
-      saya.role === 'MANAGER' ||
-      p.cabangId === saya.cabang.id;
+      (cakupanCabang?.includes(p.cabangId) ?? false);
     if (!boleh) return new NextResponse(null, { status: 403 });
 
     // Foto pegawai bisa diganti kapan saja oleh admin, jadi jangan di-cache

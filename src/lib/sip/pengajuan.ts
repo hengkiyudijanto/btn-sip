@@ -42,7 +42,7 @@ export async function cabangYangBoleh(
   role: string,
   cabangIdPengaju: string
 ): Promise<string[]> {
-  if (role === 'ADMIN') {
+  if (role === 'ADMIN' || role === 'PENGAMAT') {
     const semua = await prisma.cabang.findMany({ select: { id: true } });
     return semua.map((c) => c.id);
   }

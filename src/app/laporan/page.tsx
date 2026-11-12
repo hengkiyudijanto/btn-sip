@@ -8,6 +8,7 @@ import { angkaID } from '@/lib/sip/laporan';
 import { kumpulkanTurunan, susunPohon, LABEL_JENIS, type CabangRingkas } from '@/lib/sip/hierarki';
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
 import { boleh, bolehBukaHalaman } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 export const metadata = { title: 'Laporan Detail SIP' };
 
@@ -37,8 +38,9 @@ export default async function HalamanLaporan({
     : await pilihPeriodeRelevan();
 
   const bolehLihatSemua = boleh(saya.role, 'lihat_semua_cabang');
+  const cabangDiizinkan = await cakupanCabangUntukPegawai(saya);
   const semuaCabang = await prisma.cabang.findMany({ orderBy: { kode: 'asc' } });
-  const daftarCabang = bolehLihatSemua ? semuaCabang.filter((c) => c.aktif) : [];
+  const daftarCabang = semuaCabang.filter((c) => c.aktif && (cabangDiizinkan === undefined || cabangDiizinkan.includes(c.id)));
 
   // ===== Tentukan cakupan cabang =====
   // Opsi B: pilih satu unit -> otomatis mencakup seluruh cabang turunannya
@@ -53,11 +55,9 @@ export default async function HalamanLaporan({
     aktif: c.aktif,
   }));
 
-  const unitTerpilih = bolehLihatSemua
-    ? cabangId
-      ? semuaCabang.find((c) => c.id === cabangId)
-      : null
-    : semuaCabang.find((c) => c.id === saya.cabang.id) ?? null;
+  const diminta = cabangId ? semuaCabang.find((c) => c.id === cabangId) : undefined;
+  const unitValid = diminta && (cabangDiizinkan === undefined || cabangDiizinkan.includes(diminta.id)) ? diminta : undefined;
+  const unitTerpilih = unitValid ?? (bolehLihatSemua ? null : semuaCabang.find((c) => c.id === saya.cabang.id) ?? null);
 
   let idCakupan: string[] | null = null;
   if (unitTerpilih) {

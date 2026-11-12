@@ -60,12 +60,7 @@ export type Kemampuan =
   | 'lihat_audit'
   /**
    * Melihat data LINTAS CABANG (semua unit), bukan hanya cabangnya sendiri.
-   *
-   * PENTING: ini kemampuan, bukan `role === 'ADMIN'`. Cakupan data dulu
-   * ditulis ulang sebagai `role === 'ADMIN'` di ~6 berkas, sehingga peran baru
-   * yang juga seharusnya melihat semua (PENGAMAT) malah terjebak melihat satu
-   * cabang — akibatnya tren nilainya KOSONG dan grafiknya tidak muncul.
-   */
+  */
   | 'lihat_semua_cabang';
 
 /**
@@ -95,9 +90,7 @@ const KEMAMPUAN: Record<Peran, Kemampuan[]> = {
     'lihat_monitoring',
     'usul_pegawai',
     'setujui_pegawai',
-    // manager boleh memilih unit di grafik (perilaku lama) tetapi datanya
-    // tetap dibatasi cakupan cabangnya di halaman laporan
-    'lihat_semua_cabang',
+
   ],
 
   ADMIN: [

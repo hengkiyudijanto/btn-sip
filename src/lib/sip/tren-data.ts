@@ -2,13 +2,12 @@ import { prisma } from '@/lib/db';
 import type { PegawaiSesi } from '@/lib/auth';
 import { susunTitik, selisihTerakhir, rataRata, type SeriTren } from '@/lib/sip/tren';
 import { boleh } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 /**
  * Ambil data tren penilaian untuk dasbor.
  *
- * Cakupan data mengikuti aturan yang sama dengan halaman lain: admin melihat
- * seluruh cabang, peran lain hanya cabangnya sendiri (dan turunannya untuk
- * manager — manager BTN membawahi cabangnya, bukan hierarki Kanwil).
+ // User meminta cakupan hierarkis; semua akses terbatas harus melalui cabang + turunannya.
  *
  * Jumlah periode yang diambil sengaja dibatasi (default 12) supaya dasbor
  * tetap ringan walau database sudah memuat beberapa tahun periode.
@@ -25,7 +24,8 @@ const KATEGORI_RINGKAS = [
 
 export async function ambilTren(saya: PegawaiSesi): Promise<SeriTren[]> {
   const semuaCabang = boleh(saya.role, 'lihat_semua_cabang');
-  const diCabangku = semuaCabang ? {} : { cabangId: saya.cabang.id };
+  const cabangIds = await cakupanCabangUntukPegawai(saya);
+  const diCabangku = cabangIds ? { cabangId: { in: cabangIds } } : {};
 
   // periode yang benar-benar punya penilaian, terbaru dulu lalu dibalik
   // supaya sumbu X memburuk ke kanan (waktu berjalan ke kanan).

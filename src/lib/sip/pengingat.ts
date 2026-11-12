@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import type { PegawaiSesi } from '@/lib/auth';
 import { pilihPeriodeRelevan } from '@/lib/sip/periode-aktif';
 import { boleh } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 /**
  * Pengingat periode: apa yang belum selesai sebelum periode berjalan ditutup.
@@ -75,7 +76,8 @@ export async function ambilPengingat(
 
   // Cakupan petugas mengikuti aturan yang sama dengan halaman /penilaian:
   // admin melihat semua cabang, peran lain hanya cabangnya sendiri.
-  const diCabangku = boleh(saya.role, 'lihat_semua_cabang') ? {} : { cabangId: saya.cabang.id };
+  const cabangIds = await cakupanCabangUntukPegawai(saya);
+  const diCabangku = cabangIds ? { cabangId: { in: cabangIds } } : {};
 
   // ===== 1. yang jadi tugas SAYA: petugas belum dinilai =====
   // Hanya dihitung untuk periode yang belum dikunci dan belum lewat — bukan

@@ -7,6 +7,7 @@ import { UnggahFoto } from '@/components/unggah-foto';
 import { LABEL_JENIS, WARNA_JENIS } from '@/lib/sip/hierarki';
 import { alamatFoto } from '@/lib/sip/alamat-foto';
 import { bolehBukaHalaman } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 export const metadata = { title: 'Detail Pegawai' };
 
@@ -37,7 +38,8 @@ export default async function HalamanDetailPegawai({
   if (!p) notFound();
 
   if (!bolehBukaHalaman(saya.role, '/pegawai')) redirect('/dasbor');
-  if (saya.role === 'SUPERVISOR' && (p.cabangId !== saya.cabang.id || p.role !== 'PEGAWAI')) redirect('/pegawai');
+  const cakupanCabang = await cakupanCabangUntukPegawai(saya);
+  if (cakupanCabang && (!cakupanCabang.includes(p.cabangId) || p.role !== 'PEGAWAI')) redirect('/pegawai');
   // pegawai biasa hanya boleh melihat dirinya sendiri
   if (saya.role === 'PEGAWAI' && p.id !== saya.id) redirect('/dasbor');
 

@@ -10,6 +10,7 @@ import { FotoPenilaian } from '@/components/foto-penilaian';
 import { alamatFoto } from '@/lib/sip/alamat-foto';
 import { KelolaPenilaian } from '@/components/kelola-penilaian';
 import { boleh } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 export const metadata = { title: 'Isi Penilaian' };
 
@@ -26,6 +27,7 @@ export default async function HalamanIsiPenilaian({
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!boleh(saya.role, 'menilai')) redirect('/dasbor');
+  const cakupanCabang = await cakupanCabangUntukPegawai(saya);
   if (!BOLEH_MENILAI.has(saya.role)) redirect('/dasbor');
 
   const { pegawaiId } = await params;
@@ -44,6 +46,7 @@ export default async function HalamanIsiPenilaian({
     ? await prisma.periode.findUnique({ where: { id: periodeIdParam } })
     : await pilihPeriodeRelevan();
   if (!periode) redirect('/penilaian');
+  if (cakupanCabang && (!cakupanCabang.includes(target.cabangId) || target.role !== 'PEGAWAI')) redirect('/penilaian');
 
   // Nilai yang sudah ada (kalau pernah disimpan)
   let tersimpan = await prisma.penilaian.findUnique({

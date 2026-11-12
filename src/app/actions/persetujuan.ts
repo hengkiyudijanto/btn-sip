@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { pegawaiDariSesi, catatAudit } from '@/lib/auth';
 import { boleh } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 
 export type HasilAksi = { error?: string; sukses?: boolean; pesan?: string };
 
@@ -31,8 +32,8 @@ export async function tandaiDiketahui(
   });
   if (!p) return { error: 'Penilaian tidak ditemukan.' };
 
-  // Manager hanya untuk cabangnya sendiri
-  if (saya.role === 'MANAGER' && p.pegawai.cabangId !== saya.cabang.id) {
+  const cakupanCabang = await cakupanCabangUntukPegawai(saya);
+  if (cakupanCabang && !cakupanCabang.includes(p.pegawai.cabangId)) {
     return { error: 'Anda hanya dapat mengetahui penilaian di cabang Anda.' };
   }
 
@@ -134,7 +135,8 @@ export async function kembalikanUntukRevisi(
   });
   if (!p) return { error: 'Penilaian tidak ditemukan.' };
 
-  if (saya.role === 'MANAGER' && p.pegawai.cabangId !== saya.cabang.id) {
+  const cakupanCabang = await cakupanCabangUntukPegawai(saya);
+  if (cakupanCabang && !cakupanCabang.includes(p.pegawai.cabangId)) {
     return { error: 'Anda hanya dapat mengembalikan penilaian di cabang Anda.' };
   }
   if (p.status === 'FINAL') {

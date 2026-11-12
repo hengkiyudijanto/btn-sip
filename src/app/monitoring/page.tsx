@@ -3,6 +3,7 @@ import { pegawaiDariSesi } from '@/lib/auth';
 import { Kerangka } from '@/components/kerangka';
 import { prisma } from '@/lib/db';
 import { boleh } from '@/lib/sip/akses';
+import { cakupanCabangUntukPegawai } from '@/lib/sip/cakupan-cabang-server';
 import { kategoriBMI } from '@/lib/sip/kesehatan';
 import { TombolPengukuranIMT } from '@/components/form-pengukuran-imt';
 import { pilihPeriodeRelevan, daftarPeriodeUntukPemilih } from '@/lib/sip/periode-aktif';
@@ -23,6 +24,7 @@ export default async function HalamanMonitoring({ searchParams }: { searchParams
   if (!saya) redirect('/masuk');
   if (saya.harusGantiPassword) redirect('/ubah-password');
   if (!boleh(saya.role, 'lihat_monitoring')) redirect('/dasbor');
+  const cakupanCabang = await cakupanCabangUntukPegawai(saya);
 
   const { periode: periodeParam, tanggal: tanggalParam } = await searchParams;
   const periode = periodeParam
@@ -34,7 +36,7 @@ export default async function HalamanMonitoring({ searchParams }: { searchParams
   const tanggalKey = tanggalAman.toISOString().slice(0, 10);
   const daftarPeriode = await daftarPeriodeUntukPemilih();
   const daftar = await prisma.pegawai.findMany({
-    where: { aktif: true, role: 'PEGAWAI', ...(saya.role === 'ADMIN' ? {} : { cabangId: saya.cabang.id }) },
+    where: { aktif: true, role: 'PEGAWAI', ...(cakupanCabang ? { cabangId: { in: cakupanCabang } } : {}) },
     include: { cabang: { select: { kode: true, nama: true } }, jabatan: { select: { nama: true } }, pengukuranIMT: { where: { periodeId: periode.id, tanggal: tanggalAman } } },
     orderBy: [{ cabang: { kode: 'asc' } }, { nama: 'asc' }],
   });
