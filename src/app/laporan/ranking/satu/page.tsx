@@ -239,7 +239,7 @@ export default async function HalamanRankingSatu({
             <div className="lembar-kop">
               <div className="lembar-kop-kiri">
                 <div className="lembar-kop-instansi">PT Bank Tabungan Negara (Persero) Tbk</div>
-                <div className="lembar-kop-judul">LAPORAN RANKING PETUGAS FRONTLINER</div>
+                <div className="lembar-kop-judul">LAPORAN SERVICE INDIVIDUAL PERFORMANCE</div>
                 <div className="lembar-kop-sub">
                   {hasil.periode} &nbsp;·&nbsp; {hasil.unit} &nbsp;·&nbsp; {hasil.posisi}
                 </div>
